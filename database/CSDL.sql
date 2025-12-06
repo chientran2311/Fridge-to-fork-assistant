@@ -94,4 +94,4 @@ CREATE TABLE notifications (
     message VARCHAR(500),
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT NOW().    
-);           cập nhật bảng  user sao cho có cột chứa link ảnh profile ,Email,phone number,age,link to profile(tự tạo bằng 3tocom.com/username ) , Ingredient sẽ thay cột unit thành barcode 
+);         

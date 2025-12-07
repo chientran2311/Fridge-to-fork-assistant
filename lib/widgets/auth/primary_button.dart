@@ -16,13 +16,18 @@ class PrimaryButton extends StatelessWidget {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+        height: 48,                           // ⭐ Đảm bảo nút có chiều cao cố định
+        alignment: Alignment.center,          // ⭐ Căn giữa theo cả 2 chiều
+        padding: const EdgeInsets.symmetric(
+          horizontal: 22,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           text,
+          textAlign: TextAlign.center,        // ⭐ Cho chắc
           style: GoogleFonts.merriweather(
             color: Colors.black87,
             fontSize: 14,

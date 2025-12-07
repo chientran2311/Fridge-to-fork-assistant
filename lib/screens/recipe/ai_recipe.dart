@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import 'detail_recipe.dart';
 import '../../widgets/recipe/search_bar.dart';
 import '../../widgets/recipe/recipe_card.dart';
 import '../../widgets/recipe/section_title.dart';
@@ -14,7 +14,6 @@ class AiRecipeScreen extends StatefulWidget {
 }
 
 class _AiRecipeScreenState extends State<AiRecipeScreen> {
-  
   // 🔥 Controller để đọc text người dùng nhập
   final TextEditingController searchCtrl = TextEditingController();
 
@@ -29,7 +28,6 @@ class _AiRecipeScreenState extends State<AiRecipeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             // 🟢 Search bar cần controller — đã truyền vào
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -45,9 +43,20 @@ class _AiRecipeScreenState extends State<AiRecipeScreen> {
 
             const SizedBox(height: 10),
 
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: RecipeCard(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const RecipeDetailScreen(), // màn detail của cậu
+                    ),
+                  ); // dùng route cậu đã tạo
+                },
+                child: const RecipeCard(),
+              ),
             ),
 
             const Spacer(),

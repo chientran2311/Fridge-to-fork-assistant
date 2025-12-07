@@ -61,7 +61,7 @@ class _AiRecipeScreenState extends State<AiRecipeScreen> {
 
             const Spacer(),
 
-            BottomNav(textColor: textColor),
+            const BottomNav(textColor: textColor),
           ],
         ),
       ),

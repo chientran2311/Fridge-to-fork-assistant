@@ -50,7 +50,7 @@ class SearchBarWidget extends StatelessWidget {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
+                borderSide: const BorderSide(
                   color: textColor,
                   width: 1.5,
                 ),
@@ -69,7 +69,7 @@ class SearchBarWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             color: textColor.withOpacity(0.1),
           ),
-          child: Icon(Icons.filter_list, size: 22, color: textColor),
+          child: const Icon(Icons.filter_list, size: 22, color: textColor),
         ),
       ],
     );

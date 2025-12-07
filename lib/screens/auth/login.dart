@@ -41,7 +41,7 @@ class LoginScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>  AiRecipeScreen(),
+        builder: (context) =>  const AiRecipeScreen(),
       ),
     );
   },

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../recipe/ai_recipe.dart';
+import '../recipe/detail_recipe.dart';
+import 'editprofile.dart';
 
 class ProfileScreen extends StatelessWidget {
   final Color cardColor = const Color(0xFFE7EEE9);
@@ -23,37 +26,55 @@ class ProfileScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: textColor,
               ),
-              child: Stack(
-                children: [
-                  // Nút Back
-                  Positioned(
-                    top: 45,
-                    left: 15,
-                    child: _rectangleBtn(Icons.arrow_back, textColor),
+              child: Stack(children: [
+                // 🔙 Nút Back → quay về AI Recipe
+                Positioned(
+                  top: 45,
+                  left: 15,
+                  child: _rectangleBtn(
+                    Icons.arrow_back,
+                    textColor,
+                    () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const AiRecipeScreen()),
+                      );
+                    },
                   ),
+                ),
 
-                  // Nút Edit
-                  Positioned(
-                    top: 45,
-                    right: 15,
-                    child: _rectangleBtn(Icons.edit, textColor),
+                // ✏️ Nút Edit → sang màn hình EditProfile
+                Positioned(
+                  top: 45,
+                  right: 15,
+                  child: _rectangleBtn(
+                    Icons.edit,
+                    textColor,
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const EditProfileScreen()),
+                      );
+                    },
                   ),
+                ),
 
-                  // TITLE My profile (chữ trắng, font Merriweather)
-                  Positioned(
-                    top: 112, // đẩy xuống dưới nút back
-                    left: 20,
-                    child: Text(
-                      "My profile",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w300,
-                      ),
+                // TITLE
+                Positioned(
+                  top: 112,
+                  left: 20,
+                  child: Text(
+                    "My profile",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w300,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ]),
             ),
 
             // TITLE
@@ -284,14 +305,22 @@ class ProfileScreen extends StatelessWidget {
   // WIDGETS
   // ===========================
 
-  Widget _rectangleBtn(IconData icon, Color iconColor) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+  Widget _rectangleBtn(
+    IconData icon,
+    Color iconColor,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: iconColor, size: 22),
       ),
-      child: Icon(icon, color: iconColor, size: 22),
     );
   }
 

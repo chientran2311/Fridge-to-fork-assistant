@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import '../../screens/profile/myprofile.dart';
 class BottomNav extends StatelessWidget {
   final Color textColor;
 
@@ -33,7 +33,15 @@ class BottomNav extends StatelessWidget {
             icon: Icons.kitchen,
             label: "Fridge",
             color: textColor,
-            onTap: () => print("Fridge tapped"),
+            onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const ProfileScreen(), // màn detail của cậu
+                    ),
+                  ); // dùng 
+            },
           ),
           AnimatedNavButton(
             icon: Icons.menu_book_rounded,

@@ -10,7 +10,7 @@ class RecipeCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Color(0xFFE7EEE9),
+        color: const Color(0xFFE7EEE9),
         borderRadius: BorderRadius.circular(14),
       ),
       padding: const EdgeInsets.all(10),

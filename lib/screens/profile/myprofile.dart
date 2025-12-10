@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../recipe/ai_recipe.dart';
-import '../recipe/detail_recipe.dart';
+
 import 'editprofile.dart';
 
 class ProfileScreen extends StatelessWidget {

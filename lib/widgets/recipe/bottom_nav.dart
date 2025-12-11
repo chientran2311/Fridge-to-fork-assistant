@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../screens/profile/myprofile.dart';
+import '../../web/main.dart';
 class BottomNav extends StatelessWidget {
   final Color textColor;
 
@@ -53,7 +54,15 @@ class BottomNav extends StatelessWidget {
             icon: Icons.shopping_bag_outlined,
             label: "Plan&Shop",
             color: textColor,
-            onTap: () => print("Plan&Shop tapped"),
+            onTap: (){
+               Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          const BepTroLyApp(), // màn detail của cậu
+                    ),
+                  ); // 
+            } ,
           ),
         ],
       ),

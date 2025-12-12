@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import '../../screens/recipe/filter_modal.dart';
 class SearchBarWidget extends StatelessWidget {
   final TextEditingController controller;
 
@@ -62,15 +62,29 @@ class SearchBarWidget extends StatelessWidget {
         const SizedBox(width: 12),
 
         // FILTER BUTTON
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            color: textColor.withOpacity(0.1),
+        // Thay thế widget Container cũ bằng đoạn này
+        InkWell(
+          onTap: () {
+            showDialog(
+              context: context,
+              barrierDismissible: true, // Cho phép click ra ngoài để tắt
+              barrierColor:
+                  Colors.black.withOpacity(0.3), // Màu nền mờ khi hiện modal
+              builder: (context) => const FilterModal(),
+            );
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              // Giả sử textColor là biến bạn đang có sẵn
+              color: Colors.white, // Màu nền mờ 10%
+            ),
+            child: const Icon(Icons.filter_list, size: 22, color: textColor),
           ),
-          child: const Icon(Icons.filter_list, size: 22, color: textColor),
-        ),
+        )
       ],
     );
   }

@@ -17,9 +17,9 @@ class BepTroLyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Bếp Trợ Lý Admin',
+      title: '3tocom',
       theme: ThemeData(
-        fontFamily: 'Roboto',
+        fontFamily: 'Merriweather',
         scaffoldBackgroundColor: AppColors.white,
         useMaterial3: true,
       ),

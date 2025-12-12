@@ -14,7 +14,7 @@ class StatisticScreen extends StatelessWidget {
     return Column(
       children: [
         // 1. Header Bar (Breadcrumb & Notification)
-        const HeaderBar(),
+       const HeaderBar(title: "Quản trị / Trung tâm Dữ liệu"),
 
         // 2. Nội dung chính (Scrollable)
         Expanded(

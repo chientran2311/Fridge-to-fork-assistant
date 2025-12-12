@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:fridge_to_fork_assistant/screens/fridge/fridge_home.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../screens/profile/myprofile.dart';
 import '../../web/main.dart';
 class BottomNav extends StatelessWidget {
   final Color textColor;
@@ -39,7 +39,7 @@ class BottomNav extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (context) =>
-                          const ProfileScreen(), // màn detail của cậu
+                          const FridgeHomeScreen(), // màn detail của cậu
                     ),
                   ); // dùng 
             },
@@ -55,13 +55,13 @@ class BottomNav extends StatelessWidget {
             label: "Plan&Shop",
             color: textColor,
             onTap: (){
-               Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          const BepTroLyApp(), // màn detail của cậu
-                    ),
-                  ); // 
+              //  Navigator.push(
+              //       context,
+              //       MaterialPageRoute(
+              //         builder: (context) =>
+              //             const BepTroLyApp(), // màn detail của cậu
+              //       ),
+              //     ); // 
             } ,
           ),
         ],

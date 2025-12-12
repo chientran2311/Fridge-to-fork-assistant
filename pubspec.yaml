@@ -1,8 +1,8 @@
 name: fridge_to_fork_assistant
 description: A new Flutter project.
-
 publish_to: "none"
 
+# Bạn có thể chọn version nào cũng được, thường để 1.0.0 cho bản đầu tiên
 version: 1.0.0+1
 
 environment:
@@ -12,15 +12,24 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Giữ lại icon mặc định
   cupertino_icons: ^1.0.2
-  google_fonts: ^6.3.0   # ⚡ Font library
+  
+  # Lấy bản mới hơn
+  google_fonts: ^6.3.3
+  
+  # Giữ lại thư viện quét mã từ nhánh manh
+  mobile_scanner: ^3.5.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  # Dùng bộ kiểm tra lỗi mới nhất
+  flutter_lints: ^5.0.0
 
 flutter:
   uses-material-design: true
+  
   assets:
+    # Import cả thư mục assets/images/ để tự nhận mọi ảnh bên trong
     - assets/images/

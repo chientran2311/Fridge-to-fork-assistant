@@ -1,6 +1,8 @@
+import 'package:fridge_to_fork_assistant/screens/fridge/fridge_home.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/auth/login.dart';
+
 
 void main() {
   runApp(const MyApp());
@@ -13,12 +15,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-
       theme: ThemeData(
-        textTheme: GoogleFonts.merriweatherTextTheme(),
         fontFamily: GoogleFonts.merriweather().fontFamily,
       ),
-
       home: const LoginScreen(), 
     );
   }

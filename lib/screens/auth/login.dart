@@ -5,7 +5,7 @@ import '../../widgets/auth/big_title.dart';
 import '../../widgets/auth/custom_input.dart';
 import '../../widgets/auth/primary_button.dart';
 import 'register.dart';
-import '../recipe/ai_recipe.dart';
+import '../fridge/fridge_home.dart';
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
@@ -41,7 +41,7 @@ class LoginScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>  const AiRecipeScreen(),
+        builder: (context) =>  const FridgeHomeScreen(),
       ),
     );
   },

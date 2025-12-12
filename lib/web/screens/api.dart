@@ -14,7 +14,7 @@ class ApiScreen extends StatelessWidget {
     return Column(
       children: [
         // Header (Breadcrumb & Notifications)
-        const HeaderBar(),
+        const HeaderBar(title: "Quản trị / API & Dữ liệu Công thức"),
         
         // Scrollable Body
         Expanded(

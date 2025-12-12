@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import '../../widgets/recipe/rectangle_btn.dart';
+import '../../screens/recipe/option_modal.dart';
 class RecipeDetailScreen extends StatelessWidget {
   final Color cardColor = const Color(0xFFE7EEE9);
   final Color textColor = const Color(0xFF214130);
@@ -38,12 +39,42 @@ class RecipeDetailScreen extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _rectangleBtn(Icons.arrow_back, textColor),
+                      // --- Nút Back (Đã xử lý logic quay lại) ---
+                      RectangleBtn(
+                        icon: Icons.arrow_back,
+                        color: textColor,
+                        onTap: () {
+                          Navigator.pop(context); // Quay lại màn hình trước
+                        },
+                      ),
+
                       Row(
                         children: [
-                          _rectangleBtn(Icons.bookmark_border, textColor),
+                          // --- Nút Bookmark ---
+                          RectangleBtn(
+                            icon: Icons.bookmark_border,
+                            color: textColor,
+                            onTap: () {
+                              // Xử lý logic lưu bookmark tại đây
+                              print("Bookmark tapped");
+                            },
+                          ),
+
                           const SizedBox(width: 10),
-                          _rectangleBtn(Icons.more_horiz, textColor),
+
+                          // --- Nút More (Đã xử lý hiện OptionModal) ---
+                          RectangleBtn(
+                            icon: Icons.more_horiz,
+                            color: textColor,
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                barrierColor:
+                                    Colors.transparent, // Nền trong suốt
+                                builder: (context) => const OptionModal(),
+                              );
+                            },
+                          ),
                         ],
                       )
                     ],
@@ -167,28 +198,7 @@ class RecipeDetailScreen extends StatelessWidget {
   // ==========================================================
   // WIDGET: Circle Button on Image
   // ==========================================================
- Widget _rectangleBtn(IconData icon, Color color) {
-  return Container(
-    padding: const EdgeInsets.all(10),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12), // nút vuông bo góc 12
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.1),
-          blurRadius: 4,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: Icon(
-      icon,
-      color: color,
-      size: 22,
-    ),
-  );
-}
-
+ 
 
   // ==========================================================
   // WIDGET: Info icon row (timer - hard - kcal)

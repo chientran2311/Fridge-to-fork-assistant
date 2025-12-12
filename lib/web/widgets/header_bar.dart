@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import '../theme/app_color.dart';
 
 class HeaderBar extends StatelessWidget {
-  const HeaderBar({super.key});
+  // 1. Khai báo biến để nhận nội dung text
+  final String title;
+
+  // 2. Yêu cầu truyền 'title' khi khởi tạo Widget
+  const HeaderBar({
+    super.key, 
+    required this.title,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -12,19 +19,26 @@ class HeaderBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text("Quản trị / API & Dữ liệu Công thức",
-              style: TextStyle(color: AppColors.textGrey)),
+          // 3. Sử dụng biến 'title' thay cho text cứng
+          Text(
+            title, 
+            style: const TextStyle(color: AppColors.textGrey),
+          ),
           Stack(
             children: [
               const Icon(Icons.notifications_none, color: AppColors.textGrey),
               Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                          color: Colors.red, shape: BoxShape.circle)))
+                right: 0,
+                top: 0,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.red, 
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              )
             ],
           )
         ],

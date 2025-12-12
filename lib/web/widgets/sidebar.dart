@@ -32,7 +32,7 @@ class SidebarWidget extends StatelessWidget {
                   child: const Icon(Icons.restaurant_menu, color: Colors.white),
                 ),
                 const SizedBox(width: 10),
-                const Text("Bếp Trợ Lý", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))
+                const Text("3tocom", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))
               ],
             ),
           ),

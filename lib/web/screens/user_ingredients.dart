@@ -16,7 +16,7 @@ class InventoryScreen extends StatelessWidget {
     return Column(
       children: [
         // 1. Header Chung
-        const HeaderBar(),
+        const HeaderBar(title: "Quản trị / Danh sách nguyên liệu người dùng"),
         
         // 2. Nội dung chính (Scrollable)
         Expanded(

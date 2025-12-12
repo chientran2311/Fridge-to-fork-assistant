@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/screens/fridge/fridge_add_ingredients.dart';
 import '../settings/settings.dart';
+import '../../widgets/recipe/bottom_nav.dart';
 class FridgeHomeScreen extends StatefulWidget {
   const FridgeHomeScreen({super.key});
 
@@ -342,70 +343,38 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
               ),
             ),
       bottomNavigationBar: isSelectionMode
-          ? Container(
-              height: 75,
-              color: const Color(0xFF8B4513),
-              child: Center(
-                child: InkWell(
-                  onTap:
-                      selectedIndices.isEmpty ? null : showDeleteConfirmDialog,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.delete_outline,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Delete(${selectedIndices.length})",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+    ? Container(
+        height: 75,
+        color: const Color(0xFF8B4513),
+        child: Center(
+          child: InkWell(
+            onTap: selectedIndices.isEmpty ? null : showDeleteConfirmDialog,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.delete_outline,
+                  color: Colors.white,
+                  size: 28,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  "Delete(${selectedIndices.length})",
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            )
-          : Container(
-              height: 75,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.all(Radius.circular(75)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, -3),
-                  ),
-                ],
-              ),
-              child: BottomNavigationBar(
-                backgroundColor: const Color(0xFFE7EAE9),
-                elevation: 0,
-                selectedItemColor: mainColor,
-                unselectedItemColor: Colors.grey,
-                type: BottomNavigationBarType.fixed,
-                items: const [
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.kitchen_outlined),
-                    label: "Fridge",
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.book_outlined),
-                    label: "Note",
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.shopping_bag_outlined),
-                    label: "Plan&Shop",
-                  ),
-                ],
-              ),
+              ],
             ),
+          ),
+        ),
+      )
+    : BottomNav(
+        // Truyền màu chủ đạo của bạn vào đây (mainColor lấy từ biến trong file của bạn)
+        textColor: mainColor, 
+      ),
     );
   }
 

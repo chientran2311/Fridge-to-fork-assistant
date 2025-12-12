@@ -14,7 +14,7 @@ class AiRecipeScreen extends StatefulWidget {
 }
 
 class _AiRecipeScreenState extends State<AiRecipeScreen> {
-  // 🔥 Controller để đọc text người dùng nhập
+
   final TextEditingController searchCtrl = TextEditingController();
 
   @override

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/screens/fridge/fridge_home.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../web/main.dart';
 class BottomNav extends StatelessWidget {
   final Color textColor;
 

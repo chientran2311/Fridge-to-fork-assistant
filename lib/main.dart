@@ -5,11 +5,11 @@ import 'screens/auth/login.dart';
 
 
 void main() {
-  runApp(const MyApp());
+  runApp(const ShoppingApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class ShoppingApp extends StatelessWidget {
+  const ShoppingApp({super.key});
 
   @override
   Widget build(BuildContext context) {

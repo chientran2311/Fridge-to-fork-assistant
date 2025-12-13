@@ -5,7 +5,7 @@ import '../../widgets/auth/big_title.dart';
 import '../../widgets/auth/custom_input.dart';
 import '../../widgets/auth/primary_button.dart';
 import 'register.dart';
-import '../fridge/fridge_home.dart';
+import '../../widgets/recipe/bottom_nav.dart';
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
@@ -36,16 +36,16 @@ class LoginScreen extends StatelessWidget {
               ),
               const SizedBox(height: 30),
               PrimaryButton(
-  text: "Explore the app",
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>  const FridgeHomeScreen(),
-      ),
-    );
-  },
-),
+                text: "Explore the app",
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BottomNav(),
+                    ),
+                  );
+                },
+              ),
               const Spacer(),
               TextButton(
                 onPressed: () {

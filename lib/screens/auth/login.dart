@@ -8,6 +8,7 @@ import '../../widgets/auth/primary_button.dart';
 import 'register.dart';
 import '../fridge/fridge_home.dart';
 import '../../utils/responsive_layout.dart'; // Import file responsive
+import '../../widgets/recipe/bottom_nav.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -27,13 +28,15 @@ class LoginScreen extends StatelessWidget {
                 // Đảm bảo nội dung luôn có chiều cao tối thiểu bằng màn hình
                 // Điều này giúp Spacer() hoạt động được trong SingleChildScrollView
                 constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight, 
+                  minHeight: constraints.maxHeight,
                 ),
                 child: Center(
                   // Dùng Container này để giới hạn chiều rộng trên Web/Desktop
                   child: Container(
                     width: double.infinity,
-                    constraints: const BoxConstraints(maxWidth: 450), // ⭐ CHỈNH SỬA QUAN TRỌNG: Max width cho form
+                    constraints: const BoxConstraints(
+                        maxWidth:
+                            450), // ⭐ CHỈNH SỬA QUAN TRỌNG: Max width cho form
                     padding: const EdgeInsets.symmetric(horizontal: 28),
                     child: IntrinsicHeight(
                       child: Column(
@@ -42,7 +45,10 @@ class LoginScreen extends StatelessWidget {
                           const SizedBox(height: 40),
                           const RotatedLogo(),
                           // Dùng khoảng cách linh hoạt thay vì cố định 120
-                          SizedBox(height: ResponsiveLayout.isMobile(context) ? 60 : 100),
+                          SizedBox(
+                              height: ResponsiveLayout.isMobile(context)
+                                  ? 60
+                                  : 100),
                           const BigTitle(),
                           const SizedBox(height: 30),
                           const CustomInput(
@@ -61,15 +67,20 @@ class LoginScreen extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const FridgeHomeScreen(),
+                                  // ❌ SAI: Đừng gọi trực tiếp FridgeHomeScreen
+                                  // builder: (context) => const FridgeHomeScreen(),
+
+                                  // ✅ ĐÚNG: Hãy gọi BottomNav.
+                                  // BottomNav sẽ tự động hiển thị FridgeHomeScreen là màn hình đầu tiên (index 0).
+                                  builder: (context) => const BottomNav(),
                                 ),
                               );
                             },
                           ),
-                          
+
                           // Spacer sẽ đẩy phần dưới xuống đáy màn hình
                           const Spacer(),
-                          
+
                           const SizedBox(height: 20),
                           TextButton(
                             onPressed: () {

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'shopping_list_screen.dart';
-import '../../widgets/recipe/bottom_nav.dart';
+import 'plan_shopping_list.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+
 class ShoppingPlanScreen extends StatefulWidget {
   const ShoppingPlanScreen({super.key});
 
@@ -33,18 +35,17 @@ class _ShoppingPlanScreenState extends State<ShoppingPlanScreen> {
 
       // ----------------- APP BAR ------------------
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: const Color(0xFFF0F1F1),
         elevation: 0,
         centerTitle: true,
         scrolledUnderElevation: 0,
-        title: const Text(
+        title: Text(
           "Shopping plan",
-          style: TextStyle(
-            color: Color(0xff214130),
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Merriweather'
-          ),
+          style: GoogleFonts.merriweather(
+              color: const Color(0xff214130),
+              fontSize: 24,
+              fontWeight: FontWeight.bold),
         ),
       ),
 
@@ -74,10 +75,10 @@ class _ShoppingPlanScreenState extends State<ShoppingPlanScreen> {
                     color: const Color(0xff214d34),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  defaultTextStyle: const TextStyle(
+                  defaultTextStyle: GoogleFonts.merriweather(
                     color: Colors.black87,
                   ),
-                  weekendTextStyle: const TextStyle(
+                  weekendTextStyle: GoogleFonts.merriweather(
                     color: Colors.black87,
                   ),
                 ),
@@ -93,9 +94,13 @@ class _ShoppingPlanScreenState extends State<ShoppingPlanScreen> {
                     ),
                   );
                 },
-                headerStyle: const HeaderStyle(
+                headerStyle: HeaderStyle(
                   formatButtonVisible: false,
                   titleCentered: true,
+                  titleTextStyle: GoogleFonts.merriweather(
+                    color: Colors.black87,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -117,13 +122,12 @@ class _ShoppingPlanScreenState extends State<ShoppingPlanScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // TODAY LIST
-                  const Text(
+                  Text(
                     "Today list",
-                    style: TextStyle(
+                    style: GoogleFonts.merriweather(
                       fontSize: 20,
-                      color: Color(0xff214d34),
+                      color: const Color(0xff214d34),
                       fontWeight: FontWeight.bold,
-                      fontFamily: 'Merriweather'
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -134,23 +138,21 @@ class _ShoppingPlanScreenState extends State<ShoppingPlanScreen> {
                   const SizedBox(height: 20),
 
                   // UPCOMING LIST
-                  const Text(
+                  Text(
                     "Upcoming list",
-                    style: TextStyle(
+                    style: GoogleFonts.merriweather(
                       fontSize: 20,
-                      color: Color(0xff214d34),
+                      color: const Color(0xff214d34),
                       fontWeight: FontWeight.bold,
-                      fontFamily: 'Merriweather'
                     ),
                   ),
 
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     "19, September 2025",
-                    style: TextStyle(
+                    style: GoogleFonts.merriweather(
                       fontSize: 14,
                       color: Colors.black54,
-                      fontFamily: 'Merriweather'
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -160,12 +162,11 @@ class _ShoppingPlanScreenState extends State<ShoppingPlanScreen> {
                   buildBullet("Bun Cha"),
 
                   const SizedBox(height: 14),
-                  const Text(
+                  Text(
                     "--More--",
-                    style: TextStyle(
+                    style: GoogleFonts.merriweather(
                       fontSize: 14,
                       color: Colors.black54,
-                      fontFamily: 'Merriweather'
                     ),
                   )
                 ],
@@ -178,9 +179,6 @@ class _ShoppingPlanScreenState extends State<ShoppingPlanScreen> {
       // ----------------------------------------------------------
       // NEW FLOATING CARD NAVIGATION BAR (UPDATED PART)
       // ----------------------------------------------------------
-     bottomNavigationBar: const BottomNav(
-        textColor: Color(0xff214d34), // Màu xanh rêu đậm bạn đang dùng
-      ),
     );
   }
 
@@ -192,11 +190,13 @@ class _ShoppingPlanScreenState extends State<ShoppingPlanScreen> {
       padding: const EdgeInsets.only(left: 8, bottom: 6),
       child: Row(
         children: [
-          const Text("• ",
-              style: TextStyle(fontSize: 18, color: Colors.black87)),
+          Text(
+            "- ",
+            style: GoogleFonts.merriweather(fontSize: 18, color: Colors.black87),
+          ),
           Text(
             text,
-            style: const TextStyle(fontSize: 16),
+            style: GoogleFonts.merriweather(fontSize: 16),
           )
         ],
       ),

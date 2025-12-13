@@ -115,7 +115,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                         "Delete",
                         style: TextStyle(
                           color: Color(0xffdc3a34),
-                          fontSize: 9,
+                          fontSize: 16,
                           fontFamily: 'Merriweather',
                         ),
                       ),

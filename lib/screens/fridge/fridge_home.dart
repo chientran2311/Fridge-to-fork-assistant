@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/screens/fridge/fridge_add_ingredients.dart';
 import '../settings/settings.dart';
-import '../../widgets/recipe/bottom_nav.dart';
+import '../profile/myprofile.dart';
+// ❌ ĐÃ XÓA: import '../../widgets/recipe/bottom_nav.dart'; (Tránh lỗi vòng lặp vô tận)
+
 class FridgeHomeScreen extends StatefulWidget {
   const FridgeHomeScreen({super.key});
 
@@ -142,6 +144,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF0F1F1),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         scrolledUnderElevation: 0,
         toolbarHeight: 100,
         backgroundColor: const Color(0xFFF0F1F1),
@@ -151,7 +154,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
                 children: [
                   TextButton(
                     onPressed: toggleSelectionMode,
-                    child: Text(
+                    child: const Text(
                       "Cancel",
                       style: TextStyle(color: Colors.red, fontSize: 16),
                     ),
@@ -185,13 +188,30 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
               )
             : Row(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.all(Radius.circular(12)),
-                    child: Image.asset(
-                      'assets/images/pork.jpg',
-                      width: 48,
-                      height: 48,
-                      fit: BoxFit.cover,
+                  // 1. Nhớ import file màn hình profile của bạn ở đầu file
+// import 'path/to/myprofile.dart';
+
+// 2. Thay đoạn ClipRRect cũ bằng đoạn code này:
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          // Đảm bảo tên class bên file myprofile.dart là MyProfileScreen (hoặc tên tương ứng bạn đặt)
+                          builder: (context) => const ProfileScreen(),
+                        ),
+                      );
+                    },
+                    // Bo góc cho hiệu ứng ripple trùng với ảnh
+                    borderRadius: BorderRadius.circular(12),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.all(Radius.circular(12)),
+                      child: Image.asset(
+                        'assets/images/pork.jpg',
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -221,14 +241,12 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
                   Icon(Icons.notifications_outlined, color: mainColor),
                   const SizedBox(width: 16),
                   IconButton(
-                    icon: Icon(Icons.settings,
-                        color: mainColor), // Icon cũ của bạn
+                    icon: Icon(Icons.settings, color: mainColor),
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) =>
-                              const SettingsScreen(), // Thay SettingsScreen bằng tên class màn hình cài đặt của bạn
+                          builder: (context) => const SettingsScreen(),
                         ),
                       );
                     },
@@ -317,7 +335,8 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
                 ),
               ),
             ],
-            const SizedBox(height: 20),
+            // Thêm khoảng trống ở dưới để nội dung không bị BottomNav che mất
+            const SizedBox(height: 100),
           ],
         ),
       ),
@@ -342,39 +361,38 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
                 child: Icon(Icons.add, size: 35, color: mainColor),
               ),
             ),
+      // ⭐ PHẦN QUAN TRỌNG NHẤT: LOGIC THANH MENU
       bottomNavigationBar: isSelectionMode
-    ? Container(
-        height: 75,
-        color: const Color(0xFF8B4513),
-        child: Center(
-          child: InkWell(
-            onTap: selectedIndices.isEmpty ? null : showDeleteConfirmDialog,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.delete_outline,
-                  color: Colors.white,
-                  size: 28,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  "Delete(${selectedIndices.length})",
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+          ? Container(
+              height: 75,
+              color: const Color(0xFF8B4513), // Màu đỏ nâu cho chế độ xóa
+              child: Center(
+                child: InkWell(
+                  onTap:
+                      selectedIndices.isEmpty ? null : showDeleteConfirmDialog,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.delete_outline,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Delete(${selectedIndices.length})",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
-      )
-    : BottomNav(
-        // Truyền màu chủ đạo của bạn vào đây (mainColor lấy từ biến trong file của bạn)
-        textColor: mainColor, 
-      ),
+              ),
+            )
+          : null, // Khi null, Flutter sẽ để trống chỗ này, giúp ta nhìn thấy BottomNav của màn hình CHA
     );
   }
 
@@ -474,7 +492,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
   }
 }
 
-// Widget Marquee Text tự động chạy chữ khi text quá dài
+// Widget Marquee Text
 class MarqueeText extends StatefulWidget {
   final String text;
   final TextStyle style;

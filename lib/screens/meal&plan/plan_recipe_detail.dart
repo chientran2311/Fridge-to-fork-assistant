@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'add_ingredients_screen.dart';
+import 'plan_add_ingredients.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
   const RecipeDetailScreen({super.key});
@@ -96,60 +97,57 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 18),
-                      const Text(
+                      Text(
                         "Chicken Soup",
-                        style: TextStyle(
+                        style: GoogleFonts.merriweather(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xff214d34),
-                          fontFamily: 'Merriweather',
+                          color: const Color(0xff214d34),
                         ),
                       ),
                       const SizedBox(height: 12),
                       Row(
-                        children: const [
-                          Icon(Icons.timer, size: 20, color: Colors.black54),
-                          SizedBox(width: 6),
-                          Text("1h"),
-                          SizedBox(width: 16),
-                          Icon(Icons.bar_chart, size: 20, color: Colors.black54),
-                          SizedBox(width: 6),
-                          Text("Medium"),
-                          SizedBox(width: 16),
-                          Icon(Icons.local_fire_department, size: 20, color: Colors.black54),
-                          SizedBox(width: 6),
-                          Text("520 kcal"),
+                        children: [
+                          const Icon(Icons.timer, size: 20, color: Colors.black54),
+                          const SizedBox(width: 6),
+                          Text("1h", style: GoogleFonts.merriweather()),
+                          const SizedBox(width: 16),
+                          const Icon(Icons.bar_chart, size: 20, color: Colors.black54),
+                          const SizedBox(width: 6),
+                          Text("Medium", style: GoogleFonts.merriweather()),
+                          const SizedBox(width: 16),
+                          const Icon(Icons.local_fire_department, size: 20, color: Colors.black54),
+                          const SizedBox(width: 6),
+                          Text("520 kcal", style: GoogleFonts.merriweather()),
                         ],
                       ),
                       const SizedBox(height: 20),
-                      const Text(
+                      Text(
                         "Lorem Ipsum is simply dummy text of the printing and "
                         "typesetting industry. Lorem Ipsum has been the industry's "
                         "standard dummy text ever since the 1500s.",
-                        style: TextStyle(fontSize: 15, color: Colors.black87),
+                        style: GoogleFonts.merriweather(fontSize: 15, color: Colors.black87),
                       ),
                       const SizedBox(height: 28),
                       Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
                               "Ingredients",
-                              style: TextStyle(
+                              style: GoogleFonts.merriweather(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xff214d34),
-                                fontFamily: 'Merriweather',
+                                color: const Color(0xff214d34),
                               ),
                             ),
                           ),
                           TextButton.icon(
                             onPressed: _showAdd,
                             icon: const Icon(Icons.add_circle_outline, color: Color(0xff214d34)),
-                            label: const Text(
+                            label: Text(
                               "Add",
-                              style: TextStyle(
-                                color: Color(0xff214d34),
-                                fontFamily: 'Merriweather',
+                              style: GoogleFonts.merriweather(
+                                color: const Color(0xff214d34),
                               ),
                             ),
                           ),
@@ -158,7 +156,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                       const SizedBox(height: 6),
                       Text(
                         "${_ingredients.where((item) => item.isChecked).length} out of ${_ingredients.length} ingredients available",
-                        style: const TextStyle(color: Colors.black54),
+                        style: GoogleFonts.merriweather(color: Colors.black54),
                       ),
                       const SizedBox(height: 20),
                       Column(
@@ -203,16 +201,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             children: [
               Text(
                 ingredient.name,
-                style: const TextStyle(
-                  color: Color(0xff214d34),
+                style: GoogleFonts.merriweather(
+                  color: const Color(0xff214d34),
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  fontFamily: 'Merriweather',
                 ),
               ),
               Text(
                 ingredient.amount,
-                style: const TextStyle(color: Colors.black54),
+                style: GoogleFonts.merriweather(color: Colors.black54),
               ),
             ],
           ),

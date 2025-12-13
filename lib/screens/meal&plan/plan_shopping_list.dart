@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'recipe_detail_screen.dart';
+import 'plan_recipe_detail.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 
 class ShoppingListScreen extends StatefulWidget {
   const ShoppingListScreen({super.key});
@@ -70,21 +72,19 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
               Text(
                 "Delete these $count list${count == 1 ? '' : 's'} ?",
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: GoogleFonts.merriweather(
                   fontSize: 22,
                   fontWeight: FontWeight.w600,
-                  fontFamily: 'Merriweather',
-                  color: Color(0xff214d34),
+                  color: const Color(0xff214d34),
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 "These lists will be permanently deleted from this planner.",
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: GoogleFonts.merriweather(
                   fontSize: 15,
-                  color: Color(0xff214d34),
-                  fontFamily: 'Merriweather',
+                  color: const Color(0xff214d34),
                 ),
               ),
               const SizedBox(height: 22),
@@ -93,12 +93,11 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                   Expanded(
                     child: TextButton(
                       onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text(
+                      child: Text(
                         "Cancel",
-                        style: TextStyle(
-                          color: Color(0xffd69314),
+                        style: GoogleFonts.merriweather(
+                          color: const Color(0xffd69314),
                           fontSize: 16,
-                          fontFamily: 'Merriweather',
                         ),
                       ),
                     ),
@@ -111,12 +110,11 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                   Expanded(
                     child: TextButton(
                       onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text(
+                      child: Text(
                         "Delete",
-                        style: TextStyle(
-                          color: Color(0xffdc3a34),
-                          fontSize: 9,
-                          fontFamily: 'Merriweather',
+                        style: GoogleFonts.merriweather(
+                          color: const Color(0xffdc3a34),
+                          fontSize: 16,
                         ),
                       ),
                     ),
@@ -153,22 +151,20 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             ),
             child: Column(
               children: [
-                const Text(
+                Text(
                   "Shopping list",
-                  style: TextStyle(
-                    color: Color(0xff214d34),
+                  style: GoogleFonts.merriweather(
+                    color: const Color(0xff214d34),
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    fontFamily: 'Merriweather',
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   "9, September 2025",
-                  style: TextStyle(
+                  style: GoogleFonts.merriweather(
                     fontSize: 16,
                     color: Colors.black54,
-                    fontFamily: 'Merriweather',
                   ),
                 ),
                 if (selectionMode) ...[
@@ -179,10 +175,9 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                       alignment: Alignment.centerLeft,
                       child: Text(
                         "$selectedCount list${selectedCount == 1 ? '' : 's'} selected",
-                        style: const TextStyle(
+                        style: GoogleFonts.merriweather(
                           fontSize: 15,
-                          color: Color(0xff214d34),
-                          fontFamily: 'Merriweather',
+                          color: const Color(0xff214d34),
                         ),
                       ),
                     ),
@@ -251,18 +246,17 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                         : null,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
-                        Icon(
+                      children: [
+                        const Icon(
                           Icons.delete_outline,
                           color: Colors.white,
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
                           "Delete",
-                          style: TextStyle(
+                          style: GoogleFonts.merriweather(
                             color: Colors.white,
                             fontSize: 16,
-                            fontFamily: 'Merriweather',
                           ),
                         ),
                       ],
@@ -286,17 +280,15 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     bool navigateToDetail = false,
   }) {
     final bool isSelected = item.isSelected;
-    final titleStyle = TextStyle(
+    final titleStyle = GoogleFonts.merriweather(
       fontSize: 20,
       color: const Color(0xff214d34),
       fontWeight: FontWeight.bold,
-      fontFamily: 'Merriweather',
       decoration: item.isChecked ? TextDecoration.lineThrough : TextDecoration.none,
     );
-    final subtitleStyle = TextStyle(
+    final subtitleStyle = GoogleFonts.merriweather(
       color: Colors.black54,
       fontSize: 14,
-      fontFamily: 'Merriweather',
       decoration: item.isChecked ? TextDecoration.lineThrough : TextDecoration.none,
     );
     const selectionColor = Color(0xff214d34);

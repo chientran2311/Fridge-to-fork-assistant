@@ -1,91 +1,119 @@
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/screens/fridge/fridge_home.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../screens/recipe/ai_recipe.dart';
-import '../../screens/meal&plan/shopping_plan_screen.dart';
-class BottomNav extends StatelessWidget {
-  final Color textColor;
 
-  const BottomNav({super.key, required this.textColor});
+import '../../screens/meal&plan/plan_shopping_plan.dart';
+import '../../screens/recipe/ai_recipe.dart';
+
+class BottomNav extends StatefulWidget {
+  final int initialIndex;
+  final Color activeColor;
+
+  const BottomNav({
+    super.key,
+    this.initialIndex = 0,
+    this.activeColor = const Color(0xFF214130),
+  });
+
+  @override
+  State<BottomNav> createState() => _BottomNavState();
+}
+
+class _BottomNavState extends State<BottomNav> {
+  late int _currentIndex;
+
+  static const List<Widget> _screens = <Widget>[
+    FridgeHomeScreen(),
+    AiRecipeScreen(),
+    ShoppingPlanScreen(),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex =
+        widget.initialIndex.clamp(0, _screens.length - 1).toInt();
+  }
+
+  void _onItemTapped(int index) {
+    if (_currentIndex == index) return;
+    setState(() => _currentIndex = index);
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Không dùng navigatorColor cũ nữa, dùng màu trắng opacity như mẫu thiết kế mới
-    return Container(
-      // Tạo hiệu ứng nổi (Floating) cách lề dưới và 2 bên
-      margin: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
-      // Padding bên trong để các nút không bị dính sát mép
-      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.90), // Tăng opacity nhẹ để rõ hơn trên nền tạp
-        borderRadius: BorderRadius.circular(40), // Bo tròn thành hình viên thuốc
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1), // Bóng đổ nhẹ nhàng
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+    final Color inactiveColor = widget.activeColor.withOpacity(0.5);
+
+    const navItems = <_NavItem>[
+      _NavItem(Icons.kitchen, 'Fridge'),
+      _NavItem(Icons.menu_book_rounded, 'AI Recipe'),
+      _NavItem(Icons.shopping_bag_outlined, 'Plan&Shop'),
+    ];
+
+    return Scaffold(
+      extendBody: true,
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween, // Căn đều khoảng cách giữa các nút
-        children: [
-          AnimatedNavButton(
-            icon: Icons.kitchen,
-            label: "Fridge",
-            color: textColor,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const FridgeHomeScreen(),
-                ),
-              );
-            },
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(40),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          AnimatedNavButton(
-            icon: Icons.menu_book_rounded,
-            label: "AI Recipe",
-            color: textColor,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AiRecipeScreen(),
-                ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(navItems.length, (index) {
+              final isActive = index == _currentIndex;
+              final item = navItems[index];
+              return AnimatedNavButton(
+                icon: item.icon,
+                label: item.label,
+                isActive: isActive,
+                activeColor: widget.activeColor,
+                inactiveColor: inactiveColor,
+                onTap: () => _onItemTapped(index),
               );
-            },
+            }),
           ),
-          AnimatedNavButton(
-            icon: Icons.shopping_bag_outlined,
-            label: "Plan&Shop",
-            color: textColor,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ShoppingPlanScreen(),
-                ),
-              );
-            },
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
+class _NavItem {
+  final IconData icon;
+  final String label;
+
+  const _NavItem(this.icon, this.label);
+}
+
 class AnimatedNavButton extends StatefulWidget {
   final IconData icon;
   final String label;
-  final Color color;
+  final bool isActive;
+  final Color activeColor;
+  final Color inactiveColor;
   final VoidCallback onTap;
 
   const AnimatedNavButton({
     super.key,
     required this.icon,
     required this.label,
-    required this.color,
+    required this.isActive,
+    required this.activeColor,
+    required this.inactiveColor,
     required this.onTap,
   });
 
@@ -96,18 +124,22 @@ class AnimatedNavButton extends StatefulWidget {
 class _AnimatedNavButtonState extends State<AnimatedNavButton> {
   double scale = 1.0;
 
-  void _animate() async {
-    setState(() => scale = 0.85); // Thu nhỏ nhẹ khi nhấn
+  Future<void> _animate() async {
+    setState(() => scale = 0.85);
     await Future.delayed(const Duration(milliseconds: 100));
-    setState(() => scale = 1.0); // Trở về bình thường
-    widget.onTap(); // Thực hiện hành động
+    if (!mounted) return;
+    setState(() => scale = 1.0);
+    widget.onTap();
   }
 
   @override
   Widget build(BuildContext context) {
+    final Color color =
+        widget.isActive ? widget.activeColor : widget.inactiveColor;
+
     return GestureDetector(
       onTap: _animate,
-      behavior: HitTestBehavior.translucent, // Giúp vùng bấm nhạy hơn
+      behavior: HitTestBehavior.translucent,
       child: AnimatedScale(
         scale: scale,
         duration: const Duration(milliseconds: 100),
@@ -117,16 +149,17 @@ class _AnimatedNavButtonState extends State<AnimatedNavButton> {
           children: [
             Icon(
               widget.icon,
-              size: 28, // Kích thước icon chuẩn theo mẫu mới
-              color: widget.color,
+              size: 28,
+              color: color,
             ),
             const SizedBox(height: 4),
             Text(
               widget.label,
               style: GoogleFonts.merriweather(
-                fontSize: 11, // Chữ nhỏ gọn gàng
-                fontWeight: FontWeight.w500,
-                color: widget.color,
+                fontSize: 11,
+                fontWeight:
+                    widget.isActive ? FontWeight.bold : FontWeight.w500,
+                color: color,
               ),
             ),
           ],

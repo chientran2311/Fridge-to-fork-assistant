@@ -4,7 +4,6 @@ import 'detail_recipe.dart';
 import '../../widgets/recipe/search_bar.dart';
 import '../../widgets/recipe/recipe_card.dart';
 import '../../widgets/recipe/section_title.dart';
-import '../../widgets/recipe/bottom_nav.dart';
 
 class AiRecipeScreen extends StatefulWidget {
   const AiRecipeScreen({super.key});
@@ -59,9 +58,7 @@ class _AiRecipeScreenState extends State<AiRecipeScreen> {
               ),
             ),
 
-            const Spacer(),
-
-            const BottomNav(textColor: textColor),
+            const SizedBox(height: 20),
           ],
         ),
       ),

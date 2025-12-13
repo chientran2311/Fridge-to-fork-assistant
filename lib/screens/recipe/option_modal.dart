@@ -14,7 +14,7 @@ class OptionModal extends StatelessWidget {
       children: [
         // Dùng Positioned để đặt modal ở góc trên bên phải (dưới nút more)
         Positioned(
-          top: 85, // Khoảng cách từ đỉnh màn hình xuống (áng chừng chiều cao Header)
+          top: 80, // Khoảng cách từ đỉnh màn hình xuống (áng chừng chiều cao Header)
           right: 15, // Khoảng cách lề phải (căn thẳng với nút more)
           child: Material(
             color: Colors.transparent,

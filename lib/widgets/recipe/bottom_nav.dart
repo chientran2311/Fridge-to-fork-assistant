@@ -12,9 +12,12 @@ class BottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     // Không dùng navigatorColor cũ nữa, dùng màu trắng opacity như mẫu thiết kế mới
     return Container(
+      color: const Color(0xFFF0F1F1), // Trùng màu nền màn hình để che nội dung cuộn bên dưới
+      
       // Tạo hiệu ứng nổi (Floating) cách lề dưới và 2 bên
       margin: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
       // Padding bên trong để các nút không bị dính sát mép
+      
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.90), // Tăng opacity nhẹ để rõ hơn trên nền tạp

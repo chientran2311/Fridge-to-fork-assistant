@@ -39,7 +39,7 @@ class LoginScreen extends StatelessWidget {
               PrimaryButton(
                 text: "Explore the app",
                 onPressed: () {
-                  Navigator.pushReplacement(
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => const FridgeHomeScreen(),

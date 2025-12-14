@@ -1,5 +1,6 @@
-﻿// import 'package:fridge_to_fork_assistant/screens/fridge_home.dart';
+﻿import 'package:fridge_to_fork_assistant/screens/fridge/fridge_barcode_scan.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 
 class FridgeAddIngredients extends StatefulWidget {
@@ -74,32 +75,36 @@ class _FridgeAddIngredientsState extends State<FridgeAddIngredients> {
                     // Search box
                     Container(
                       height: 48,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE7EAE9),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Row(
-                        children: const [
-                          Icon(Icons.search, size: 20, color: Colors.grey),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: TextField(
-                              decoration: InputDecoration(
-                                hintText: 'search type of ingredients...',
-                                hintStyle: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 14,
-                                ),
-                                border: InputBorder.none,
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE7EAE9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.search, size: 20, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            style: GoogleFonts.merriweather(
+                              color: Colors.black87,
+                              fontSize: 14,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'search type of ingredients...',
+                              hintStyle: GoogleFonts.merriweather(
+                                color: Colors.grey,
+                                fontSize: 14,
                               ),
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
+                  ),
 
                     const SizedBox(height: 20),
 
@@ -154,7 +159,7 @@ class _FridgeAddIngredientsState extends State<FridgeAddIngredients> {
                               Expanded(
                                 child: Text(
                                   category,
-                                  style: TextStyle(
+                                  style: GoogleFonts.merriweather(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,
                                     color: mainColor,
@@ -233,7 +238,7 @@ class _FridgeAddIngredientsState extends State<FridgeAddIngredients> {
                           // Item name
                           Text(
                             itemName,
-                            style: TextStyle(
+                            style: GoogleFonts.merriweather(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                               color: mainColor,
@@ -245,7 +250,7 @@ class _FridgeAddIngredientsState extends State<FridgeAddIngredients> {
                           // Amount section
                           Text(
                             "AMOUNT",
-                            style: TextStyle(
+                            style: GoogleFonts.merriweather(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: Colors.grey[600],
@@ -266,10 +271,18 @@ class _FridgeAddIngredientsState extends State<FridgeAddIngredients> {
                                   child: TextField(
                                     controller: amountController,
                                     keyboardType: TextInputType.number,
-                                    decoration: const InputDecoration(
+                                    style: GoogleFonts.merriweather(
+                                      fontSize: 14,
+                                      color: Colors.black87,
+                                    ),
+                                    decoration: InputDecoration(
                                       hintText: 'Amount...',
                                       border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                                      hintStyle: GoogleFonts.merriweather(
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -281,7 +294,12 @@ class _FridgeAddIngredientsState extends State<FridgeAddIngredients> {
                                       items: ['g', 'kg', 'ml', 'l', 'pcs']
                                           .map((unit) => DropdownMenuItem(
                                                 value: unit,
-                                                child: Text(unit),
+                                                child: Text(
+                                                  unit,
+                                                  style: GoogleFonts.merriweather(
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
                                               ))
                                           .toList(),
                                       onChanged: (value) {
@@ -301,7 +319,7 @@ class _FridgeAddIngredientsState extends State<FridgeAddIngredients> {
                           // Expired date section
                           Text(
                             "EXPIRED DATE",
-                            style: TextStyle(
+                            style: GoogleFonts.merriweather(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: Colors.grey[600],
@@ -322,10 +340,18 @@ class _FridgeAddIngredientsState extends State<FridgeAddIngredients> {
                                   child: TextField(
                                     controller: dateController,
                                     readOnly: true,
-                                    decoration: const InputDecoration(
+                                    style: GoogleFonts.merriweather(
+                                      fontSize: 14,
+                                      color: Colors.black87,
+                                    ),
+                                    decoration: InputDecoration(
                                       hintText: 'Date of expiry...',
                                       border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                                      hintStyle: GoogleFonts.merriweather(
+                                        fontSize: 14,
+                                        color: Colors.grey[600],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -380,7 +406,7 @@ class _FridgeAddIngredientsState extends State<FridgeAddIngredients> {
                                   ),
                                   child: Text(
                                     "Cancel",
-                                    style: TextStyle(
+                                    style: GoogleFonts.merriweather(
                                       color: mainColor,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -405,9 +431,9 @@ class _FridgeAddIngredientsState extends State<FridgeAddIngredients> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
-                                  child: const Text(
+                                  child: Text(
                                     "Add",
-                                    style: TextStyle(
+                                    style: GoogleFonts.merriweather(
                                       color: Colors.white,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -434,12 +460,12 @@ class _FridgeAddIngredientsState extends State<FridgeAddIngredients> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
-          children: const [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 12),
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
             Text(
               "Item added successfully!",
-              style: TextStyle(
+              style: GoogleFonts.merriweather(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -527,17 +553,25 @@ class _FridgeAddIngredientsState extends State<FridgeAddIngredients> {
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Row(
-                        children: const [
-                          Icon(Icons.search, size: 20, color: Colors.grey),
-                          SizedBox(width: 8),
+                        children: [
+                          const Icon(Icons.search, size: 20, color: Colors.grey),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: TextField(
+                              style: GoogleFonts.merriweather(
+                                fontSize: 14,
+                                color: Colors.black87,
+                              ),
                               decoration: InputDecoration(
                                 hintText: 'search ingredients...',
                                 border: InputBorder.none,
                                 isDense: true,
                                 contentPadding: EdgeInsets.zero,
-                                fillColor: Color(0xFFE7EAE9),
+                                fillColor: const Color(0xFFE7EAE9),
+                                hintStyle: GoogleFonts.merriweather(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
                           ),
@@ -583,7 +617,7 @@ class _FridgeAddIngredientsState extends State<FridgeAddIngredients> {
                     return Chip(
                       label: Text(
                         categories[index],
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                        style: GoogleFonts.merriweather(fontWeight: FontWeight.w600),
                       ),
                       backgroundColor: const Color(0xFFE7EAE9),
                       padding: const EdgeInsets.symmetric(
@@ -634,7 +668,7 @@ class _FridgeAddIngredientsState extends State<FridgeAddIngredients> {
                           Expanded(
                             child: Text(
                               name,
-                              style: const TextStyle(
+                              style: GoogleFonts.merriweather(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.black87,

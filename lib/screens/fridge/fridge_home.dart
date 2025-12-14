@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
+import '../settings/settings.dart';
 
 class FridgeHomeScreen extends StatefulWidget {
   const FridgeHomeScreen({super.key});
@@ -19,7 +20,8 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
   // Dữ liệu mẫu (Giả lập DB)
   final List<Map<String, dynamic>> eatMeFirstItems = [
     {
-      "image": "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=300&q=80", // Milk
+      "image":
+          "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=300&q=80", // Milk
       "title": "Whole Milk",
       "subtitle": "Expiring soon",
       "tag": "1 DAY",
@@ -27,7 +29,8 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
       "tagTextColor": Colors.red,
     },
     {
-      "image": "https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&w=300&q=80", // Spinach
+      "image":
+          "https://images.unsplash.com/photo-1576045057995-568f588f82fb?auto=format&fit=crop&w=300&q=80", // Spinach
       "title": "Baby Spinach",
       "subtitle": "Plan a meal",
       "tag": "2 DAYS",
@@ -35,7 +38,8 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
       "tagTextColor": Colors.orange,
     },
     {
-       "image": "https://images.unsplash.com/photo-1587049359535-b64d3d865c49?auto=format&fit=crop&w=300&q=80", // Yogurt
+      "image":
+          "https://images.unsplash.com/photo-1587049359535-b64d3d865c49?auto=format&fit=crop&w=300&q=80", // Yogurt
       "title": "Greek Yogurt",
       "subtitle": "Expiring soon",
       "tag": "3 DAYS",
@@ -46,32 +50,38 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
 
   final List<Map<String, dynamic>> inStockItems = [
     {
-      "image": "https://images.unsplash.com/photo-1523049673856-388668a7550d?auto=format&fit=crop&w=300&q=80", // Avocado
+      "image":
+          "https://images.unsplash.com/photo-1523049673856-388668a7550d?auto=format&fit=crop&w=300&q=80", // Avocado
       "title": "Avocados",
       "qty": "2 pcs",
     },
     {
-      "image": "https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&w=300&q=80", // Eggs
+      "image":
+          "https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&w=300&q=80", // Eggs
       "title": "Large Eggs",
       "qty": "6 pcs",
     },
     {
-      "image": "https://images.unsplash.com/photo-1618164436241-4473940d1f5c?auto=format&fit=crop&w=300&q=80", // Cheddar
+      "image":
+          "https://images.unsplash.com/photo-1618164436241-4473940d1f5c?auto=format&fit=crop&w=300&q=80", // Cheddar
       "title": "Cheddar",
       "qty": "1 block",
     },
     {
-      "image": "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=300&q=80", // Tomatoes
+      "image":
+          "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&w=300&q=80", // Tomatoes
       "title": "Tomatoes",
       "qty": "500g",
     },
     {
-      "image": "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?auto=format&fit=crop&w=300&q=80", // Strawberries
+      "image":
+          "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?auto=format&fit=crop&w=300&q=80", // Strawberries
       "title": "Strawberries",
       "qty": "1 pack",
     },
     {
-      "image": "https://images.unsplash.com/photo-1563565375-f3fdf5dbc240?auto=format&fit=crop&w=300&q=80", // Peppers
+      "image":
+          "https://images.unsplash.com/photo-1563565375-f3fdf5dbc240?auto=format&fit=crop&w=300&q=80", // Peppers
       "title": "Peppers",
       "qty": "3 pcs",
     },
@@ -81,7 +91,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bgCream,
-      
+
       // Floating Action Button (Nút dấu cộng xanh)
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
@@ -89,13 +99,13 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
         shape: const CircleBorder(),
         child: const Icon(Icons.add, color: Colors.white),
       ),
-      
+
       body: SafeArea(
         bottom: false,
         child: ResponsiveLayout(
           // --- MOBILE BODY ---
           mobileBody: _buildBodyContent(crossAxisCount: 2, isMobile: true),
-          
+
           // --- DESKTOP BODY ---
           desktopBody: Center(
             child: Container(
@@ -110,7 +120,8 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
   }
 
   // Widget chứa toàn bộ nội dung chính (Header, Search, Lists)
-  Widget _buildBodyContent({required int crossAxisCount, required bool isMobile}) {
+  Widget _buildBodyContent(
+      {required int crossAxisCount, required bool isMobile}) {
     return CustomScrollView(
       slivers: [
         // 1. Header & Search Bar
@@ -139,13 +150,20 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
                       child: IconButton(
                         icon: const Icon(Icons.settings_outlined),
                         color: Colors.black,
-                        onPressed: () {},
+                        onPressed: () {
+                          // ĐIỀU HƯỚNG SANG SETTINGS
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const SettingsScreen()),
+                          );
+                        },
                       ),
                     )
                   ],
                 ),
                 const SizedBox(height: 20),
-                
+
                 // Search Bar
                 TextField(
                   decoration: InputDecoration(
@@ -196,7 +214,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Horizontal Scroll List
               SizedBox(
                 height: 220, // Chiều cao cố định cho list ngang
@@ -251,7 +269,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
             ),
           ),
         ),
-        
+
         // Khoảng trống dưới cùng để không bị che bởi BottomNav hoặc FAB
         const SliverToBoxAdapter(child: SizedBox(height: 100)),
       ],
@@ -296,7 +314,8 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
                   top: 18,
                   right: 18,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8),
@@ -391,7 +410,8 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
                   ),
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(8),

@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import '../../widgets/fridge/fridge_item_card.dart';
+import '../../widgets/fridge/fridge_header.dart';
+import '../../widgets/fridge/fridge_search_bar.dart';
+import '../../widgets/fridge/fridge_section_header.dart';
+import '../../widgets/fridge/fridge_bottom_navigation.dart';
+import '../../widgets/fridge/fridge_delete_bar.dart';
 import '../../widgets/fridge/edit_item_bottom_sheet.dart';
+import '../../widgets/fridge/add_item_bottom_sheet.dart';
 import '../../widgets/fridge/delete_confirmation_modal.dart';
 import 'package:fridge_to_fork_assistant/widgets/fridge/models/fridge_item.dart';
-
 
 class FridgeHomeScreen extends StatefulWidget {
   const FridgeHomeScreen({super.key});
@@ -16,6 +21,7 @@ class FridgeHomeScreen extends StatefulWidget {
 class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
   bool _isMultiSelectMode = false;
   final Set<String> _selectedItems = {};
+  int _currentNavIndex = 0;
   
   // Dữ liệu mẫu
   final List<FridgeItem> _eatMeFirstItems = [
@@ -90,6 +96,8 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     ),
   ];
 
+  // ==================== MULTI-SELECT METHODS ====================
+  
   void _toggleItemSelection(String itemId) {
     setState(() {
       if (_selectedItems.contains(itemId)) {
@@ -107,6 +115,60 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     });
   }
 
+  void _enterMultiSelectMode(String itemId) {
+    setState(() {
+      _isMultiSelectMode = true;
+      _selectedItems.add(itemId);
+    });
+  }
+
+  // ==================== ITEM CRUD METHODS ====================
+  
+  void _addItem(FridgeItem newItem) {
+    setState(() {
+      if (newItem.expiryDays != null && newItem.expiryDays! <= 3) {
+        _eatMeFirstItems.add(newItem);
+      } else {
+        _inStockItems.add(newItem);
+      }
+    });
+    _showSuccessSnackbar('Item added successfully');
+  }
+
+  void _updateItem(FridgeItem updatedItem) {
+    setState(() {
+      final eatMeIndex = _eatMeFirstItems.indexWhere((i) => i.id == updatedItem.id);
+      final inStockIndex = _inStockItems.indexWhere((i) => i.id == updatedItem.id);
+      
+      if (eatMeIndex != -1) {
+        _eatMeFirstItems[eatMeIndex] = updatedItem;
+      } else if (inStockIndex != -1) {
+        _inStockItems[inStockIndex] = updatedItem;
+      }
+    });
+  }
+
+  void _deleteSelectedItems() {
+    setState(() {
+      _eatMeFirstItems.removeWhere((item) => _selectedItems.contains(item.id));
+      _inStockItems.removeWhere((item) => _selectedItems.contains(item.id));
+      _exitMultiSelectMode();
+    });
+  }
+
+  // ==================== BOTTOM SHEETS & MODALS ====================
+  
+  void _showAddItemBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AddItemBottomSheet(
+        onAdd: _addItem,
+      ),
+    );
+  }
+
   void _showEditBottomSheet(FridgeItem item) {
     showModalBottomSheet(
       context: context,
@@ -114,37 +176,76 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => EditItemBottomSheet(
         item: item,
-        onSave: (updatedItem) {
-          setState(() {
-            // Logic cập nhật item vào list
-          });
-        },
+        onSave: _updateItem,
       ),
     );
   }
 
   void _showDeleteConfirmation() {
+    if (_selectedItems.isEmpty) return;
+    
     showDialog(
       context: context,
       builder: (context) => DeleteConfirmationModal(
         itemCount: _selectedItems.length,
         onConfirm: () {
-          setState(() {
-            _eatMeFirstItems.removeWhere((item) => _selectedItems.contains(item.id));
-            _inStockItems.removeWhere((item) => _selectedItems.contains(item.id));
-            _exitMultiSelectMode();
-          });
+          _deleteSelectedItems();
           Navigator.pop(context);
         },
       ),
     );
   }
 
+  // ==================== UI HELPERS ====================
+  
+  void _showSuccessSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 12),
+            Text(
+              message,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF28A745),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _onItemTap(FridgeItem item) {
+    if (_isMultiSelectMode) {
+      _toggleItemSelection(item.id);
+    } else {
+      _showEditBottomSheet(item);
+    }
+  }
+
+  void _onItemLongPress(FridgeItem item) {
+    if (!_isMultiSelectMode) {
+      _enterMultiSelectMode(item.id);
+    }
+  }
+
+  // ==================== BUILD METHODS ====================
+
   @override
   Widget build(BuildContext context) {
     return ResponsiveLayout(
       mobileBody: _buildMobileLayout(),
-      desktopBody: _buildDesktopLayout(),
+      desktopBody: _buildMobileLayout(),
     );
   }
 
@@ -154,39 +255,19 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
-            _buildHeader(),
+            FridgeHeader(
+              isMultiSelectMode: _isMultiSelectMode,
+              onCancel: _exitMultiSelectMode,
+              onSave: _exitMultiSelectMode,
+              onSettings: () {
+                // TODO: Navigate to settings
+              },
+            ),
             
-            // Search Bar
-            _buildSearchBar(),
+            const FridgeSearchBar(),
             
-            // Content
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 20),
-                    
-                    // Eat Me First Section - CHỈ hiện khi KHÔNG multi-select
-                    if (_eatMeFirstItems.isNotEmpty && !_isMultiSelectMode) ...[
-                      _buildSectionHeader('Eat Me First', onSeeAll: () {}),
-                      const SizedBox(height: 12),
-                      _buildItemGrid(_eatMeFirstItems),
-                      const SizedBox(height: 28),
-                    ],
-                    
-                    // In Stock Section - Luôn hiển thị
-                    if (!_isMultiSelectMode)
-                      _buildSectionHeader('In Stock'),
-                    if (!_isMultiSelectMode)
-                      const SizedBox(height: 12),
-                    _buildItemGrid(_inStockItems),
-                    const SizedBox(height: 100), // Space for bottom nav
-                  ],
-                ),
-              ),
+              child: _buildContent(),
             ),
           ],
         ),
@@ -194,189 +275,88 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
       floatingActionButton: _isMultiSelectMode 
           ? null 
           : FloatingActionButton(
-              onPressed: () {
-                // Open add item bottom sheet
-                _showEditBottomSheet(FridgeItem(
-                  id: DateTime.now().toString(),
-                  name: '',
-                  quantity: 1,
-                  unit: 'pcs',
-                  category: 'Vegetables',
-                  imageUrl: '🥗',
-                ));
-              },
+              onPressed: _showAddItemBottomSheet,
               shape: const CircleBorder(),
               backgroundColor: const Color(0xFF2D5F4F),
-              child: const Icon(Icons.add, size: 28, color: Colors.white,),
+              child: const Icon(Icons.add, size: 28, color: Colors.white),
             ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: _isMultiSelectMode
-          ? GestureDetector(
-              onTap: _selectedItems.isEmpty ? null : _showDeleteConfirmation,
-              child: _buildDeleteBottomBar(),
+          ? FridgeDeleteBar(
+              onDelete: _showDeleteConfirmation,
+              isEnabled: _selectedItems.isNotEmpty,
             )
-          : _buildBottomNavigationBar(),
+          : FridgeBottomNavigation(
+              currentIndex: _currentNavIndex,
+              onTap: (index) {
+                setState(() {
+                  _currentNavIndex = index;
+                });
+                // TODO: Handle navigation
+              },
+            ),
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      color: const Color(0xFFF8F9FA),
-      child: Row(
-        mainAxisAlignment: _isMultiSelectMode 
-            ? MainAxisAlignment.spaceBetween 
-            : MainAxisAlignment.spaceBetween,
+  Widget _buildContent() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (_isMultiSelectMode)
-            TextButton(
-              onPressed: _exitMultiSelectMode,
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(60, 40),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFFDC3545),
-                ),
-              ),
-            ),         
+          const SizedBox(height: 20),
           
-          const Text(
-            'My Fridge',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
-            ),
-          ),
+          // Eat Me First Section - Horizontal Scroll
+          if (_eatMeFirstItems.isNotEmpty && !_isMultiSelectMode) ...[
+            const FridgeSectionHeader(title: 'Eat Me First'),
+            const SizedBox(height: 12),
+            _buildEatMeFirstSection(),
+            const SizedBox(height: 28),
+          ],
           
-          if (_isMultiSelectMode)
-            TextButton(
-              onPressed: () {
-                // Save action - có thể là confirm selection hoặc thoát
-                _exitMultiSelectMode();
-              },
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(60, 40),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text(
-                'Save',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF28A745),
-                ),
-              ),
-            )
-          else
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.settings_outlined, size: 20),
-                onPressed: () {},
-                color: const Color(0xFF1A1A1A),
-                padding: EdgeInsets.zero,
-              ),
-            ),
+          // In Stock Section - Grid
+          if (!_isMultiSelectMode) ...[
+            const FridgeSectionHeader(title: 'In Stock'),
+            const SizedBox(height: 12),
+          ],
+          _buildInStockGrid(),
+          const SizedBox(height: 100),
         ],
       ),
     );
   }
 
-  Widget _buildSearchBar() {
-    return Container(
-      color: const Color(0xFFF8F9FA),
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-      child: Container(
-        height: 48,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+  Widget _buildEatMeFirstSection() {
+    return SizedBox(
+      height: 220,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _eatMeFirstItems.length,
+        itemBuilder: (context, index) {
+          final item = _eatMeFirstItems[index];
+          return Container(
+            width: 160,
+            margin: EdgeInsets.only(
+              right: index < _eatMeFirstItems.length - 1 ? 12 : 0,
             ),
-          ],
-        ),
-        child: TextField(
-          decoration: InputDecoration(
-            hintText: 'Search ingredients...',
-            hintStyle: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 15,
+            child: FridgeItemCard(
+              item: item,
+              isSelected: _selectedItems.contains(item.id),
+              isMultiSelectMode: _isMultiSelectMode,
+              showAddButton: false,
+              onTap: () => _onItemTap(item),
+              onLongPress: () => _onItemLongPress(item),
             ),
-            prefixIcon: Icon(
-              Icons.search,
-              color: Colors.grey[400],
-              size: 22,
-            ),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 12),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title, {VoidCallback? onSeeAll}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1A1A1A),
-          ),
-        ),
-        if (onSeeAll != null)
-          TextButton(
-            onPressed: onSeeAll,
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(50, 30),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              'See all',
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildItemGrid(List<FridgeItem> items) {
-    // Trong multi-select mode, merge cả 2 lists
+  Widget _buildInStockGrid() {
     final displayItems = _isMultiSelectMode 
         ? [..._eatMeFirstItems, ..._inStockItems]
-        : items;
+        : _inStockItems;
     
     return GridView.builder(
       shrinkWrap: true,
@@ -395,124 +375,10 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
           isSelected: _selectedItems.contains(item.id),
           isMultiSelectMode: _isMultiSelectMode,
           showAddButton: false,
-          onTap: () {
-            if (_isMultiSelectMode) {
-              _toggleItemSelection(item.id);
-            } else {
-              _showEditBottomSheet(item);
-            }
-          },
-          onLongPress: () {
-            setState(() {
-              _isMultiSelectMode = true;
-              _selectedItems.add(item.id);
-            });
-          },
+          onTap: () => _onItemTap(item),
+          onLongPress: () => _onItemLongPress(item),
         );
       },
     );
-  }
-
-  Widget _buildDeleteBottomBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFDC3545),
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(24),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.delete_outline,
-                color: Colors.white,
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Delete',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildBottomNavItem(Icons.kitchen_outlined, 'Fridge', true),
-              _buildBottomNavItem(Icons.restaurant_menu_outlined, 'Recipes', false),
-              _buildBottomNavItem(Icons.list_alt_outlined, 'Lists', false),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem(IconData icon, String label, bool isActive) {
-    return InkWell(
-      onTap: () {},
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              color: isActive ? const Color(0xFF2D5F4F) : const Color(0xFFB0B0B0),
-              size: 26,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                color: isActive ? const Color(0xFF2D5F4F) : const Color(0xFFB0B0B0),
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDesktopLayout() {
-    return _buildMobileLayout();
   }
 }

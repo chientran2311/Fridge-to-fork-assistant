@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         // fontFamily: GoogleFonts.merriweather().fontFamily,
-        fontFamily: GoogleFonts.splineSans().fontFamily,
+        fontFamily: GoogleFonts.montserrat().fontFamily,
       ),
       home: const FridgeHomeScreen(), 
     );

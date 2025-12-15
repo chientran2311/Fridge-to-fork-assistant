@@ -1,49 +1,30 @@
-import 'dart:ui';
-import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/widgets/fridge/models/fridge_item.dart';
 import 'package:fridge_to_fork_assistant/screens/fridge/fridge_barcode_scan.dart';
+import 'package:dotted_border/dotted_border.dart';
 
-class EditItemBottomSheet extends StatefulWidget {
-  final FridgeItem item;
-  final Function(FridgeItem) onSave;
 
-  const EditItemBottomSheet({
+class AddItemBottomSheet extends StatefulWidget {
+  final Function(FridgeItem) onAdd;
+
+  const AddItemBottomSheet({
     super.key,
-    required this.item,
-    required this.onSave,
+    required this.onAdd,
   });
 
   @override
-  State<EditItemBottomSheet> createState() => _EditItemBottomSheetState();
+  State<AddItemBottomSheet> createState() => _AddItemBottomSheetState();
 }
 
-class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
-  late TextEditingController _nameController;
-  late TextEditingController _quantityController;
+class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _quantityController = TextEditingController(text: '1');
   String _selectedUnit = 'pcs';
   DateTime? _selectedExpiryDate;
   String _selectedCategory = 'Vegetables';
 
   final List<String> _units = ['pcs', 'g', 'kg', 'ml', 'L', 'pack', 'block'];
-  final List<String> _categories = [
-    'Vegetables',
-    'Dairy',
-    'Meat',
-    'Fruit',
-    '+ Add Tag'
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.item.name);
-    _quantityController =
-        TextEditingController(text: widget.item.quantity.toString());
-    _selectedUnit = widget.item.unit;
-    _selectedCategory = widget.item.category;
-    _selectedExpiryDate = widget.item.expiryDate;
-  }
+  final List<String> _categories = ['Vegetables', 'Dairy', 'Meat', 'Fruit', 'Other'];
 
   @override
   void dispose() {
@@ -55,8 +36,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
   void _selectExpiryDate() async {
     final date = await showDatePicker(
       context: context,
-      initialDate:
-          _selectedExpiryDate ?? DateTime.now().add(const Duration(days: 7)),
+      initialDate: DateTime.now().add(const Duration(days: 7)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
@@ -70,7 +50,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
         );
       },
     );
-
+    
     if (date != null) {
       setState(() {
         _selectedExpiryDate = date;
@@ -78,45 +58,47 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
     }
   }
 
-  void _save() {
-    final updatedItem = widget.item.copyWith(
-      name: _nameController.text,
-      quantity: int.tryParse(_quantityController.text) ?? widget.item.quantity,
+  void _addItem() {
+    if (_nameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter ingredient name'),
+          backgroundColor: Color(0xFFDC3545),
+        ),
+      );
+      return;
+    }
+
+    final newItem = FridgeItem(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: _nameController.text.trim(),
+      quantity: int.tryParse(_quantityController.text) ?? 1,
       unit: _selectedUnit,
       category: _selectedCategory,
+      imageUrl: _getCategoryEmoji(_selectedCategory),
       expiryDate: _selectedExpiryDate,
+      expiryDays: _selectedExpiryDate != null 
+          ? _selectedExpiryDate!.difference(DateTime.now()).inDays 
+          : null,
     );
-
-    widget.onSave(updatedItem);
+    
+    widget.onAdd(newItem);
     Navigator.pop(context);
-    showSuccessSnackbar();
   }
 
-  void showSuccessSnackbar() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: const [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 12),
-            Text(
-              "Item added successfully!",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+  String _getCategoryEmoji(String category) {
+    switch (category.toLowerCase()) {
+      case 'vegetables':
+        return '🥗';
+      case 'dairy':
+        return '🥛';
+      case 'meat':
+        return '🥩';
+      case 'fruit':
+        return '🍎';
+      default:
+        return '🍽️';
+    }
   }
 
   @override
@@ -143,7 +125,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-
+            
             // Header
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -151,7 +133,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Edit Item',
+                    'Add Item',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -166,9 +148,9 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                 ],
               ),
             ),
-
+            
             const SizedBox(height: 20),
-
+            
             // Form Content
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -205,9 +187,9 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                       ),
                     ),
                   ),
-
+                  
                   const SizedBox(height: 20),
-
+                  
                   // Quantity and Expiry Date Row
                   Row(
                     children: [
@@ -239,8 +221,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                                         borderRadius: BorderRadius.circular(12),
                                         borderSide: BorderSide.none,
                                       ),
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
+                                      contentPadding: const EdgeInsets.symmetric(
                                         horizontal: 16,
                                         vertical: 14,
                                       ),
@@ -249,8 +230,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                                 ),
                                 const SizedBox(width: 8),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFF5F5F5),
                                     borderRadius: BorderRadius.circular(12),
@@ -279,9 +259,9 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                           ],
                         ),
                       ),
-
+                      
                       const SizedBox(width: 16),
-
+                      
                       // Expiry Date
                       Expanded(
                         child: Column(
@@ -308,8 +288,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       _selectedExpiryDate != null
@@ -336,9 +315,9 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                       ),
                     ],
                   ),
-
+                  
                   const SizedBox(height: 20),
-
+                  
                   // Quick Tags
                   const Text(
                     'Quick Tags',
@@ -366,8 +345,8 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                             vertical: 8,
                           ),
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? const Color.fromARGB(10, 15, 189, 59)
+                            color: isSelected 
+                                ? const Color.fromARGB(10, 15, 189, 59) 
                                 : const Color(0xFFF5F5F5),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
@@ -379,9 +358,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                           child: Text(
                             category,
                             style: TextStyle(
-                              color: isSelected
-                                  ? const Color(0xFF0A8A2B)
-                                  : const Color(0xFF2D3436),
+                              color: isSelected ? const Color(0xFF0A8A2B): const Color(0xFF2D3436),
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),
@@ -390,9 +367,9 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                       );
                     }).toList(),
                   ),
-
+                  
                   const SizedBox(height: 20),
-
+                  
                   // Scan Barcode Button
                   DottedBorder(
                     borderType: BorderType.RRect,
@@ -443,12 +420,12 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                       ),
                     ),
                   ),
-
+                  
                   const SizedBox(height: 12),
-
+                  
                   // Add to Fridge Button
                   ElevatedButton(
-                    onPressed: _save,
+                    onPressed: _addItem,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2D5F4F),
                       foregroundColor: Colors.white,
@@ -474,7 +451,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                       ],
                     ),
                   ),
-
+                  
                   const SizedBox(height: 20),
                 ],
               ),
@@ -485,4 +462,3 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
     );
   }
 }
-

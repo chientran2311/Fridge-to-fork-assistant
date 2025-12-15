@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/auth/login.dart';
+import 'package:fridge_to_fork_assistant/screens/fridge/fridge_home.dart'; 
 void main() {
   runApp(const MyApp());
 }
@@ -13,9 +14,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        fontFamily: GoogleFonts.merriweather().fontFamily,
+        // fontFamily: GoogleFonts.merriweather().fontFamily,
+        fontFamily: GoogleFonts.montserrat().fontFamily,
       ),
-      home: const LoginScreen(), 
+      home: const FridgeHomeScreen(), 
     );
   }
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 
+import 'package:fridge_to_fork_assistant/widgets/common/primary_button.dart';
+
 class FilterModal extends StatefulWidget {
   const FilterModal({super.key});
 
@@ -215,26 +217,13 @@ class _FilterModalState extends State<FilterModal> {
             child: SizedBox(
               width: double.infinity,
               height: 56,
-              child: ElevatedButton(
+              child: PrimaryButton(
+                text: "Apply Filters (3)",
                 onPressed: () {
                   // Apply logic here
                   Navigator.pop(context);
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: mainColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  "Apply Filters (3)",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+                backgroundColor: mainColor,
               ),
             ),
           ),

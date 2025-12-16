@@ -1,9 +1,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
-import 'add_item_overlay.dart';
-import 'weekly_plan_tab.dart';
-import 'shopping_list_tab.dart';
+import '../../../widgets/plans/tabs/weekly_plan_tab/add_item_overlay.dart';
+import '../tabs/weekly_plan/weekly_plan_tab.dart';
+import '../tabs/shopping_list/shopping_list_tab.dart';
 
 const _bgColor = Color(0xFFF4F6F4);
 const _primaryColor = Color(0xFF214130);
@@ -84,6 +84,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
     );
   }
 }
+
 class _Tabs extends StatelessWidget {
   final PlannerTab currentTab;
   final ValueChanged<PlannerTab> onChanged;

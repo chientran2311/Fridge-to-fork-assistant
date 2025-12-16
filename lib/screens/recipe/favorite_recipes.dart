@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
-// Reuse your existing PrimaryButton if desired, though these specific buttons have custom sizing
-import '../../widgets/common/primary_button.dart'; 
+
 
 class FavoriteRecipesScreen extends StatefulWidget {
   const FavoriteRecipesScreen({super.key});
@@ -15,11 +14,11 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
   final Color mainColor = const Color(0xFF1B3B36);
   String _selectedFilter = "All";
 
-  // Mock Data based on image_719e60.png
+  // Mock Data
   final List<Map<String, dynamic>> favorites = [
     {
       "type": "image",
-      "image": "https://images.unsplash.com/photo-1525351484163-7529414395d8?auto=format&fit=crop&w=600&q=80", // Avocado Toast
+      "image": "https://images.unsplash.com/photo-1525351484163-7529414395d8?auto=format&fit=crop&w=600&q=80",
       "category": "BREAKFAST",
       "kcal": "350 kcal",
       "title": "Avocado Toast & Egg",
@@ -27,15 +26,15 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
     },
     {
       "type": "image",
-      "image": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80", // Quinoa Salad
+      "image": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80",
       "category": "LUNCH",
       "kcal": "420 kcal",
       "title": "Superfood Quinoa Salad",
       "desc": "Packed with protein and fresh veggies.",
     },
     {
-      "type": "color", // Special case for Pumpkin Soup (Yellow bg)
-      "color": const Color(0xFFFFF9C4), 
+      "type": "color",
+      "color": const Color(0xFFFFF9C4),
       "icon": Icons.soup_kitchen_outlined,
       "iconColor": Colors.orange,
       "category": "DINNER",
@@ -50,17 +49,21 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF9F9F7), // Cream background from image
+      backgroundColor: const Color(0xFFF9F9F7),
+      // ĐÃ XÓA bottomNavigationBar TẠI ĐÂY
       body: SafeArea(
         child: ResponsiveLayout(
-          // --- MOBILE LAYOUT ---
-          mobileBody: _buildContent(crossAxisCount: 1),
+          // --- MOBILE: Dùng List thay vì Grid ---
+          mobileBody: _buildMobileList(),
           
-          // --- TABLET/WEB LAYOUT ---
+          // --- TABLET: Grid 2 cột ---
+          tabletBody: _buildGridContent(crossAxisCount: 2, aspectRatio: 0.8),
+          
+          // --- DESKTOP: Grid 3 cột, căn giữa ---
           desktopBody: Center(
             child: Container(
-              constraints: const BoxConstraints(maxWidth: 1000),
-              child: _buildContent(crossAxisCount: 2),
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: _buildGridContent(crossAxisCount: 3, aspectRatio: 0.85),
             ),
           ),
         ),
@@ -68,93 +71,149 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
     );
   }
 
-  Widget _buildContent({required int crossAxisCount}) {
+  // Layout cho Mobile: Dùng SliverList
+  Widget _buildMobileList() {
     return CustomScrollView(
       slivers: [
-        // 1. Header Title
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-            child: Text(
-              "My Favorite Recipes",
-              style: GoogleFonts.merriweather(
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                color: Colors.black,
-              ),
-            ),
-          ),
-        ),
-
-        // 2. Filter Chips (Horizontal Scroll)
-        SliverToBoxAdapter(
-          child: SizedBox(
-            height: 60,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              scrollDirection: Axis.horizontal,
-              itemCount: filters.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 10),
-              itemBuilder: (context, index) {
-                final filter = filters[index];
-                final isSelected = _selectedFilter == filter;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedFilter = filter),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? mainColor : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: isSelected ? null : Border.all(color: Colors.grey.shade300),
+        _buildHeader(), // Header có nút Back
+        _buildFilterChips(),
+        const SliverToBoxAdapter(child: SizedBox(height: 20)),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                if (index == favorites.length) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 40),
+                    child: const SizedBox(
+                      height: 150,
+                      child: DiscoverMoreCard(),
                     ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      filter,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                        color: isSelected ? Colors.white : Colors.grey[700],
-                      ),
-                    ),
+                  );
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: SizedBox(
+                    height: 310, // Chiều cao cố định cho card mobile
+                    child: FavoriteRecipeCard(data: favorites[index]),
                   ),
                 );
               },
+              childCount: favorites.length + 1,
             ),
           ),
         ),
+      ],
+    );
+  }
 
-        const SliverToBoxAdapter(child: SizedBox(height: 10)),
-
-        // 3. Recipe Cards Grid/List
+  // Layout cho Web/Tablet: Dùng Grid
+  Widget _buildGridContent({required int crossAxisCount, required double aspectRatio}) {
+    return CustomScrollView(
+      slivers: [
+        _buildHeader(), // Header có nút Back
+        _buildFilterChips(),
+        const SliverToBoxAdapter(child: SizedBox(height: 20)),
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           sliver: SliverGrid(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: crossAxisCount,
-              childAspectRatio: crossAxisCount == 1 ? 0.85 : 0.9, 
+              childAspectRatio: aspectRatio,
               mainAxisSpacing: 20,
               crossAxisSpacing: 20,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) {
-                // If we are at the end, show "Discover More"
                 if (index == favorites.length) {
                   return const DiscoverMoreCard();
                 }
                 return FavoriteRecipeCard(data: favorites[index]);
               },
-              childCount: favorites.length + 1, // +1 for Discover More card
+              childCount: favorites.length + 1,
             ),
           ),
         ),
-
-        const SliverToBoxAdapter(child: SizedBox(height: 100)), // Bottom spacing
+        const SliverToBoxAdapter(child: SizedBox(height: 40)),
       ],
+    );
+  }
+
+  // --- WIDGET HEADER ĐÃ SỬA ĐỔI (Thêm nút Back) ---
+  Widget _buildHeader() {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 20, 20, 10), // Giảm padding trái một chút cho icon
+        child: Row(
+          children: [
+            // Nút Back
+          CircleAvatar(
+          backgroundColor: Colors.white.withOpacity(0.8),
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        const SizedBox(width: 16),
+            // Tiêu đề
+            Expanded(
+              child: Text(
+                "My Favorite Recipes",
+                style: GoogleFonts.merriweather(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black,
+                ),
+                textAlign: TextAlign.left, // Căn lề trái cho văn bản
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChips() {
+    return SliverToBoxAdapter(
+      child: SizedBox(
+        height: 50,
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          scrollDirection: Axis.horizontal,
+          itemCount: filters.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 10),
+          itemBuilder: (context, index) {
+            final filter = filters[index];
+            final isSelected = _selectedFilter == filter;
+            return GestureDetector(
+              onTap: () => setState(() => _selectedFilter = filter),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: isSelected ? mainColor : Colors.white,
+                  borderRadius: BorderRadius.circular(25),
+                  border: isSelected ? null : Border.all(color: Colors.grey.shade300),
+                ),
+                child: Text(
+                  filter,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: isSelected ? Colors.white : Colors.grey[700],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 }
 
-// --- WIDGET: FAVORITE RECIPE CARD (Custom layout for this screen) ---
+// --- WIDGET: CARD MÓN ĂN YÊU THÍCH (Giữ nguyên logic Card đã tối ưu) ---
 class FavoriteRecipeCard extends StatelessWidget {
   final Map<String, dynamic> data;
 
@@ -170,126 +229,129 @@ class FavoriteRecipeCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           )
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- IMAGE HEADER ---
-          Expanded(
-            flex: 5,
+          // 1. ẢNH: Cố định chiều cao
+          SizedBox(
+            height: 150,
+            width: double.infinity,
             child: Stack(
               children: [
-                // Image or Colored Placeholder
                 Container(
                   width: double.infinity,
+                  height: double.infinity,
                   decoration: BoxDecoration(
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                     color: data['type'] == 'color' ? data['color'] : Colors.grey[200],
                   ),
-                  child: data['type'] == 'image' 
+                  child: data['type'] == 'image'
                       ? ClipRRect(
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                           child: Image.network(data['image'], fit: BoxFit.cover),
                         )
                       : Icon(data['icon'], size: 48, color: data['iconColor']),
                 ),
-                // Heart Icon
                 Positioned(
-                  top: 12,
-                  right: 12,
+                  top: 10,
+                  right: 10,
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.favorite_border, size: 18, color: Colors.redAccent),
+                    child: const Icon(Icons.favorite, size: 16, color: Color(0xFFE57373)),
                   ),
                 )
               ],
             ),
           ),
 
-          // --- CONTENT ---
+          // 2. NỘI DUNG: Chiếm phần còn lại
           Expanded(
-            flex: 6,
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(14.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Metadata: BREAKFAST • 350 kcal
-                      Text(
-                        "${data['category']}  •  ${data['kcal']}",
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[600],
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      // Title
-                      Text(
-                        data['title'],
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.merriweather(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      // Desc
-                      Text(
-                        data['desc'],
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
+                  // Metadata
+                  Text(
+                    "${data['category']}  •  ${data['kcal']}",
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.grey[500],
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  
+                  // Title
+                  Text(
+                    data['title'],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.merriweather(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  
+                  // Description
+                  Text(
+                    data['desc'],
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                      height: 1.3,
+                    ),
                   ),
                   
-                  // Buttons Row: Schedule & Today
+                  const Spacer(), // Đẩy nút xuống đáy
+                  
+                  // Buttons Row
                   Row(
                     children: [
                       Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.calendar_today, size: 14, color: Colors.black54),
-                          label: const Text("Schedule", style: TextStyle(color: Colors.black54, fontSize: 12, fontWeight: FontWeight.bold)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFF5F5F5),
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        child: SizedBox(
+                          height: 38,
+                          child: ElevatedButton.icon(
+                            onPressed: () {},
+                            icon: const Icon(Icons.calendar_today, size: 14, color: Colors.black54),
+                            label: const Text("Schedule", style: TextStyle(color: Colors.black54, fontSize: 11, fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFF5F5F5),
+                              elevation: 0,
+                              padding: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.add, size: 14, color: Colors.white),
-                          label: const Text("Today", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: mainColor,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        child: SizedBox(
+                          height: 38,
+                          child: ElevatedButton.icon(
+                            onPressed: () {},
+                            icon: const Icon(Icons.add, size: 14, color: Colors.white),
+                            label: const Text("Today", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: mainColor,
+                              elevation: 0,
+                              padding: EdgeInsets.zero,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
                           ),
                         ),
                       ),
@@ -305,7 +367,7 @@ class FavoriteRecipeCard extends StatelessWidget {
   }
 }
 
-// --- WIDGET: DISCOVER MORE CARD (Dashed Border) ---
+// --- WIDGET: DISCOVER MORE CARD ---
 class DiscoverMoreCard extends StatelessWidget {
   const DiscoverMoreCard({super.key});
 
@@ -315,7 +377,7 @@ class DiscoverMoreCard extends StatelessWidget {
       painter: DashedRectPainter(color: Colors.grey.shade300, strokeWidth: 1.5, gap: 5.0),
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF9F9F7), // Match background to look transparent
+          color: const Color(0xFFF9F9F7),
           borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
@@ -346,7 +408,7 @@ class DiscoverMoreCard extends StatelessWidget {
   }
 }
 
-// Helper for Dashed Border
+// Helper vẽ viền đứt nét (Simplified)
 class DashedRectPainter extends CustomPainter {
   final double strokeWidth;
   final Color color;
@@ -363,45 +425,10 @@ class DashedRectPainter extends CustomPainter {
 
     double x = size.width;
     double y = size.height;
-
-    Path _topPath = getDashedPath(a: const Offset(0, 0), b: Offset(x, 0), gap: gap);
-    Path _rightPath = getDashedPath(a: Offset(x, 0), b: Offset(x, y), gap: gap);
-    Path _bottomPath = getDashedPath(a: Offset(0, y), b: Offset(x, y), gap: gap);
-    Path _leftPath = getDashedPath(a: const Offset(0, 0), b: Offset(0, y), gap: gap);
-
-    canvas.drawPath(_topPath, dashedPaint);
-    canvas.drawPath(_rightPath, dashedPaint);
-    canvas.drawPath(_bottomPath, dashedPaint);
-    canvas.drawPath(_leftPath, dashedPaint);
-  }
-
-  Path getDashedPath({required Offset a, required Offset b, required double gap}) {
-    Size size = Size(b.dx - a.dx, b.dy - a.dy);
-    Path path = Path();
-    path.moveTo(a.dx, a.dy);
-    bool shouldDraw = true;
-    Offset currentPoint = a;
-
-    double radians = (size.bottomRight(Offset.zero) - size.topLeft(Offset.zero)).direction;
-    double distance = 0.0;
-    double fullDistance = (size.bottomRight(Offset.zero) - size.topLeft(Offset.zero)).distance;
-
-    while (distance < fullDistance) {
-      double nextDistance = distance + gap;
-      if (nextDistance > fullDistance) nextDistance = fullDistance;
-      
-      double dx = nextDistance * (b.dx - a.dx) / fullDistance;
-      double dy = nextDistance * (b.dy - a.dy) / fullDistance;
-      
-      if (shouldDraw) {
-        path.lineTo(a.dx + dx, a.dy + dy);
-      } else {
-        path.moveTo(a.dx + dx, a.dy + dy);
-      }
-      shouldDraw = !shouldDraw;
-      distance = nextDistance;
-    }
-    return path;
+    double r = 24.0;
+    
+    var path = Path()..addRRect(RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, x, y), Radius.circular(r)));
+    canvas.drawPath(path, dashedPaint); 
   }
 
   @override

@@ -1,9 +1,11 @@
 
 import 'package:flutter/material.dart';
+import 'package:fridge_to_fork_assistant/screens/recipe/favorite_recipes.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import 'add_item_overlay.dart';
 import 'weekly_plan_tab.dart';
 import 'shopping_list_tab.dart';
+import '../../widgets/recipe/bottom_nav.dart';
 
 const _bgColor = Color(0xFFF4F6F4);
 const _primaryColor = Color(0xFF214130);
@@ -44,9 +46,35 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              actions: const [
-                Icon(Icons.settings, color: Colors.black),
-                SizedBox(width: 8),
+              actions: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const FavoriteRecipesScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    margin: const EdgeInsets.only(right: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.grey.shade300),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        )
+                      ],
+                    ),
+                    child: Icon(Icons.favorite_border_outlined, size: 20, color: _primaryColor),
+                  ),
+                ),
               ],
             ),
 
@@ -79,7 +107,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
         ),
       ),
 
-      bottomNavigationBar: isDesktop ? null : const _BottomNav(),
+      
       floatingActionButton: isDesktop ? null : const _FloatingAddButton(),
     );
   }
@@ -155,25 +183,6 @@ class _TabButton extends StatelessWidget {
   }
 }
 
-
-class _BottomNav extends StatelessWidget {
-  const _BottomNav();
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: 2,
-      items: [
-        BottomNavigationBarItem(icon: Icon(Icons.kitchen), label: "Fridge"),
-        BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: "Recipes"),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today),
-          label: "Plan",
-        ),
-      ],
-    );
-  }
-}
 
 class _FloatingAddButton extends StatelessWidget {
   const _FloatingAddButton();

@@ -192,7 +192,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                 ),
-                // --- DELETE ACCOUNT ---
+                
             
               ],
             ),

@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
         // fontFamily: GoogleFonts.merriweather().fontFamily,
         fontFamily: GoogleFonts.montserrat().fontFamily,
       ),
-      home: const LoginScreen(), 
+      home: const LoginScreen(),
     );
   }
 }

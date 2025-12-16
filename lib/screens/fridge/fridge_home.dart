@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
+// Import các widget con
 import '../../widgets/fridge/fridge_item_card.dart';
 import '../../widgets/fridge/fridge_header.dart';
 import '../../widgets/fridge/fridge_search_bar.dart';
 import '../../widgets/fridge/fridge_section_header.dart';
-import '../../widgets/fridge/fridge_bottom_navigation.dart';
 import '../../widgets/fridge/fridge_delete_bar.dart';
 import '../../widgets/fridge/edit_item_bottom_sheet.dart';
 import '../../widgets/fridge/add_item_bottom_sheet.dart';
 import '../../widgets/fridge/delete_confirmation_modal.dart';
+import 'package:fridge_to_fork_assistant/screens/settings/settings.dart';
 import 'package:fridge_to_fork_assistant/widgets/fridge/models/fridge_item.dart';
+
+// LƯU Ý: Không cần import 'bottom_nav.dart' ở đây nữa vì MainScreen đã lo việc đó.
 
 class FridgeHomeScreen extends StatefulWidget {
   const FridgeHomeScreen({super.key});
@@ -21,83 +24,25 @@ class FridgeHomeScreen extends StatefulWidget {
 class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
   bool _isMultiSelectMode = false;
   final Set<String> _selectedItems = {};
-  int _currentNavIndex = 0;
   
-  // Dữ liệu mẫu
+  // XÓA: int _currentNavIndex = 0; -> Biến này không cần thiết vì MainScreen quản lý index
+
+  // Dữ liệu mẫu (Giữ nguyên)
   final List<FridgeItem> _eatMeFirstItems = [
-    FridgeItem(
-      id: '1',
-      name: 'Whole Milk',
-      quantity: 1,
-      unit: 'pcs',
-      category: 'Dairy',
-      expiryDays: 1,
-      imageUrl: '🥛',
-    ),
-    FridgeItem(
-      id: '2',
-      name: 'Baby Spinach',
-      quantity: 1,
-      unit: 'pcs',
-      category: 'Vegetables',
-      expiryDays: 3,
-      imageUrl: '🌿',
-    ),
+    FridgeItem(id: '1', name: 'Whole Milk', quantity: 1, unit: 'pcs', category: 'Dairy', expiryDays: 1, imageUrl: '🥛'),
+    FridgeItem(id: '2', name: 'Baby Spinach', quantity: 1, unit: 'pcs', category: 'Vegetables', expiryDays: 3, imageUrl: '🌿'),
   ];
 
   final List<FridgeItem> _inStockItems = [
-    FridgeItem(
-      id: '3',
-      name: 'Avocados',
-      quantity: 2,
-      unit: 'pcs',
-      category: 'Vegetables',
-      imageUrl: '🥑',
-    ),
-    FridgeItem(
-      id: '4',
-      name: 'Large Eg...',
-      quantity: 6,
-      unit: 'pcs',
-      category: 'Dairy',
-      imageUrl: '🥚',
-    ),
-    FridgeItem(
-      id: '5',
-      name: 'Cheddar',
-      quantity: 1,
-      unit: 'block',
-      category: 'Dairy',
-      imageUrl: '🧀',
-    ),
-    FridgeItem(
-      id: '6',
-      name: 'Tomatoes',
-      quantity: 500,
-      unit: 'g',
-      category: 'Vegetables',
-      imageUrl: '🍅',
-    ),
-    FridgeItem(
-      id: '7',
-      name: 'Strawb...',
-      quantity: 1,
-      unit: 'pack',
-      category: 'Vegetables',
-      imageUrl: '🍓',
-    ),
-    FridgeItem(
-      id: '8',
-      name: 'Peppers',
-      quantity: 3,
-      unit: 'pcs',
-      category: 'Vegetables',
-      imageUrl: '🫑',
-    ),
+    FridgeItem(id: '3', name: 'Avocados', quantity: 2, unit: 'pcs', category: 'Vegetables', imageUrl: '🥑'),
+    FridgeItem(id: '4', name: 'Large Eg...', quantity: 6, unit: 'pcs', category: 'Dairy', imageUrl: '🥚'),
+    FridgeItem(id: '5', name: 'Cheddar', quantity: 1, unit: 'block', category: 'Dairy', imageUrl: '🧀'),
+    FridgeItem(id: '6', name: 'Tomatoes', quantity: 500, unit: 'g', category: 'Vegetables', imageUrl: '🍅'),
+    FridgeItem(id: '7', name: 'Strawb...', quantity: 1, unit: 'pack', category: 'Vegetables', imageUrl: '🍓'),
+    FridgeItem(id: '8', name: 'Peppers', quantity: 3, unit: 'pcs', category: 'Vegetables', imageUrl: '🫑'),
   ];
 
-  // ==================== MULTI-SELECT METHODS ====================
-  
+  // ==================== MULTI-SELECT METHODS (Giữ nguyên) ====================
   void _toggleItemSelection(String itemId) {
     setState(() {
       if (_selectedItems.contains(itemId)) {
@@ -122,8 +67,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     });
   }
 
-  // ==================== ITEM CRUD METHODS ====================
-  
+  // ==================== ITEM CRUD METHODS (Giữ nguyên) ====================
   void _addItem(FridgeItem newItem) {
     setState(() {
       if (newItem.expiryDays != null && newItem.expiryDays! <= 3) {
@@ -156,16 +100,13 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     });
   }
 
-  // ==================== BOTTOM SHEETS & MODALS ====================
-  
+  // ==================== BOTTOM SHEETS & MODALS (Giữ nguyên) ====================
   void _showAddItemBottomSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => AddItemBottomSheet(
-        onAdd: _addItem,
-      ),
+      builder: (context) => AddItemBottomSheet(onAdd: _addItem),
     );
   }
 
@@ -174,16 +115,12 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => EditItemBottomSheet(
-        item: item,
-        onSave: _updateItem,
-      ),
+      builder: (context) => EditItemBottomSheet(item: item, onSave: _updateItem),
     );
   }
 
   void _showDeleteConfirmation() {
     if (_selectedItems.isEmpty) return;
-    
     showDialog(
       context: context,
       builder: (context) => DeleteConfirmationModal(
@@ -196,8 +133,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     );
   }
 
-  // ==================== UI HELPERS ====================
-  
+  // ==================== UI HELPERS (Giữ nguyên) ====================
   void _showSuccessSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -205,20 +141,12 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
           children: [
             const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 12),
-            Text(
-              message,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Text(message, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
           ],
         ),
         backgroundColor: const Color(0xFF28A745),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
         duration: const Duration(seconds: 2),
       ),
@@ -253,6 +181,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
+        // Thêm padding bottom để nội dung không bị BottomNav của MainScreen che mất khi cuộn xuống cuối
         child: Column(
           children: [
             FridgeHeader(
@@ -260,7 +189,10 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
               onCancel: _exitMultiSelectMode,
               onSave: _exitMultiSelectMode,
               onSettings: () {
-                // TODO: Navigate to settings
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                );
               },
             ),
             
@@ -272,6 +204,8 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
           ],
         ),
       ),
+      
+      // Floating Action Button
       floatingActionButton: _isMultiSelectMode 
           ? null 
           : FloatingActionButton(
@@ -281,20 +215,17 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
               child: const Icon(Icons.add, size: 28, color: Colors.white),
             ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+
+      // --- SỬA ĐỔI QUAN TRỌNG Ở ĐÂY ---
+      // Nếu đang MultiSelect: Hiển thị thanh Xóa của màn hình con.
+      // Nếu KHÔNG MultiSelect: Trả về null. Lúc này Scaffold con trong suốt ở đáy,
+      // người dùng sẽ nhìn thấy và tương tác được với BottomNav của MainScreen.
       bottomNavigationBar: _isMultiSelectMode
           ? FridgeDeleteBar(
               onDelete: _showDeleteConfirmation,
               isEnabled: _selectedItems.isNotEmpty,
             )
-          : FridgeBottomNavigation(
-              currentIndex: _currentNavIndex,
-              onTap: (index) {
-                setState(() {
-                  _currentNavIndex = index;
-                });
-                // TODO: Handle navigation
-              },
-            ),
+          : null, 
     );
   }
 
@@ -306,7 +237,6 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
         children: [
           const SizedBox(height: 20),
           
-          // Eat Me First Section - Horizontal Scroll
           if (_eatMeFirstItems.isNotEmpty && !_isMultiSelectMode) ...[
             const FridgeSectionHeader(title: 'Eat Me First'),
             const SizedBox(height: 12),
@@ -314,18 +244,20 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
             const SizedBox(height: 28),
           ],
           
-          // In Stock Section - Grid
           if (!_isMultiSelectMode) ...[
             const FridgeSectionHeader(title: 'In Stock'),
             const SizedBox(height: 12),
           ],
           _buildInStockGrid(),
-          const SizedBox(height: 100),
+          
+          // Khoảng trống dưới cùng quan trọng để list không bị BottomNav của MainScreen che
+          const SizedBox(height: 100), 
         ],
       ),
     );
   }
 
+  // ... Các widget con (_buildEatMeFirstSection, _buildInStockGrid) giữ nguyên như cũ
   Widget _buildEatMeFirstSection() {
     return SizedBox(
       height: 220,

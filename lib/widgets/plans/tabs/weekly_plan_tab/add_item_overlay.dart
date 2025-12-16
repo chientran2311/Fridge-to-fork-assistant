@@ -288,7 +288,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                   ),
                   icon: const Icon(Icons.check, color: Colors.white),
                   label: const Text(
-                    "Add to Fridge",
+                    "Add To List",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../widgets/recipe/bottom_nav.dart';
 import 'package:fridge_to_fork_assistant/screens/fridge/fridge_home.dart';
 import 'package:fridge_to_fork_assistant/screens/recipe/ai_recipe.dart';
+import 'package:fridge_to_fork_assistant/screens/meal&plan/planner_screen.dart';
 
 // Màn hình Plan tạm thời (nếu chưa có)
 class PlanScreen extends StatelessWidget {
@@ -26,7 +27,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = [
     const FridgeHomeScreen(), // Index 0: Tủ lạnh
     const AIRecipeScreen(),   // Index 1: Công thức AI
-    const PlanScreen(),       // Index 2: Plan
+    const PlannerScreen(),       // Index 2: Plan
   ];
 
   void _onItemTapped(int index) {

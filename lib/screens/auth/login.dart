@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+// Đảm bảo import đúng đường dẫn file responsive_ui.dart của bạn
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
-import 'package:fridge_to_fork_assistant/screens/main_screen.dart';
-import 'package:fridge_to_fork_assistant/screens/auth/register.dart';
-
-// Import Service và Widgets
-import '../../services/auth_service/auth_service.dart'; // Đảm bảo đường dẫn đúng tới file AuthService
-import '../../widgets/auth/auth_text_field.dart';
-import '../../widgets/auth/button_log_reg.dart';
-
+import 'register.dart';
+import '../main_screen.dart';
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -17,85 +12,18 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // --- KHAI BÁO BIẾN ---
+  // Màu chủ đạo (Dark Green)
   final Color mainColor = const Color(0xFF1B3B36);
   final Color secondaryColor = const Color(0xFFF0F1F1);
 
-  // 1. Controllers để lấy dữ liệu nhập vào
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-
-  // 2. Khởi tạo AuthService
-  final AuthService _authService = AuthService();
-
-  // 3. Trạng thái giao diện
-  bool _isObscure = true;
-  bool _isLoading = false; // Biến để hiện vòng xoay loading
-
-  // --- HÀM LOGIC ---
-
-  // Hàm giải phóng bộ nhớ khi tắt màn hình
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  // Hàm xử lý Đăng nhập
-  Future<void> _handleLogin() async {
-    // 1. Validate dữ liệu
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vui lòng nhập đầy đủ Email và Mật khẩu")),
-      );
-      return;
-    }
-
-    // 2. Bắt đầu trạng thái loading
-    setState(() => _isLoading = true);
-
-    // 3. Gọi AuthService
-    // Hàm này trả về null nếu thành công, trả về chuỗi lỗi nếu thất bại
-    String? errorMessage = await _authService.loginWithEmail(
-      email: email, 
-      password: password
-    );
-
-    // Kiểm tra widget còn tồn tại không trước khi dùng context (tránh lỗi async gap)
-    if (!mounted) return;
-
-    // 4. Kết thúc loading
-    setState(() => _isLoading = false);
-
-    // 5. Xử lý kết quả
-    if (errorMessage == null) {
-      // Thành công -> Chuyển sang màn hình chính
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-      );
-    } else {
-      // Thất bại -> Hiện thông báo lỗi từ Service trả về
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-  }
+  bool _isObscure = true; // Trạng thái ẩn/hiện mật khẩu
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: ResponsiveLayout(
-        // Mobile
+        // 1. Giao diện Mobile: Full màn hình, cuộn dọc
         mobileBody: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -104,12 +32,13 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-        // Desktop/Web
+
+        // 2. Giao diện Desktop/Web: Một Card nằm giữa màn hình
         desktopBody: Container(
-          color: secondaryColor,
+          color: secondaryColor, // Nền xám nhẹ cho desktop
           child: Center(
             child: Container(
-              width: 500,
+              width: 500, // Giới hạn chiều rộng
               padding: const EdgeInsets.all(40),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -130,17 +59,18 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // --- HÀM XÂY DỰNG FORM CHUNG (Dùng cho cả Mobile & Desktop) ---
   Widget _buildLoginForm(BuildContext context) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // 1. Logo
+        // 1. Logo Icon
         Container(
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: mainColor.withOpacity(0.1),
+            color: mainColor.withOpacity(0.1), // Màu xanh nhạt nền icon
             shape: BoxShape.circle,
           ),
           child: Icon(Icons.kitchen, size: 40, color: mainColor),
@@ -160,27 +90,31 @@ class _LoginScreenState extends State<LoginScreen> {
         Text(
           "Let's get cooking with what you have.",
           textAlign: TextAlign.center,
-          style: GoogleFonts.inter(fontSize: 16, color: Colors.grey[600]),
+          style: GoogleFonts.inter(
+            fontSize: 16,
+            color: Colors.grey[600],
+          ),
         ),
         const SizedBox(height: 32),
 
-        // 3. Email Field (Đã gắn Controller)
-        AuthTextField(
-          label: "Email Address",
+        // 3. Email Field
+        _buildLabel("Email Address"),
+        const SizedBox(height: 8),
+        _buildTextField(
           hintText: "hello@example.com",
           icon: Icons.mail_outline,
-          controller: _emailController, // <-- Gắn controller vào đây
         ),
         const SizedBox(height: 20),
 
-        // 4. Password Field (Đã gắn Controller)
-        AuthTextField(
-          label: "Password",
+        // 4. Password Field
+        _buildLabel("Password"),
+        const SizedBox(height: 8),
+        _buildTextField(
           hintText: "........",
-          icon: Icons.lock_outline,
+          icon: _isObscure
+              ? Icons.visibility_off_outlined
+              : Icons.visibility_outlined,
           isPassword: true,
-          isObscure: _isObscure,
-          controller: _passwordController, // <-- Gắn controller vào đây
           onIconTap: () {
             setState(() {
               _isObscure = !_isObscure;
@@ -192,9 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
-            onPressed: () {
-              // TODO: Thêm logic quên mật khẩu sau
-            },
+            onPressed: () {},
             child: Text(
               "Forgot Password?",
               style: TextStyle(
@@ -206,13 +138,21 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 24),
 
-        // 5. Login Button (Có Loading)
+        // 5. Login Button
         SizedBox(
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            // Nếu đang loading thì disable nút (null) để tránh bấm nhiều lần
-            onPressed: _isLoading ? null : _handleLogin, 
+            onPressed: () {
+              // Xử lý kiểm tra tài khoản mật khẩu ở đây...
+
+              // Nếu thành công, chuyển sang MainScreen
+              // Dùng pushReplacement để người dùng không bấm nút Back quay lại Login được
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const MainScreen()),
+              );
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: mainColor,
               shape: RoundedRectangleBorder(
@@ -220,34 +160,26 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               elevation: 0,
             ),
-            child: _isLoading 
-              // Hiển thị vòng xoay nếu đang xử lý
-              ? const SizedBox(
-                  width: 24, 
-                  height: 24, 
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                )
-              // Hiển thị chữ nếu bình thường
-              : const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      "Log In",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Icon(Icons.arrow_forward, color: Colors.white),
-                  ],
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  "Log In",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
+                const SizedBox(width: 8),
+                const Icon(Icons.arrow_forward, color: Colors.white),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 32),
 
-        // 6. Divider
+        // 6. Or continue with
         Row(
           children: [
             Expanded(child: Divider(color: Colors.grey[300])),
@@ -263,24 +195,30 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 32),
 
-        // 7. Google Button
+        // 7. Social Buttons (Google & Apple)
         Row(
           children: [
             Expanded(
-              child: ButtonLogReg(
+              child: _buildSocialButton(
                 text: "Google",
-                icon: Icons.g_mobiledata,
-                iconColor: Colors.red,
-                onTap: () {
-                  // TODO: Gọi hàm Google Login từ AuthService sau
-                },
+                icon: Icons
+                    .g_mobiledata, // Thay bằng ảnh logo Google nếu có asset
+                color: Colors.red,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildSocialButton(
+                text: "Apple",
+                icon: Icons.apple,
+                color: Colors.black,
               ),
             ),
           ],
         ),
         const SizedBox(height: 40),
 
-        // 8. Footer
+        // 8. Footer: Create Account
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -290,12 +228,14 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             GestureDetector(
               onTap: () {
+                // Điều hướng sang trang đăng ký
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const RegisterScreen()),
                 );
               },
-              child: const Text(
+              child: Text(
                 "Create an account",
                 style: TextStyle(
                   color: Colors.black,
@@ -307,6 +247,87 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  // --- Widget Label ---
+  Widget _buildLabel(String text) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
+  // --- Widget TextField Tùy biến ---
+  Widget _buildTextField({
+    required String hintText,
+    required IconData icon,
+    bool isPassword = false,
+    VoidCallback? onIconTap,
+  }) {
+    return TextField(
+      obscureText: isPassword ? _isObscure : false,
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: TextStyle(color: Colors.grey[400]),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        suffixIcon: IconButton(
+          icon: Icon(icon, color: Colors.grey[600]),
+          onPressed: onIconTap,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: BorderSide(color: mainColor, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+      ),
+    );
+  }
+
+  // --- Widget Social Button ---
+  Widget _buildSocialButton({
+    required String text,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: InkWell(
+        onTap: () {},
+        borderRadius: BorderRadius.circular(30),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(width: 8),
+            Text(
+              text,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

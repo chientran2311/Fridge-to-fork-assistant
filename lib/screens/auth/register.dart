@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+// Đảm bảo import đúng đường dẫn file responsive_ui.dart
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
-import 'package:fridge_to_fork_assistant/screens/main_screen.dart'; // Import màn hình chính
-
-// Import widgets và service
-import '../../widgets/auth/common_auth_widgets.dart'; 
-import '../../services/auth_service/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -15,112 +11,35 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  // Màu chủ đạo
   final Color mainColor = const Color(0xFF1B3B36);
   final Color secondaryColor = const Color(0xFFF0F1F1);
 
-  // 1. Khởi tạo Service
-  final AuthService _authService = AuthService();
-
-  // 2. Controllers để lấy dữ liệu
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
-
-  // 3. Trạng thái UI
+  // Trạng thái ẩn/hiện mật khẩu riêng biệt cho 2 ô
   bool _isPasswordObscure = true;
   bool _isConfirmPasswordObscure = true;
-  bool _isLoading = false; // Trạng thái loading
-
-  // Giải phóng bộ nhớ
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
-
-  // --- HÀM XỬ LÝ ĐĂNG KÝ ---
-  Future<void> _handleRegister() async {
-    // A. Lấy dữ liệu
-    final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-    final confirmPass = _confirmPasswordController.text.trim();
-
-    // B. Kiểm tra dữ liệu (Validate)
-    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPass.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vui lòng điền đầy đủ thông tin")),
-      );
-      return;
-    }
-
-    if (password != confirmPass) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Mật khẩu xác nhận không khớp")),
-      );
-      return;
-    }
-
-    // C. Bắt đầu Loading
-    setState(() => _isLoading = true);
-
-    // D. Gọi Service đăng ký
-    String? errorMessage = await _authService.registerWithEmail(
-      email: email, 
-      password: password
-    );
-
-    // Kiểm tra widget còn tồn tại
-    if (!mounted) return;
-
-    // E. Kết thúc Loading
-    setState(() => _isLoading = false);
-
-    // F. Xử lý kết quả
-    if (errorMessage == null) {
-      // Thành công: Chuyển vào màn hình chính
-      // (Lưu ý: Có thể thêm logic cập nhật tên user tại đây nếu cần)
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-        (route) => false, // Xóa hết lịch sử quay lại trang Login/Register
-      );
-    } else {
-      // Thất bại: Hiện lỗi
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage), 
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: ResponsiveLayout(
-        // --- Mobile ---
+        // --- 1. Giao diện Mobile ---
         mobileBody: SafeArea(
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: _buildRegisterContent(context),
+              child: _buildRegisterForm(context),
             ),
           ),
         ),
 
-        // --- Desktop ---
+        // --- 2. Giao diện Desktop/Web ---
         desktopBody: Container(
           color: secondaryColor,
           child: Center(
             child: Container(
-              width: 500,
+              width: 500, // Card cố định ở giữa màn hình
               padding: const EdgeInsets.all(40),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -133,7 +52,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ],
               ),
-              child: _buildRegisterContent(context),
+              child: _buildRegisterForm(context),
             ),
           ),
         ),
@@ -141,27 +60,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // Nội dung Form
-  Widget _buildRegisterContent(BuildContext context) {
+  // --- FORM LOGIC CHUNG ---
+  Widget _buildRegisterForm(BuildContext context) {
     return Column(
       children: [
-        // 1. Back Button
+        // 1. Back Button (Căn trái)
         Align(
           alignment: Alignment.centerLeft,
           child: IconButton(
             icon: const Icon(Icons.arrow_back, size: 28),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context), // Quay lại Login
           ),
         ),
-
-        // 2. Avatar Widget
-        const AvatarDisplay(
-          imageUrl: "https://i.pravatar.cc/300",
-          size: 100,
+        
+        // 2. Avatar Image
+        Container(
+          width: 100,
+          height: 100,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 4),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+            // Bạn có thể thay bằng NetworkImage hoặc AssetImage
+            image: const DecorationImage(
+              image: NetworkImage("https://i.pravatar.cc/300"), 
+              fit: BoxFit.cover,
+            ),
+          ),
         ),
         const SizedBox(height: 24),
 
-        // 3. Title Text
+        // 3. Title & Subtitle
         Text(
           "Create Account",
           style: GoogleFonts.merriweather(
@@ -173,66 +108,64 @@ class _RegisterScreenState extends State<RegisterScreen> {
         const SizedBox(height: 8),
         Text(
           "Start saving food today",
-          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey[600],
+          ),
         ),
         const SizedBox(height: 32),
 
-        // 4. Các trường nhập liệu (Gắn Controller vào đây)
-        // LƯU Ý: Bạn cần đảm bảo CustomAuthField có tham số 'controller'
-        CustomAuthField(
-          label: "Full Name",
-          hintText: "Jane Doe",
-          mainColor: mainColor,
-          controller: _nameController, // <--- Controller
-        ),
+        // 4. Form Fields
+        _buildLabel("Full Name"),
+        const SizedBox(height: 8),
+        _buildTextField(hintText: "Jane Doe"),
+        
         const SizedBox(height: 16),
         
-        CustomAuthField(
-          label: "Email Address",
-          hintText: "jane@example.com",
-          mainColor: mainColor,
-          controller: _emailController, // <--- Controller
-        ),
-        const SizedBox(height: 16),
+        _buildLabel("Email Address"),
+        const SizedBox(height: 8),
+        _buildTextField(hintText: "jane@example.com"),
         
-        CustomAuthField(
-          label: "Password",
+        const SizedBox(height: 16),
+
+        _buildLabel("Password"),
+        const SizedBox(height: 8),
+        _buildTextField(
           hintText: "........",
           isPassword: true,
           isObscure: _isPasswordObscure,
-          mainColor: mainColor,
-          controller: _passwordController, // <--- Controller
           onIconTap: () {
             setState(() {
               _isPasswordObscure = !_isPasswordObscure;
             });
           },
         ),
+
         const SizedBox(height: 16),
-        
-        CustomAuthField(
-          label: "Confirm Password",
+
+        _buildLabel("Confirm Password"),
+        const SizedBox(height: 8),
+        _buildTextField(
           hintText: "........",
           isPassword: true,
           isObscure: _isConfirmPasswordObscure,
-          mainColor: mainColor,
-          controller: _confirmPasswordController, // <--- Controller
           onIconTap: () {
             setState(() {
               _isConfirmPasswordObscure = !_isConfirmPasswordObscure;
             });
           },
         ),
+
         const SizedBox(height: 32),
 
-        // 5. Nút đăng ký (Gắn logic _handleRegister)
-        // Chúng ta có thể cần sửa PrimaryButton để hỗ trợ loading state
-        // Hoặc dùng ElevatedButton trực tiếp nếu PrimaryButton chưa hỗ trợ
+        // 5. Sign Up Button
         SizedBox(
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
-            onPressed: _isLoading ? null : _handleRegister, // Disable khi loading
+            onPressed: () {
+              // Logic đăng ký
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: mainColor,
               shape: RoundedRectangleBorder(
@@ -240,22 +173,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               elevation: 0,
             ),
-            child: _isLoading
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Text(
-                    "Sign Up",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+            child: const Text(
+              "Sign Up",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
           ),
         ),
         
         const SizedBox(height: 24),
 
-        // 6. Footer Text
+        // 6. Footer (Back to Login)
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -264,11 +195,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
               style: TextStyle(color: Colors.grey[600], fontSize: 16),
             ),
             GestureDetector(
-              onTap: () => Navigator.pop(context),
+              onTap: () {
+                Navigator.pop(context); // Quay lại Login
+              },
               child: Text(
                 "Log in",
                 style: TextStyle(
-                  color: mainColor,
+                  color: mainColor, // Dùng màu xanh chủ đạo cho đẹp
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -278,6 +211,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         const SizedBox(height: 20),
       ],
+    );
+  }
+
+  // --- Widget Helper: Label ---
+  Widget _buildLabel(String text) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.bold, // Semi-bold giống ảnh
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
+  // --- Widget Helper: TextField ---
+  Widget _buildTextField({
+    required String hintText,
+    bool isPassword = false,
+    bool isObscure = false,
+    VoidCallback? onIconTap,
+  }) {
+    return TextField(
+      obscureText: isPassword ? isObscure : false,
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: TextStyle(color: Colors.grey[400]),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        // Chỉ hiện icon mắt nếu là trường password
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  isObscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  color: Colors.grey[500],
+                ),
+                onPressed: onIconTap,
+              )
+            : null,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(30),
+          borderSide: BorderSide(color: mainColor, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+      ),
     );
   }
 }

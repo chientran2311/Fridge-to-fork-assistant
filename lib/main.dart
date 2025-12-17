@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:fridge_to_fork_assistant/screens/main_screen.dart';
+
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/auth/login.dart';
-import 'package:fridge_to_fork_assistant/screens/fridge/fridge_home.dart'; 
-void main() {
+import 'package:firebase_core/firebase_core.dart'; // 1. Import này
+import 'firebase_options.dart';
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 5. Khởi tạo Firebase với cấu hình từ file options
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 

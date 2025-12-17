@@ -5,7 +5,6 @@ import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import 'add_item_overlay.dart';
 import 'weekly_plan_tab.dart';
 import 'shopping_list_tab.dart';
-import '../../widgets/recipe/bottom_nav.dart';
 
 const _bgColor = Color(0xFFF4F6F4);
 const _primaryColor = Color(0xFF214130);

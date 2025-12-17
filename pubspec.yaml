@@ -12,17 +12,17 @@ dependencies:
   dotted_border: ^2.1.0
   flutter:
     sdk: flutter
+    
 
   # Giữ lại icon mặc định
   cupertino_icons: ^1.0.8
-
+  
   # Lấy bản mới hơn
   google_fonts: ^6.3.3
   table_calendar: ^3.0.9
   # Giữ lại thư viện quét mã từ nhánh manh
   mobile_scanner: ^3.5.0
-  firebase_auth: ^6.1.3
-  firebase_core: ^4.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
-import 'package:fridge_to_fork_assistant/screens/main_screen.dart';
-
+import '../../utils/database_seeder.dart'; // Import DatabaseSeeder
+import 'package:go_router/go_router.dart';
 // Import các Widgets UI
 import 'package:fridge_to_fork_assistant/widgets/auth/common_auth_widgets.dart'; // Chứa CustomAuthField, PrimaryButton
 import 'package:fridge_to_fork_assistant/widgets/auth/login_header.dart';
 import 'package:fridge_to_fork_assistant/widgets/auth/login_footer.dart';
 import 'package:fridge_to_fork_assistant/widgets/auth/social_buttons.dart';
-
-// Import Service và Notification Widget
 import '../../services/auth_service.dart'; // Đảm bảo đúng đường dẫn file AuthService
 import '../../widgets/notification.dart';  // Đảm bảo đúng đường dẫn file CustomToast
 
@@ -73,10 +71,9 @@ class _LoginScreenState extends State<LoginScreen> {
       CustomToast.show(context, "Đăng nhập thành công!");
       
       // Chuyển trang và xóa lịch sử để không back lại login được
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-      );
+      if (mounted) {
+        context.go('/fridge'); 
+      }
     } else {
       // --- THẤT BẠI ---
       CustomToast.show(context, errorMessage, isError: true);
@@ -196,7 +193,41 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // 8. Footer
         const SignupFooter(),
-      ],
-    );
-  }
+     const SizedBox(height: 50), // Cách ra một chút cho dễ nhìn
+      Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50, // Nền đỏ nhạt cảnh báo
+          border: Border.all(color: Colors.red),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          children: [
+            const Text(
+              "Khu vực Developer (Xóa sau khi xong)",
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+            TextButton.icon(
+              icon: const Icon(Icons.cloud_upload, color: Colors.red),
+              label: const Text("Tạo Database Mẫu (Firestore)", style: TextStyle(color: Colors.red)),
+              onPressed: () async {
+                // 1. Hiện loading để biết đang chạy
+                CustomToast.show(context, "Đang khởi tạo dữ liệu...");
+                
+                // 2. Gọi hàm Seeder (Đây là lệnh thực thi)
+                await DatabaseSeeder().seedDatabase();
+                
+                // 3. Báo thành công
+                if (context.mounted) {
+                   CustomToast.show(context, "Xong! Kiểm tra Firebase Console ngay.");
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+      // ========================================================
+    ],
+  );
+}
 }

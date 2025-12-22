@@ -29,6 +29,7 @@ dependencies:
   cloud_firestore: ^6.1.1
   provider: ^6.1.5+1
   intl: ^0.20.2
+  flutter_dotenv: ^6.0.0
 
 dev_dependencies:
   flutter_test:
@@ -41,3 +42,4 @@ flutter:
   assets:
     # Import cả thư mục assets/images/ để tự nhận mọi ảnh bên trong
     - assets/images/
+    - .env

@@ -79,7 +79,16 @@ class HouseholdRecipe {
       missedIngredientCount: 0,
     );
   }
-
+  factory HouseholdRecipe.fromJson(Map<String, dynamic> json) {
+    return HouseholdRecipe(
+      apiRecipeId: json['id'],
+      title: json['title'],
+      imageUrl: json['image'] ?? '',
+      // Spoonacular trả về field này khi dùng endpoint findByIngredients
+      missedIngredientCount: json['missedIngredientCount'] ?? 0,
+      usedIngredientCount: json['usedIngredientCount'] ?? 0,
+    );
+  }
   // ==========================================================
   // 3. Method: Chuyển thành Map để lưu xuống Firestore
   // ==========================================================

@@ -14,7 +14,7 @@ import 'router/app_router.dart';
 // 4. Import các Provider (Bạn đã tạo ở bước trước)
 import 'providers/inventory_provider.dart';
 import 'providers/recipe_provider.dart';
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -22,7 +22,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
+  await dotenv.load(fileName: ".env");
   runApp(
     // --- KHỐI MULTIPROVIDER Ở ĐÂY ---
     // Nó bọc lấy MyApp để cung cấp dữ liệu cho toàn bộ ứng dụng

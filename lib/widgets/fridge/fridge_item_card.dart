@@ -1,233 +1,229 @@
 import 'package:flutter/material.dart';
-import 'package:fridge_to_fork_assistant/widgets/fridge/models/fridge_item.dart';
+import '../../models/inventory_item.dart'; // Import Model mới
 
 class FridgeItemCard extends StatelessWidget {
-  final FridgeItem item;
+  final InventoryItem item;
   final bool isSelected;
   final bool isMultiSelectMode;
-  final bool showAddButton;
-  final VoidCallback onTap;
-  final VoidCallback onLongPress;
+  final bool showAddButton; // Giữ lại biến này nếu muốn dùng cho màn hình Search sau này
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
+  final VoidCallback? onAdd;
 
   const FridgeItemCard({
     super.key,
     required this.item,
-    required this.isSelected,
-    required this.isMultiSelectMode,
+    this.isSelected = false,
+    this.isMultiSelectMode = false,
     this.showAddButton = false,
-    required this.onTap,
-    required this.onLongPress,
+    this.onTap,
+    this.onLongPress,
+    this.onAdd,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Logic xác định màu hạn sử dụng
+    final int days = item.daysLeft;
+    Color expiryColor = const Color(0xFF28A745); // Xanh (An toàn)
+    String expiryText = '$days days';
+
+    if (days < 0) {
+      expiryColor = const Color(0xFFDC3545); // Đỏ (Hết hạn)
+      expiryText = 'Expired';
+    } else if (days <= 2) {
+      expiryColor = const Color(0xFFFFC107); // Vàng (Sắp hết)
+      expiryText = '$days days left';
+    }
+
     return GestureDetector(
       onTap: onTap,
       onLongPress: onLongPress,
-      child: Container(
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF2D5F4F) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+      child: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: isSelected
+                  ? Border.all(color: const Color(0xFF2D5F4F), width: 2.5)
+                  : Border.all(color: Colors.transparent, width: 0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Phần 1: Ảnh và Badge (Stack)
-            Expanded(
-              child: Stack(
-                children: [
-                  // Container ảnh với gradient background - Full width height
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: _getGradientColors(),
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        item.imageUrl,
-                        style: const TextStyle(fontSize: 64),
-                      ),
-                    ),
-                  ),
-                  
-                  // Badge "X DAYS"
-                  if (item.expiryDays != null && !isSelected)
-                    Positioned(
-                      top: 20,
-                      right: 20,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getExpiryBadgeBackgroundColor(),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '${item.expiryDays} DAY${item.expiryDays! > 1 ? 'S' : ''}',
-                          style: TextStyle(
-                            color: _getExpiryBadgeTextColor(),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ),
-                    ),
-                  
-                  // Selection Checkbox Overlay - REMOVED
-                  // Không cần checkbox nữa
-                  
-                  // Add Button (only for Peppers)
-                  if (showAddButton && !isMultiSelectMode)
-                    Positioned(
-                      bottom: 20,
-                      right: 20,
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2D5F4F),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF2D5F4F).withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.add,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            
-            // Phần 2: Nội dung chữ
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 1. HEADER: Ảnh & Tag ngày hết hạn
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Ảnh món ăn
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8F9FA),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        alignment: Alignment.center,
+                        child: _buildItemImage(),
+                      ),
+                      
+                      // Badge hạn sử dụng (Chỉ hiện khi không phải mode select)
+                      if (!isMultiSelectMode && item.expiryDate != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: expiryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            expiryText,
+                            style: TextStyle(
+                              color: expiryColor == const Color(0xFFFFC107) 
+                                  ? Colors.orange[800] 
+                                  : expiryColor,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  
+                  const Spacer(),
+                  
+                  // 2. INFO: Tên & Số lượng
                   Text(
                     item.name,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : const Color(0xFF1A1A1A),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      height: 1.3,
-                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    _getSubtitle(),
-                    style: TextStyle(
-                      color: isSelected 
-                          ? Colors.white.withOpacity(0.8)
-                          : (item.expiryDays != null 
-                              ? const Color(0xFFE63946) 
-                              : const Color(0xFF6B7280)),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  Row(
+                    children: [
+                      // Tag category (ví dụ Meat, Dairy...)
+                      if (item.quickTag != null && item.quickTag!.isNotEmpty) ...[
+                         Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            item.quickTag!.toUpperCase(),
+                            style: TextStyle(fontSize: 10, color: Colors.grey[600], fontWeight: FontWeight.w600),
+                          ),
+                         ),
+                         const SizedBox(width: 6),
+                      ],
+                      Text(
+                        '${item.quantity.toStringAsFixed(item.quantity % 1 == 0 ? 0 : 1)} ${item.unit}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF868E96),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+
+          // Icon checkmark khi chọn Multi-select
+          if (isMultiSelectMode)
+            Positioned(
+              top: 10,
+              right: 10,
+              child: Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF2D5F4F) : Colors.transparent,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: isSelected ? const Color(0xFF2D5F4F) : const Color(0xFFDEE2E6),
+                    width: 2,
+                  ),
+                ),
+                child: isSelected
+                    ? const Icon(Icons.check, size: 16, color: Colors.white)
+                    : null,
+              ),
+            ),
+            
+           // Nút Add (Dùng cho màn hình Search/Suggest sau này)
+           if (showAddButton && !isMultiSelectMode)
+            Positioned(
+              bottom: 8,
+              right: 8,
+              child: InkWell(
+                onTap: onAdd,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2D5F4F),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.add, size: 18, color: Colors.white),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 
-  String _getSubtitle() {
-    if (item.expiryDays != null) {
-      return item.expiryDays! <= 1 ? 'Expiring soon' : 'Plan a meal';
-    }
-    return '${item.quantity}${item.unit}';
-  }
-
-  List<Color> _getGradientColors() {
-    // Màu gradient dựa theo category và expiry status
-    if (item.expiryDays != null) {
-      // Eat Me First items - darker green tones
-      return [
-        const Color(0xFF2F5043),
-        const Color(0xFF1E3A2F),
-      ];
+  Widget _buildItemImage() {
+    // Ưu tiên hiển thị ảnh từ URL
+    if (item.imageUrl != null && item.imageUrl!.startsWith('http')) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.network(
+          item.imageUrl!,
+          fit: BoxFit.cover,
+          width: 48,
+          height: 48,
+          errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 24, color: Colors.grey),
+        ),
+      );
     }
     
-    // In Stock items
-    if (item.name.contains('Avocados')) {
-      return [
-        const Color(0xFF3D5A4F),
-        const Color(0xFF2A4538),
-      ];
-    } else if (item.name.contains('Eg')) {
-      return [
-        const Color(0xFF4A5568),
-        const Color(0xFF2D3748),
-      ];
-    } else if (item.name.contains('Cheddar')) {
-      return [
-        const Color(0xFF2F5F4F),
-        const Color(0xFF1F4538),
-      ];
-    } else if (item.name.contains('Tomatoes')) {
-      return [
-        const Color(0xFF4A4A4A),
-        const Color(0xFF2A2A2A),
-      ];
-    } else if (item.name.contains('Strawb')) {
-      return [
-        const Color(0xFFB0B0B0),
-        const Color(0xFF858585),
-      ];
-    } else if (item.name.contains('Peppers')) {
-      return [
-        const Color(0xFF1A3A2A),
-        const Color(0xFF0F2518),
-      ];
+    // Nếu không có ảnh URL, hiển thị Icon dựa trên QuickTag
+    IconData icon = Icons.fastfood;
+    Color color = Colors.grey;
+
+    final tag = item.quickTag?.toLowerCase() ?? '';
+    if (tag.contains('meat') || tag.contains('thịt')) {
+      icon = Icons.kebab_dining;
+      color = Colors.red.shade300;
+    } else if (tag.contains('veg') || tag.contains('rau')) {
+      icon = Icons.eco;
+      color = Colors.green.shade300;
+    } else if (tag.contains('dairy') || tag.contains('sữa') || tag.contains('trứng')) {
+      icon = Icons.egg;
+      color = Colors.orange.shade300;
+    } else if (tag.contains('fruit') || tag.contains('quả')) {
+      icon = Icons.apple;
+      color = Colors.pink.shade300;
     }
-    
-    return [
-      const Color(0xFF3D5F4F),
-      const Color(0xFF2D4538),
-    ];
-  }
 
-  Color _getExpiryBadgeBackgroundColor() {
-    if (item.expiryDays == null) return const Color(0xFFE0E0E0);
-    if (item.expiryDays! <= 1) return const Color(0xFFFFDBDD);
-    if (item.expiryDays! <= 3) return const Color(0xFFFFE8CC);
-    return const Color(0xFFD4EDDA);
-  }
-
-  Color _getExpiryBadgeTextColor() {
-    if (item.expiryDays == null) return const Color(0xFF757575);
-    if (item.expiryDays! <= 1) return const Color(0xFFD32F2F);
-    if (item.expiryDays! <= 3) return const Color(0xFFF57C00);
-    return const Color(0xFF388E3C);
+    return Icon(icon, size: 24, color: color);
   }
 }

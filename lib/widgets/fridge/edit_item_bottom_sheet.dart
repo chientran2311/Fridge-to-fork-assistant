@@ -394,55 +394,55 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                   const SizedBox(height: 20),
 
                   // Scan Barcode Button
-                  DottedBorder(
-                    borderType: BorderType.RRect,
-                    radius: const Radius.circular(12), // Bo góc giống code cũ
-                    padding: EdgeInsets.zero, // Quan trọng để inkwell tràn viền
-                    color: const Color.fromARGB(150, 15, 189,
-                        59), // Màu viền (đậm hơn chút cho rõ nét đứt)
-                    strokeWidth: 1.5, // Độ dày nét đứt
-                    dashPattern: const [6, 4], // [độ dài nét, khoảng cách]
-                    child: Material(
-                      color: const Color.fromARGB(
-                          5, 15, 189, 59), // Màu nền (backgroundColor cũ)
-                      borderRadius: BorderRadius.circular(12),
-                      child: InkWell(
-                        onTap: () {
-                          Navigator.pushReplacement(context,
-                              MaterialPageRoute(builder: (context) {
-                            return const FridgeBarcodeScanScreen();
-                          }));
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          width:
-                              double.infinity, // minimumSize: width infinity cũ
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 14), // padding cũ
-                          alignment: Alignment.center,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(
-                                Icons.qr_code_scanner,
-                                color: Color(0xFF0A8A2B), // foregroundColor cũ
-                              ),
-                              SizedBox(
-                                  width: 8), // Khoảng cách giữa icon và text
-                              Text(
-                                'Scan Barcode',
-                                style: TextStyle(
-                                  color:
-                                      Color(0xFF0A8A2B), // foregroundColor cũ
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  // DottedBorder(
+                  //   borderType: BorderType.RRect,
+                  //   radius: const Radius.circular(12), // Bo góc giống code cũ
+                  //   padding: EdgeInsets.zero, // Quan trọng để inkwell tràn viền
+                  //   color: const Color.fromARGB(150, 15, 189,
+                  //       59), // Màu viền (đậm hơn chút cho rõ nét đứt)
+                  //   strokeWidth: 1.5, // Độ dày nét đứt
+                  //   dashPattern: const [6, 4], // [độ dài nét, khoảng cách]
+                  //   child: Material(
+                  //     color: const Color.fromARGB(
+                  //         5, 15, 189, 59), // Màu nền (backgroundColor cũ)
+                  //     borderRadius: BorderRadius.circular(12),
+                  //     child: InkWell(
+                  //       onTap: () {
+                  //         Navigator.pushReplacement(context,
+                  //             MaterialPageRoute(builder: (context) {
+                  //           return const FridgeBarcodeScanScreen();
+                  //         }));
+                  //       },
+                  //       borderRadius: BorderRadius.circular(12),
+                  //       child: Container(
+                  //         width:
+                  //             double.infinity, // minimumSize: width infinity cũ
+                  //         padding: const EdgeInsets.symmetric(
+                  //             vertical: 14), // padding cũ
+                  //         alignment: Alignment.center,
+                  //         child: Row(
+                  //           mainAxisSize: MainAxisSize.min,
+                  //           children: const [
+                  //             Icon(
+                  //               Icons.qr_code_scanner,
+                  //               color: Color(0xFF0A8A2B), // foregroundColor cũ
+                  //             ),
+                  //             SizedBox(
+                  //                 width: 8), // Khoảng cách giữa icon và text
+                  //             Text(
+                  //               'Scan Barcode',
+                  //               style: TextStyle(
+                  //                 color:
+                  //                     Color(0xFF0A8A2B), // foregroundColor cũ
+                  //                 fontWeight: FontWeight.w500,
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
 
                   const SizedBox(height: 12),
 

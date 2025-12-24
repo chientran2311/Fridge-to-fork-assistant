@@ -1,266 +1,120 @@
 import 'package:flutter/material.dart';
-import '../../widgets/recipe/rectangle_btn.dart';
-import '../../screens/recipe/option_modal.dart';
-class RecipeDetailScreen extends StatelessWidget {
-  final Color cardColor = const Color(0xFFE7EEE9);
-  final Color textColor = const Color(0xFF214130);
+import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
+import 'package:fridge_to_fork_assistant/widgets/common/primary_button.dart';
+import 'package:fridge_to_fork_assistant/widgets/recipe/detail/ingredients_section.dart';
+import 'package:fridge_to_fork_assistant/widgets/recipe/detail/instructions_section.dart';
+import 'package:fridge_to_fork_assistant/widgets/recipe/detail/recipe_detail_app_bar.dart';
+import 'package:fridge_to_fork_assistant/widgets/recipe/detail/recipe_tags_section.dart';
+import 'package:fridge_to_fork_assistant/widgets/recipe/detail/recipe_title_section.dart';
 
+class RecipeDetailScreen extends StatefulWidget {
   const RecipeDetailScreen({super.key});
+
+  @override
+  State<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
+}
+
+class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
+  // Màu sắc chủ đạo
+  final Color mainColor = const Color(0xFF1B3B36);
+
+  // Dữ liệu mẫu (Hardcode theo ảnh)
+  final List<Map<String, dynamic>> ingredients = [
+    {"name": "2 ripe Avocados", "inFridge": true},
+    {"name": "200g Spinach", "inFridge": false},
+    {"name": "500g Pasta", "inFridge": false},
+    {"name": "1 Lemon", "inFridge": true},
+    {"name": "3 Garlic Cloves", "inFridge": false},
+  ];
+
+  final List<String> instructions = [
+    "Boil the pasta in salted water according to the package instructions until al dente. Reserve 1/2 cup of pasta water before draining.",
+    "While pasta cooks, combine avocado, spinach, lemon juice, garlic, and olive oil in a blender. Blend until smooth and creamy.",
+    "Drain the pasta and return it to the pot. Pour the green sauce over the pasta. Add the reserved pasta water a little at a time to loosen the sauce if needed.",
+    "Toss gently until well coated. Season with salt and pepper to taste. Serve immediately topped with optional parmesan or pine nuts."
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: cardColor,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // =============================
-            // HEADER IMAGE + ACTION BUTTONS
-            // =============================
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    bottom: Radius.circular(12), // sửa từ 30 → 12
-                  ),
-                  child: Image.asset(
-                    'assets/images/Suggested.png',
-                    width: double.infinity,
-                    height: 250,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-
-                // Top buttons
-                Positioned(
-                  top: 40,
-                  left: 15,
-                  right: 15,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // --- Nút Back (Đã xử lý logic quay lại) ---
-                      RectangleBtn(
-                        icon: Icons.arrow_back,
-                        color: textColor,
-                        onTap: () {
-                          Navigator.pop(context); // Quay lại màn hình trước
-                        },
-                      ),
-
-                      Row(
-                        children: [
-                          // --- Nút Bookmark ---
-                          RectangleBtn(
-                            icon: Icons.bookmark_border,
-                            color: textColor,
-                            onTap: () {
-                              // Xử lý logic lưu bookmark tại đây
-                              print("Bookmark tapped");
-                            },
-                          ),
-
-                          const SizedBox(width: 10),
-
-                          // --- Nút More (Đã xử lý hiện OptionModal) ---
-                          RectangleBtn(
-                            icon: Icons.more_horiz,
-                            color: textColor,
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                barrierColor:
-                                    Colors.transparent, // Nền trong suốt
-                                builder: (context) => const OptionModal(),
-                              );
-                            },
-                          ),
-                        ],
-                      )
-                    ],
-                  ),
-                ),
-
-                // Drag indicator (giữ rectangular nhưng radius 12)
-                Positioned(
-                  bottom: 8,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      width: 45,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: Colors.white70,
-                        borderRadius: BorderRadius.circular(12), // sửa 20 → 12
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            // =============================
-            // CONTENT CARD
-            // =============================
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(25),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  Text(
-                    "Braised pork",
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Info Row
-                  Row(
-                    children: [
-                      _infoIcon(Icons.timer, "3h"),
-                      const SizedBox(width: 20),
-                      _infoIcon(Icons.star, "Hard"),
-                      const SizedBox(width: 20),
-                      _infoIcon(Icons.local_fire_department, "512 kcal"),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Description
-                  Text(
-                    "Lorem Ipsum is simply dummy text of the printing "
-                    "and typesetting industry. Lorem Ipsum has been the "
-                    "industry's standard dummy text ever since the 1500s",
-                    style: TextStyle(
-                      color: textColor.withOpacity(0.7),
-                      fontSize: 15,
-                    ),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  // Ingredients title
-                  Text(
-                    "Ingredients",
-                    style: TextStyle(
-                      color: textColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Ingredient Items
-                  _ingredientItem(
-                    image: "assets/images/pork.png",
-                    name: "Pork",
-                    amount: "300 g",
-                    iconColor: textColor,
-                  ),
-                  const SizedBox(height: 12),
-
-                  _ingredientItem(
-                    image: "assets/images/giavithitkho.png",
-                    name: "Knor pack",
-                    amount: "100 g",
-                    iconColor: textColor,
-                  ),
-                  const SizedBox(height: 12),
-
-                  _ingredientItem(
-                    image: "assets/images/trungga.png",
-                    name: "Eggs",
-                    amount: "3 eggs",
-                    iconColor: textColor,
-                  ),
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
+      backgroundColor: Colors.white,
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            )
           ],
+        ),
+        child: PrimaryButton(
+          text: "Add to calendar",
+          icon: Icons.calendar_today_outlined,
+          onPressed: () { /* Add to calendar logic */ },
+          backgroundColor: mainColor,
+        ),
+      ),
+      body: ResponsiveLayout(
+        // --- MOBILE LAYOUT ---
+        mobileBody: _buildContent(),
+
+        // --- WEB/DESKTOP LAYOUT ---
+        desktopBody: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 800),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20)],
+            ),
+            child: _buildContent(),
+          ),
         ),
       ),
     );
   }
 
-  // ==========================================================
-  // WIDGET: Circle Button on Image
-  // ==========================================================
- 
-
-  // ==========================================================
-  // WIDGET: Info icon row (timer - hard - kcal)
-  // ==========================================================
-  Widget _infoIcon(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, size: 18, color: textColor),
-        const SizedBox(width: 4),
-        Text(
-          text,
-          style: TextStyle(
-            color: textColor,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+  Widget _buildContent() {
+    return CustomScrollView(
+      slivers: [
+        const RecipeDetailAppBar(
+          imageUrl:
+              "https://images.unsplash.com/photo-1551183053-bf91a1d81141?q=80&w=600&auto=format&fit=crop",
         ),
-      ],
-    );
-  }
-
-  Widget _ingredientItem({
-    required String image,
-    required String name,
-    required String amount,
-    required Color iconColor,
-  }) {
-    return Row(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.asset(
-            image,
-            width: 55,
-            height: 55,
-            fit: BoxFit.cover,
-          ),
-        ),
-        const SizedBox(width: 15),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                name,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
+        SliverToBoxAdapter(
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+            ),
+            transform: Matrix4.translationValues(0, -30, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RecipeTitleSection(
+                  title: "Creamy Avocado & Spinach Pesto Pasta",
+                  author: "By GreenChef • Italian Inspired",
+                  mainColor: mainColor,
                 ),
-              ),
-              Text(
-                amount,
-                style: TextStyle(
-                  color: textColor.withOpacity(0.6),
-                  fontSize: 14,
+                const RecipeTagsSection(),
+                const SizedBox(height: 32),
+                IngredientsSection(
+                  ingredients: ingredients,
+                  mainColor: mainColor,
                 ),
-              ),
-            ],
+                const SizedBox(height: 32),
+                InstructionsSection(
+                  instructions: instructions,
+                  mainColor: mainColor,
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
-        ),
-        Icon(Icons.check_circle, color: iconColor, size: 24),
+        )
       ],
     );
   }

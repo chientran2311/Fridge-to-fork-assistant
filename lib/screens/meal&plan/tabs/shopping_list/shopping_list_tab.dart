@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:fridge_to_fork_assistant/widgets/plans/modals/planner_confirm_delete_modal.dart';
-import '../../../../widgets/plans/tabs/shopping_list_tab/circle_button.dart';
+// import 'package:fridge_to_fork_assistant/widgets/plans/modals/planner_confirm_delete_modal.dart';
+// import '../../../../widgets/plans/tabs/shopping_list_tab/circle_button.dart';
 import '../../../../widgets/plans/tabs/shopping_list_tab/section_header.dart';
 import '../../../../widgets/plans/tabs/shopping_list_tab/shopping_filter.dart';
 import '../../../../widgets/plans/tabs/shopping_list_tab/shopping_item.dart';

@@ -1,215 +1,299 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart'; // Đảm bảo bạn đã có package này
+import 'package:google_fonts/google_fonts.dart';
+import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
+
+import 'package:fridge_to_fork_assistant/widgets/common/primary_button.dart';
 
 class FilterModal extends StatefulWidget {
   const FilterModal({super.key});
+
+  // --- HÀM STATIC ĐỂ GỌI MODAL RESPONSIVE ---
+  // Gọi hàm này từ màn hình cha, nó sẽ tự quyết định hiện Dialog hay BottomSheet
+  static void show(BuildContext context) {
+    if (ResponsiveLayout.isDesktop(context)) {
+      // WEB: Hiện Dialog giữa màn hình
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withOpacity(0.3),
+        builder: (context) => const Dialog(
+          backgroundColor: Colors.transparent,
+          child: SizedBox(
+            width: 450, // Chiều rộng cố định cho Web
+            child: FilterModal(),
+          ),
+        ),
+      );
+    } else {
+      // MOBILE: Hiện BottomSheet từ dưới lên
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true, // Cho phép modal cao theo nội dung
+        backgroundColor: Colors.transparent,
+        builder: (context) => const FilterModal(),
+      );
+    }
+  }
 
   @override
   State<FilterModal> createState() => _FilterModalState();
 }
 
 class _FilterModalState extends State<FilterModal> {
-  // Màu sắc chủ đạo lấy từ ảnh
-  final Color darkGreen = const Color(0xFF1B3B36);
-  final Color bgLight = const Color(0xFFF2F4F3); // Màu nền trắng xám nhẹ
+  final Color mainColor = const Color(0xFF1B3B36);
+  
+  // State quản lý lựa chọn
+  String _difficulty = 'Easy';
+  String _mealType = 'Lunch';
+  String _cuisine = 'Italian';
+  double _maxPrepTime = 45.0; // Slider value
 
   @override
   Widget build(BuildContext context) {
-    // Sử dụng Align để đẩy Dialog sang sát bên phải
-    return Align(
-      alignment: Alignment.centerRight,
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          // Kích thước modal: Chiếm 85% chiều rộng màn hình hoặc max 320px
-          width: MediaQuery.of(context).size.width * 0.85,
-          constraints: const BoxConstraints(maxWidth: 340),
-          margin: const EdgeInsets.only(right: 16), // Cách lề phải một chút cho đẹp
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: bgLight,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 20,
-                offset: const Offset(-4, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min, // Co giãn theo nội dung
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // --- 1. Cooking Time ---
-              _buildTitle("Cooking time"),
-              const SizedBox(height: 8),
-              _buildTextField(hint: "", suffix: "min"),
+    // Xác định bo góc tùy theo Web hay Mobile
+    final bool isDesktop = ResponsiveLayout.isDesktop(context);
+    final BorderRadius borderRadius = isDesktop
+        ? BorderRadius.circular(24) // Web: Bo tròn 4 góc
+        : const BorderRadius.vertical(top: Radius.circular(24)); // Mobile: Chỉ bo góc trên
 
-              const SizedBox(height: 20),
-
-              // --- 2. Country Food ---
-              _buildTitle("Country food"),
-              const SizedBox(height: 8),
-              _buildTextField(hint: "Vietnam, Korea,..."),
-
-              const SizedBox(height: 20),
-
-              // --- 3. Level ---
-              _buildTitle("Level"),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _buildOptionBtn("Easy"),
-                  _buildOptionBtn("Medium"),
-                  _buildOptionBtn("Hard"),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              // --- 4. Meals ---
-              _buildTitle("Meals"),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _buildOptionBtn("Breakfast"),
-                  _buildOptionBtn("Lunch"),
-                  _buildOptionBtn("Dinner"),
-                  _buildOptionBtn("Snack"),
-                ],
-              ),
-
-              const SizedBox(height: 32),
-
-              // --- 5. Footer Buttons ---
-              Row(
-                children: [
-                  // Nút Reset
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                         // Logic Reset sau này
-                      },
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: BorderSide(color: darkGreen, width: 2),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: Text(
-                        "Reset",
-                        style: GoogleFonts.merriweather(
-                          color: darkGreen,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Nút Save
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // Logic Save sau này
-                        Navigator.pop(context); // Đóng modal
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: darkGreen,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        "Save",
-                        style: GoogleFonts.merriweather(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // --- Widget Con: Tiêu đề ---
-  Widget _buildTitle(String text) {
-    return Text(
-      text,
-      style: GoogleFonts.merriweather(
-        fontSize: 18,
-        fontWeight: FontWeight.w900, // Đậm như ảnh mẫu
-        color: darkGreen,
-      ),
-    );
-  }
-
-  // --- Widget Con: Ô nhập liệu ---
-  Widget _buildTextField({required String hint, String? suffix}) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
+      // Giới hạn chiều cao max trên mobile để không che hết màn hình
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
-      child: TextField(
-        style: TextStyle(color: darkGreen, fontWeight: FontWeight.w600),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-          suffixText: suffix,
-          suffixStyle: TextStyle(
-              color: Colors.grey.shade500, fontWeight: FontWeight.bold),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: darkGreen, width: 2), // Viền đậm
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: borderRadius,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // --- 1. HANDLE BAR (Chỉ Mobile mới cần) ---
+          if (!isDesktop)
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+
+          // --- 2. HEADER ---
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Filter Recipes",
+                  style: GoogleFonts.merriweather(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: mainColor,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      // Reset logic
+                      _difficulty = 'Easy';
+                      _maxPrepTime = 15;
+                    });
+                  },
+                  child: Text(
+                    "Reset",
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+              ],
+            ),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: darkGreen, width: 2.5),
+
+          const Divider(height: 1),
+
+          // --- 3. SCROLLABLE CONTENT ---
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- DIFFICULTY ---
+                  _buildSectionTitle("Difficulty Level"),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 12,
+                    children: [
+                      _buildChip("Easy", Icons.check),
+                      _buildChip("Medium", null),
+                      _buildChip("Hard", null),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // --- MEAL TYPE ---
+                  _buildSectionTitle("Meal Type"),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      _buildChip("Breakfast", Icons.bedroom_parent_outlined, groupValue: _mealType, onChanged: (v) => setState(() => _mealType = v)),
+                      _buildChip("Lunch", Icons.soup_kitchen_outlined, groupValue: _mealType, onChanged: (v) => setState(() => _mealType = v)),
+                      _buildChip("Dinner", Icons.dinner_dining_outlined, groupValue: _mealType, onChanged: (v) => setState(() => _mealType = v)),
+                      _buildChip("Snack", Icons.cookie_outlined, groupValue: _mealType, onChanged: (v) => setState(() => _mealType = v)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // --- CUISINE ---
+                  _buildSectionTitle("Cuisine"),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      _buildChip("Italian", null, groupValue: _cuisine, onChanged: (v) => setState(() => _cuisine = v)),
+                      _buildChip("Mexican", null, groupValue: _cuisine, onChanged: (v) => setState(() => _cuisine = v)),
+                      _buildChip("Asian", null, groupValue: _cuisine, onChanged: (v) => setState(() => _cuisine = v)),
+                      _buildChip("Vegan", Icons.eco, groupValue: _cuisine, onChanged: (v) => setState(() => _cuisine = v)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // --- MAX PREP TIME ---
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildSectionTitle("Max Prep Time"),
+                      Text(
+                        "${_maxPrepTime.toInt()} min",
+                        style: TextStyle(fontWeight: FontWeight.bold, color: mainColor),
+                      ),
+                    ],
+                  ),
+                  SliderTheme(
+                    data: SliderThemeData(
+                      activeTrackColor: mainColor,
+                      inactiveTrackColor: Colors.grey[200],
+                      thumbColor: mainColor,
+                      overlayColor: mainColor.withOpacity(0.2),
+                      trackHeight: 4,
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                    ),
+                    child: Slider(
+                      value: _maxPrepTime,
+                      min: 5,
+                      max: 120,
+                      divisions: 23,
+                      onChanged: (val) {
+                        setState(() {
+                          _maxPrepTime = val;
+                        });
+                      },
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("15 min", style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                      Text("2+ hours", style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
+
+          // --- 4. BOTTOM BUTTON ---
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: PrimaryButton(
+                text: "Apply Filters (3)",
+                onPressed: () {
+                  // Apply logic here
+                  Navigator.pop(context);
+                },
+                backgroundColor: mainColor,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  // --- Widget Con: Nút chọn (Easy, Medium...) ---
-  Widget _buildOptionBtn(String text) {
-    return InkWell(
+  // --- Helpers ---
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.merriweather(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: const Color(0xFF1B3B36),
+      ),
+    );
+  }
+
+  // Widget tạo Chip (Nút chọn)
+  Widget _buildChip(
+    String label, 
+    IconData? icon, 
+    {String? groupValue, Function(String)? onChanged}
+  ) {
+    // Nếu không truyền groupValue thì mặc định dùng cho Difficulty
+    final bool isSelected = (groupValue == null) 
+        ? _difficulty == label 
+        : groupValue == label;
+
+    return GestureDetector(
       onTap: () {
-        // Logic chọn sau này
+        if (groupValue == null) {
+          setState(() => _difficulty = label);
+        } else {
+          onChanged?.call(label);
+        }
       },
-      borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          border: Border.all(color: darkGreen, width: 2),
-          borderRadius: BorderRadius.circular(8),
-          color: Colors.transparent, // Chưa chọn thì nền trong suốt
-        ),
-        child: Text(
-          text,
-          style: GoogleFonts.merriweather(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: darkGreen,
+          color: isSelected ? mainColor : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isSelected ? mainColor : Colors.grey.shade300,
+            width: 1.5,
           ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? Colors.white : Colors.grey[600],
+              ),
+              const SizedBox(width: 8),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: isSelected ? Colors.white : Colors.grey[800],
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -75,9 +75,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                 borderRadius: BorderRadius.circular(28),
               ),
             ),
-            icon: const Icon(Icons.calendar_today, color: Colors.white),
+            icon: const Icon(Icons.check, color: Colors.white),
             label: const Text(
-              "Add to calendar",
+              "Save your order",
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

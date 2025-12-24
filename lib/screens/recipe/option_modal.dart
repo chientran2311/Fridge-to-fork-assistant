@@ -1,78 +1,101 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
+import 'package:fridge_to_fork_assistant/widgets/common/primary_button.dart';
+import 'package:fridge_to_fork_assistant/widgets/recipe/option/option_header.dart';
+import 'package:fridge_to_fork_assistant/widgets/recipe/option/option_button.dart';
+import 'share_recipe_modal.dart'; 
 
 class OptionModal extends StatelessWidget {
   const OptionModal({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    // Màu sắc theo style của dự án
-    final Color darkGreen = const Color(0xFF1B3B36);
-    final Color bgLight = const Color(0xFFE7EAE9); // Màu nền giống BottomBar
-
-    return Stack(
-      children: [
-        // Dùng Positioned để đặt modal ở góc trên bên phải (dưới nút more)
-        Positioned(
-          top: 80, // Khoảng cách từ đỉnh màn hình xuống (áng chừng chiều cao Header)
-          right: 15, // Khoảng cách lề phải (căn thẳng với nút more)
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              width: 180, // Chiều rộng cố định cho menu nhỏ
-              decoration: BoxDecoration(
-                color: bgLight,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min, // Tự co lại theo nội dung
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildOptionItem("Share recipe", darkGreen, () {
-                    print("Share tapped");
-                    Navigator.pop(context);
-                  }),
-                  
-                  // Đường kẻ mảnh phân cách
-                  Divider(height: 1, thickness: 1, color: darkGreen.withOpacity(0.2)),
-                  
-                  _buildOptionItem("Add to calendar", darkGreen, () {
-                     print("Calendar tapped");
-                     Navigator.pop(context);
-                  }),
-                ],
-              ),
-            ),
+  static void show(BuildContext context) {
+    if (context.isDesktop || context.isTablet) {
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withOpacity(0.3),
+        builder: (context) => const Dialog(
+          backgroundColor: Colors.transparent,
+          child: SizedBox(
+            width: 400, 
+            child: OptionModal(),
           ),
         ),
-      ],
-    );
+      );
+    } else {
+      showModalBottomSheet(
+        context: context,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        builder: (context) => const OptionModal(),
+      );
+    }
   }
 
-  Widget _buildOptionItem(String text, Color textColor, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16), // Bo tròn hiệu ứng ripple khi bấm
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        child: SizedBox(
-          width: double.infinity, // Để vùng bấm full chiều ngang
-          child: Text(
-            text,
-            style: GoogleFonts.merriweather(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: textColor,
+  @override
+  Widget build(BuildContext context) {
+    final bool isDialogMode = !context.isMobile;
+    final BorderRadius borderRadius = isDialogMode
+        ? BorderRadius.circular(24)
+        : const BorderRadius.vertical(top: Radius.circular(24));
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: borderRadius,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (!isDialogMode)
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          const OptionHeader(),
+          OptionButton(
+            icon: Icons.ios_share,
+            title: "Share Recipe",
+            subtitle: "Send to friends or family",
+            onTap: () {
+              Navigator.pop(context);
+              Future.delayed(const Duration(milliseconds: 150), () {
+                if (context.mounted) {
+                   ShareModal.show(context, url: "https://fridge2fork.app/recipe/creamy-pesto");
+                }
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+          OptionButton(
+            icon: Icons.favorite_border,
+            title: "Save to favorite recipe",
+            subtitle: "Access quickly from plan",
+            onTap: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Recipe saved to favorites!")),
+              );
+            },
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: PrimaryButton(
+              text: "Cancel",
+              onPressed: () => Navigator.pop(context),
+              backgroundColor: const Color(0xFFF8F9FA),
+              textColor: const Color(0xFF1B3B36),
             ),
           ),
-        ),
+          SizedBox(height: context.isMobile ? 20 : 10),
+        ],
       ),
     );
   }

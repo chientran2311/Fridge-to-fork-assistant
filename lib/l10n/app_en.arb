@@ -57,5 +57,7 @@
   "logOut": "Log Out",
   "deleteAccount": "Delete Account",
   "deleteAccountWarning": "This action will permanently delete your data. Are you sure?",
-  "confirm": "Confirm"
+  "confirm": "Confirm",
+  "account": "Account",
+  "household": "Household & Sharing"
 }

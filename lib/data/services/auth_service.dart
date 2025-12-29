@@ -1,12 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // 1. Import Firestore
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance; // 2. Instance Firestore
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // --- HÀM PHỤ: ĐỒNG BỘ USER SANG FIRESTORE ---
-  // Hàm này tự động chạy sau khi Login hoặc Register thành công
   Future<void> _syncUserToFirestore(User user) async {
     try {
       final userRef = _firestore.collection('users').doc(user.uid);
@@ -19,7 +18,7 @@ class AuthService {
           'email': user.email,
           'display_name': user.displayName ?? 'Người dùng mới',
           'photo_url': user.photoURL ?? '',
-          'current_household_id': null, // Để null, InventoryProvider sẽ tự xử lý tạo nhà sau
+          'current_household_id': null,
           'created_at': FieldValue.serverTimestamp(),
           'last_login': FieldValue.serverTimestamp(),
         });
@@ -30,7 +29,6 @@ class AuthService {
         });
       }
     } catch (e) {
-      // Chỉ log lỗi, không chặn luồng đăng nhập của user
       print("⚠️ Lỗi đồng bộ Firestore: $e");
     }
   }
@@ -41,13 +39,11 @@ class AuthService {
     required String password
   }) async {
     try {
-      // 1. Đăng nhập Auth
       UserCredential cred = await _auth.signInWithEmailAndPassword(
         email: email, 
         password: password
       );
 
-      // 2. Đồng bộ sang Firestore (Quan trọng)
       if (cred.user != null) {
         await _syncUserToFirestore(cred.user!);
       }
@@ -79,13 +75,11 @@ class AuthService {
     required String password
   }) async {
     try {
-      // 1. Tạo tài khoản Auth
       UserCredential cred = await _auth.createUserWithEmailAndPassword(
         email: email, 
         password: password
       );
 
-      // 2. Đồng bộ sang Firestore (Quan trọng)
       if (cred.user != null) {
         await _syncUserToFirestore(cred.user!);
       }
@@ -112,7 +106,32 @@ class AuthService {
     await _auth.signOut();
   }
 
-  // --- 4. Lấy User hiện tại ---
+  // --- 4. Xóa tài khoản (Mới) ---
+  Future<String?> deleteAccount() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return "Không tìm thấy người dùng.";
+
+      // Bước 1: Xóa dữ liệu user trong Firestore
+      // Lưu ý: Không xóa household vì có thể còn thành viên khác
+      await _firestore.collection('users').doc(user.uid).delete();
+
+      // Bước 2: Xóa tài khoản Auth
+      await user.delete();
+
+      return null; // Thành công
+    } on FirebaseAuthException catch (e) {
+      // Lỗi này xảy ra nếu user đăng nhập quá lâu
+      if (e.code == 'requires-recent-login') {
+        return 'Để bảo mật, vui lòng đăng xuất và đăng nhập lại để thực hiện hành động này.';
+      }
+      return 'Lỗi xóa tài khoản: ${e.message}';
+    } catch (e) {
+      return 'Đã xảy ra lỗi không xác định: $e';
+    }
+  }
+
+  // --- 5. Lấy User hiện tại ---
   User? getCurrentUser() {
     return _auth.currentUser;
   }

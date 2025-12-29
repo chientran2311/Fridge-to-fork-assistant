@@ -157,4 +157,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get confirm => 'Xác nhận';
+
+  @override
+  String get account => 'Tài khoản';
+
+  @override
+  String get household => 'Gia đình & Chia sẻ';
 }

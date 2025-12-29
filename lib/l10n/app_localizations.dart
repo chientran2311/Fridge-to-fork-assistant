@@ -391,6 +391,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirm'**
   String get confirm;
+
+  /// No description provided for @account.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get account;
+
+  /// No description provided for @household.
+  ///
+  /// In en, this message translates to:
+  /// **'Household & Sharing'**
+  String get household;
 }
 
 class _AppLocalizationsDelegate

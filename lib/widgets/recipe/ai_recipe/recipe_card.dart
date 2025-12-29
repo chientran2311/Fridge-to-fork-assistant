@@ -1,180 +1,168 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-// 1. Import đúng file model HouseholdRecipe của bạn
-// (Hãy đảm bảo đường dẫn import này đúng với cấu trúc thư mục của bạn)
-import '../../../models/household_recipe.dart'; 
-import '../../../screens/recipe/detail_recipe.dart';
-
+import '../../../models/household_recipe.dart';
+import '../../../l10n/app_localizations.dart';
 class RecipeCard extends StatelessWidget {
-  // 2. Thay đổi kiểu dữ liệu thành HouseholdRecipe
   final HouseholdRecipe recipe;
-
+  
   const RecipeCard({super.key, required this.recipe});
 
   @override
   Widget build(BuildContext context) {
-    // --- SETUP MÀU SẮC & BADGE ---
-    final mainColor = const Color(0xFF1B3B36);
+    // Xác định phần trăm match (Logic giả định: ít nguyên liệu thiếu = match cao)
+    // Bạn có thể tùy chỉnh logic này
+    final bool isFullMatch = recipe.missedIngredientCount == 0;
     
-    String matchTag;
-    IconData tagIcon;
-    Color badgeColor;
-    Color badgeBgColor;
-
-    // Sử dụng field missedIngredientCount có sẵn trong HouseholdRecipe
-    if (recipe.missedIngredientCount == 0) {
-      matchTag = "Đủ nguyên liệu";
-      tagIcon = Icons.check_circle_outline;
-      badgeColor = const Color(0xFF0FBD3B); // Xanh lá
-      badgeBgColor = const Color(0xFFE7F9EC);
-    } else {
-      matchTag = "Thiếu ${recipe.missedIngredientCount} món";
-      tagIcon = Icons.shopping_basket_outlined;
-      badgeColor = const Color(0xFFF2994A); // Cam
-      badgeBgColor = const Color(0xFFFEF5EA);
-    }
-
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            // Truyền ID hoặc cả object sang màn hình chi tiết
-            builder: (context) => const RecipeDetailScreen(), 
-          ),
-        );
+        context.go('/recipes/detail', extra: recipe);
       },
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(24), // Bo góc lớn giống ảnh
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.06),
               blurRadius: 15,
-              offset: const Offset(0, 5),
+              offset: const Offset(0, 8),
             ),
           ],
-          border: Border.all(color: Colors.grey.shade100),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- ẢNH MÓN ĂN ---
+            // --- PHẦN 1: HÌNH ẢNH + BADGE ---
             Stack(
               children: [
+                // Ảnh món ăn
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                   child: AspectRatio(
-                    aspectRatio: 16 / 10,
-                    // 3. XỬ LÝ IMAGE URL (Vì trong model nó là String?)
-                    child: (recipe.imageUrl != null && recipe.imageUrl!.isNotEmpty)
-                        ? Image.network(
-                            recipe.imageUrl!, // Dấu ! để khẳng định nó không null
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(color: Colors.grey[100]);
-                            },
-                            errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
-                          )
-                        : _buildPlaceholder(), // Nếu null thì hiện ảnh giữ chỗ
-                  ),
-                ),
-                
-                // Badge Match
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.95),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(tagIcon, size: 14, color: badgeColor),
-                        const SizedBox(width: 4),
-                        Text(
-                          matchTag,
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: badgeColor),
-                        ),
-                      ],
+                    aspectRatio: 16 / 10, // Tỷ lệ ảnh
+                    child: Image.network(
+                      recipe.imageUrl ?? "https://via.placeholder.com/400",
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Container(color: Colors.grey[200], child: const Icon(Icons.image)),
                     ),
                   ),
                 ),
 
-                // Icon Tim
+                // Badge "100% Match" (Góc trái trên)
+                if (isFullMatch)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, size: 14, color: Colors.green[700]),
+                          const SizedBox(width: 4),
+                          Text(
+                            "100% Match",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green[800],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // Nút Tim (Góc phải trên)
                 Positioned(
                   top: 12,
                   right: 12,
                   child: Container(
-                    width: 36,
-                    height: 36,
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.white.withOpacity(0.9),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.favorite_border, color: Colors.white, size: 20),
+                    child: const Icon(Icons.favorite_border, size: 20, color: Colors.grey),
                   ),
                 ),
               ],
             ),
 
-            // --- THÔNG TIN ---
+            // --- PHẦN 2: THÔNG TIN CHI TIẾT ---
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Tên món ăn
                   Text(
-                    recipe.title, // Field title là required nên an tâm dùng
+                    recipe.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.merriweather(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: mainColor,
-                      height: 1.3,
+                      color: const Color(0xFF1B3B36), // Màu xanh đậm
                     ),
                   ),
                   
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 6),
                   
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildMiniChip(
-                        icon: Icons.kitchen,
-                        text: "Có ${recipe.usedIngredientCount} món",
-                        color: Colors.blueGrey,
-                        bgColor: Colors.blueGrey.withOpacity(0.1),
-                      ),
+                  // Mô tả ngắn (Nếu có description thì hiện, không thì hiện text mặc định)
+                  Text(
+                    "Món ngon hấp dẫn từ nguyên liệu có sẵn trong tủ lạnh của bạn.",
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13, color: Colors.grey[600], height: 1.4),
+                  ),
 
-                      if (recipe.missedIngredientCount > 0)
-                        _buildMiniChip(
-                          icon: Icons.shopping_cart_outlined,
-                          text: "Mua ${recipe.missedIngredientCount} món",
-                          color: const Color(0xFFF2994A),
-                          bgColor: const Color(0xFFFEF5EA),
-                        ),
-                        
-                      // Nếu có calo thì hiện thêm (Vì field này nullable)
+                  const SizedBox(height: 16),
+
+                  // Các Chips thông tin (Time, Calo, Missing)
+                  Row(
+                    children: [
+                      // Chip 1: Thời gian
+                      _buildInfoChip(
+                        Icons.access_time, 
+                        "${recipe.readyInMinutes ?? 30} min"
+                      ),
+                      
+                      const SizedBox(width: 8),
+
+                      // Chip 2: Calories
                       if (recipe.calories != null)
-                         _buildMiniChip(
-                          icon: Icons.local_fire_department,
-                          text: "${recipe.calories!.toInt()} Kcal",
-                          color: Colors.redAccent,
-                          bgColor: Colors.red.withOpacity(0.1),
+                        _buildInfoChip(
+                          Icons.local_fire_department_outlined, 
+                          "${recipe.calories!.toInt()} kcal"
+                        ),
+
+                      const SizedBox(width: 8),
+
+                      // Chip 3: Missing Ingredients
+                      if (recipe.missedIngredientCount > 0)
+                        _buildInfoChip(
+                          Icons.shopping_bag_outlined, 
+                          "Missing: ${recipe.missedIngredientCount}",
+                          isHighlight: true, // Highlight nếu thiếu đồ
+                        )
+                      else 
+                        // Chip Match nếu đủ đồ
+                         _buildInfoChip(
+                          Icons.check, 
+                          "Đủ đồ",
+                          isSuccess: true,
                         ),
                     ],
-                  ),
+                  )
                 ],
               ),
             ),
@@ -184,41 +172,36 @@ class RecipeCard extends StatelessWidget {
     );
   }
 
-  // Widget hiển thị ảnh giữ chỗ nếu không có ảnh hoặc lỗi ảnh
-  Widget _buildPlaceholder() {
-    return Container(
-      color: Colors.grey[200],
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.fastfood, color: Colors.grey, size: 40),
-          SizedBox(height: 8),
-          Text("Không có ảnh", style: TextStyle(color: Colors.grey, fontSize: 12)),
-        ],
-      ),
-    );
-  }
+  // Helper Widget để vẽ các Chip nhỏ (Time, Kcal...)
+  Widget _buildInfoChip(IconData icon, String text, {bool isHighlight = false, bool isSuccess = false}) {
+    Color bgColor = Colors.grey[100]!;
+    Color textColor = Colors.grey[800]!;
+    Color iconColor = Colors.grey[600]!;
 
-  Widget _buildMiniChip({
-    required IconData icon,
-    required String text,
-    required Color color,
-    required Color bgColor,
-  }) {
+    if (isHighlight) {
+      bgColor = Colors.orange[50]!;
+      textColor = Colors.orange[800]!;
+      iconColor = Colors.orange[800]!;
+    } else if (isSuccess) {
+      bgColor = Colors.green[50]!;
+      textColor = Colors.green[800]!;
+      iconColor = Colors.green[800]!;
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color),
+          Icon(icon, size: 14, color: iconColor),
           const SizedBox(width: 4),
           Text(
             text,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textColor),
           ),
         ],
       ),

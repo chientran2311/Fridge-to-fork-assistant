@@ -1,51 +1,41 @@
 import 'package:flutter/material.dart';
-import '../ai_recipe/info_chip.dart';
 
 class RecipeTagsSection extends StatelessWidget {
-  const RecipeTagsSection({super.key});
+  final int readyInMinutes;
+  final int servings;
+
+  const RecipeTagsSection({
+    super.key,
+    this.readyInMinutes = 0,
+    this.servings = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final Color mainColor = const Color(0xFF1B3B36);
-    final Color greenTagBg = const Color(0xFFE8F5E9);
-    final Color orangeTagBg = const Color(0xFFFFF3E0);
-    final Color blueTagBg = const Color(0xFFE3F2FD);
-
     return Row(
       children: [
-        InfoChip(
-          icon: Icons.access_time,
-          text: "15 Mins",
-          backgroundColor: greenTagBg,
-          textColor: mainColor,
-          iconColor: mainColor,
-          borderRadius: 20,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          iconSize: 16,
-        ),
-        const SizedBox(width: 12),
-        InfoChip(
-          icon: Icons.bolt,
-          text: "Easy",
-          backgroundColor: orangeTagBg,
-          textColor: Colors.orange[800]!,
-          iconColor: Colors.orange[800]!,
-          borderRadius: 20,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          iconSize: 16,
-        ),
-        const SizedBox(width: 12),
-        InfoChip(
-          icon: Icons.local_fire_department_outlined,
-          text: "320 Kcal",
-          backgroundColor: blueTagBg,
-          textColor: Colors.blue[800]!,
-          iconColor: Colors.blue[800]!,
-          borderRadius: 20,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          iconSize: 16,
-        ),
+        _buildTag(Icons.timer_outlined, "$readyInMinutes mins"),
+        const SizedBox(width: 16),
+        _buildTag(Icons.people_outline, "$servings servings"),
+        // Có thể thêm HealthScore hoặc Price nếu muốn
       ],
+    );
+  }
+
+  Widget _buildTag(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: Colors.grey[700]),
+          const SizedBox(width: 6),
+          Text(text, style: TextStyle(color: Colors.grey[800], fontSize: 13, fontWeight: FontWeight.w600)),
+        ],
+      ),
     );
   }
 }

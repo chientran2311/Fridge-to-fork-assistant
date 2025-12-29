@@ -57,5 +57,7 @@
    "logOut": "Đăng xuất",
    "deleteAccount": "Xóa tài khoản",
    "deleteAccountWarning": "Hành động này sẽ xóa vĩnh viễn dữ liệu của bạn. Bạn có chắc không?",
-  "confirm": "Xác nhận"
+  "confirm": "Xác nhận",
+  "household": "Gia đình & Chia sẻ",
+  "account": "Tài khoản"
 }

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart'; // Import Router
+import 'package:go_router/go_router.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 
-// Import Service & Provider & Localization
-import '../../data/services/auth_service.dart'; // ✅ Import AuthService
+// Import Providers & Localization
+// ❌ Đã xóa import AuthService
+import '../../providers/auth_provider.dart'; // ✅ Chỉ dùng Provider
 import '../../providers/locale_provider.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -17,38 +18,43 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  // --- MÀU SẮC UI ---
   final Color bgCream = const Color(0xFFF9F9F7);
   final Color mainColor = const Color(0xFF1B3B36);
   final Color redColor = const Color(0xFFE53935);
 
-  final AuthService _authService = AuthService(); // ✅ Khởi tạo Service
   bool _notificationsEnabled = true;
 
-  // --- LOGIC: MỜI THÀNH VIÊN ---
-  void _showInviteDialog(BuildContext context) {
-    // Demo UI: Sau này bạn có thể làm form nhập email để gửi lời mời
+  // --- UI LOGIC: MỜI THÀNH VIÊN ---
+  void _showInviteDialog(BuildContext context, AppLocalizations s) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Invite Member"),
-        content: const Text("Tính năng chia sẻ QR Code hoặc gửi Email đang được phát triển."),
+        title: Text(s.inviteMember),
+        content: const Text("QR Code & Email invitation feature coming soon."),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("OK"))
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("OK"),
+          )
         ],
       ),
     );
   }
 
-  // --- LOGIC: ĐĂNG XUẤT ---
-  Future<void> _handleLogout() async {
-    await _authService.signOut();
-    if (mounted) {
-      // Xóa hết các màn hình cũ và về trang Login
+  // --- UI LOGIC: ĐĂNG XUẤT ---
+  Future<void> _handleLogout(BuildContext context) async {
+    // Gọi hàm logout từ Provider (Logic nằm bên Provider)
+    final authProvider = context.read<AuthProvider>();
+    await authProvider.logout();
+    
+    // Điều hướng UI
+    if (context.mounted) {
       context.go('/login'); 
     }
   }
 
-  // --- LOGIC: XÓA TÀI KHOẢN ---
+  // --- UI LOGIC: XÓA TÀI KHOẢN ---
   void _confirmDeleteAccount(BuildContext context, AppLocalizations s) {
     showDialog(
       context: context,
@@ -56,16 +62,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text(s.deleteAccount, style: TextStyle(color: redColor)),
         content: Text(s.deleteAccountWarning),
         actions: [
+          // Nút Hủy
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(s.cancel, style: const TextStyle(color: Colors.grey)),
           ),
+          // Nút Xác Nhận
           TextButton(
             onPressed: () async {
-              // Gọi hàm xóa user (cần viết thêm trong AuthService)
-              // await _authService.deleteAccount();
-              Navigator.pop(ctx);
-              _handleLogout(); // Tạm thời logout sau khi xóa
+              Navigator.pop(ctx); // Đóng Dialog trước
+
+              // Gọi Provider để xử lý logic xóa
+              final authProvider = context.read<AuthProvider>();
+              final String? error = await authProvider.deleteAccount();
+
+              if (!context.mounted) return;
+
+              // Xử lý kết quả trả về từ Provider để update UI
+              if (error == null) {
+                // Thành công
+                context.go('/login');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Account deleted successfully")),
+                );
+              } else {
+                // Thất bại (VD: cần đăng nhập lại)
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(error),
+                    backgroundColor: redColor,
+                    duration: const Duration(seconds: 5),
+                  ),
+                );
+              }
             },
             child: Text(s.confirm, style: TextStyle(color: redColor, fontWeight: FontWeight.bold)),
           ),
@@ -76,7 +105,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final s = AppLocalizations.of(context)!;
+    final s = AppLocalizations.of(context);
+    // Fallback an toàn
+    if (s == null) return const SizedBox();
 
     return Scaffold(
       backgroundColor: bgCream,
@@ -104,12 +135,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildContent(BuildContext context, AppLocalizations s, {required bool isMobile}) {
-    final currentLocale = Provider.of<LocaleProvider>(context).locale;
+    // Lấy ngôn ngữ hiển thị từ Provider
+    final currentLocale = context.watch<LocaleProvider>().locale;
     final String languageName = currentLocale.languageCode == 'vi' ? 'Tiếng Việt' : 'English';
 
     return Column(
       children: [
-        // Header
+        // --- HEADER ---
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Row(
@@ -128,17 +160,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 40),
+              const SizedBox(width: 40), 
             ],
           ),
         ),
 
+        // --- SCROLLABLE BODY ---
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                
                 // SECTION 1: CÀI ĐẶT CHUNG
                 _buildSectionHeader(s.general), 
                 _buildSectionCard([
@@ -168,32 +202,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ]),
                 const SizedBox(height: 24),
 
-                // SECTION 2: GIA ĐÌNH (MỚI)
-              
+                // SECTION 2: GIA ĐÌNH
+                _buildSectionHeader(s.household),
                 _buildSectionCard([
-                  // Đăng xuất
+                  _buildListTile(
+                    icon: Icons.person_add_alt_1,
+                    title: s.inviteMember,
+                    trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    onTap: () => _showInviteDialog(context, s),
+                  ),
+                ]),
+                const SizedBox(height: 24),
+
+                // SECTION 3: TÀI KHOẢN
+                _buildSectionHeader(s.account),
+                _buildSectionCard([
+                  // Nút Đăng Xuất
                   _buildListTile(
                     icon: Icons.logout,
                     title: s.logOut,
                     trailing: const SizedBox(),
-                    onTap: _handleLogout, // Gọi hàm đăng xuất
+                    onTap: () => _handleLogout(context), // ✅ Gọi logic Auth qua hàm wrapper
                   ),
                   _buildDivider(),
-                  // Xóa tài khoản (Màu đỏ)
+                  // Nút Xóa Tài Khoản
                   _buildListTile(
                     icon: Icons.delete_outline,
                     title: s.deleteAccount,
-                    textColor: redColor, // Chữ đỏ
-                    iconColor: redColor.withOpacity(0.1), // Nền icon đỏ nhạt
-                    iconColorTint: redColor, // Icon đỏ
+                    textColor: redColor, 
+                    iconColor: redColor.withOpacity(0.1), 
+                    iconColorTint: redColor, 
                     trailing: const SizedBox(),
-                    onTap: () => _confirmDeleteAccount(context, s),
+                    onTap: () => _confirmDeleteAccount(context, s), // ✅ Gọi logic Auth qua hàm wrapper
                   ),
                 ]),
                 
                 const SizedBox(height: 40),
                 
-                // Version info
+                // Version Info
                 Center(
                   child: Text(
                     "Version 1.0.0",
@@ -209,7 +255,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // --- Widgets Helper ---
+  // --- WIDGET HELPER METHODS (Giữ nguyên UI) ---
 
   void _showLanguageBottomSheet(BuildContext context) {
     showModalBottomSheet(
@@ -229,7 +275,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 leading: const Text("🇻🇳", style: TextStyle(fontSize: 24)),
                 title: const Text("Tiếng Việt"),
                 onTap: () {
-                  Provider.of<LocaleProvider>(context, listen: false).setLocale(const Locale('vi'));
+                  context.read<LocaleProvider>().setLocale(const Locale('vi'));
                   Navigator.pop(context);
                 },
               ),
@@ -237,7 +283,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 leading: const Text("🇺🇸", style: TextStyle(fontSize: 24)),
                 title: const Text("English"),
                 onTap: () {
-                  Provider.of<LocaleProvider>(context, listen: false).setLocale(const Locale('en'));
+                  context.read<LocaleProvider>().setLocale(const Locale('en'));
                   Navigator.pop(context);
                 },
               ),
@@ -294,9 +340,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String title,
     required Widget trailing,
     VoidCallback? onTap,
-    Color? textColor, // ✅ Thêm tham số màu chữ
-    Color? iconColor, // ✅ Thêm tham số màu nền icon
-    Color? iconColorTint, // ✅ Thêm tham số màu icon
+    Color? textColor,
+    Color? iconColor,
+    Color? iconColorTint,
   }) {
     return Material(
       color: Colors.transparent,
@@ -310,12 +356,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Container(
                 width: 36, height: 36,
                 decoration: BoxDecoration(
-                  color: iconColor ?? const Color(0xFFE8F0EE), // Mặc định hoặc custom
+                  color: iconColor ?? const Color(0xFFE8F0EE),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   icon, 
-                  color: iconColorTint ?? const Color(0xFF1B3B36), // Mặc định hoặc custom
+                  color: iconColorTint ?? const Color(0xFF1B3B36), 
                   size: 18
                 ),
               ),
@@ -326,7 +372,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: GoogleFonts.inter(
                     fontSize: 15, 
                     fontWeight: FontWeight.w600, 
-                    color: textColor ?? Colors.black87, // Mặc định hoặc custom
+                    color: textColor ?? Colors.black87,
                   ),
                 ),
               ),

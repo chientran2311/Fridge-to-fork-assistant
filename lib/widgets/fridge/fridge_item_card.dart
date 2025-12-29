@@ -26,14 +26,14 @@ class FridgeItemCard extends StatelessWidget {
     // Logic xác định màu hạn sử dụng
     final int days = item.daysLeft;
     Color expiryColor = const Color(0xFF28A745); // Xanh (An toàn)
-    String expiryText = '$days days';
+    String expiryText = '$days ngày';
 
     if (days < 0) {
       expiryColor = const Color(0xFFDC3545); // Đỏ (Hết hạn)
-      expiryText = 'Expired';
+      expiryText = 'Hết hạn';
     } else if (days <= 2) {
       expiryColor = const Color(0xFFFFC107); // Vàng (Sắp hết)
-      expiryText = '$days days left';
+      expiryText = 'Còn $days ngày';
     }
 
     return GestureDetector(
@@ -216,7 +216,11 @@ class FridgeItemCard extends StatelessWidget {
     } else if (tag.contains('veg') || tag.contains('rau')) {
       icon = Icons.eco;
       color = Colors.green.shade300;
-    } else if (tag.contains('dairy') || tag.contains('sữa') || tag.contains('trứng')) {
+    } else if (tag.contains('milk') || tag.contains('sữa')) {
+      // Fix: Tách Sữa ra khỏi Trứng để tránh nhầm lẫn icon
+      icon = Icons.local_drink; 
+      color = Colors.blue.shade300;
+    } else if (tag.contains('dairy') || tag.contains('trứng') || tag.contains('cheese')) {
       icon = Icons.egg;
       color = Colors.orange.shade300;
     } else if (tag.contains('fruit') || tag.contains('quả')) {

@@ -24,7 +24,7 @@ class RecipeCard extends StatelessWidget {
 
     // Sử dụng field missedIngredientCount có sẵn trong HouseholdRecipe
     if (recipe.missedIngredientCount == 0) {
-      matchTag = "100% Match";
+      matchTag = "Đủ nguyên liệu";
       tagIcon = Icons.check_circle_outline;
       badgeColor = const Color(0xFF0FBD3B); // Xanh lá
       badgeBgColor = const Color(0xFFE7F9EC);
@@ -152,7 +152,7 @@ class RecipeCard extends StatelessWidget {
                     children: [
                       _buildMiniChip(
                         icon: Icons.kitchen,
-                        text: "Dùng ${recipe.usedIngredientCount} món",
+                        text: "Có ${recipe.usedIngredientCount} món",
                         color: Colors.blueGrey,
                         bgColor: Colors.blueGrey.withOpacity(0.1),
                       ),
@@ -193,7 +193,7 @@ class RecipeCard extends StatelessWidget {
         children: const [
           Icon(Icons.fastfood, color: Colors.grey, size: 40),
           SizedBox(height: 8),
-          Text("No Image", style: TextStyle(color: Colors.grey, fontSize: 12)),
+          Text("Không có ảnh", style: TextStyle(color: Colors.grey, fontSize: 12)),
         ],
       ),
     );

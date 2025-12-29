@@ -6,11 +6,10 @@ import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 // Import Providers & Models
 import '../../providers/inventory_provider.dart';
 import '../../providers/recipe_provider.dart';
-import '../../models/household_recipe.dart';
 
 // Import Widgets
 import '../../widgets/recipe/ai_recipe/ai_recipe_header.dart';
-import '../../widgets/recipe/ai_recipe/recipe_card.dart';
+import '../../widgets/recipe/ai_recipe/recipe_card.dart'; // Đảm bảo import file Card mới bên dưới
 
 class AIRecipeScreen extends StatefulWidget {
   const AIRecipeScreen({super.key});
@@ -23,165 +22,188 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
   @override
   void initState() {
     super.initState();
-    // Gọi hàm load dữ liệu ngay khi màn hình được tạo
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadRecipes();
     });
   }
 
   void _loadRecipes() {
-    // 1. Lấy nguyên liệu từ InventoryProvider
     final inventory = Provider.of<InventoryProvider>(context, listen: false);
     final ingredients = inventory.ingredientNames;
-
-    // 2. Gọi API thông qua RecipeProvider
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
     
+    // Logic: Luôn gọi API để refresh hoặc load mới nếu có nguyên liệu
     if (ingredients.isNotEmpty) {
       recipeProvider.getRecipesByIngredients(ingredients);
-    } else {
-      // Nếu tủ lạnh trống, không làm gì hoặc reset
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Màu xanh đậm giống trong ảnh nút "Generate"
+    final Color darkGreenColor = const Color(0xFF1B3B36); 
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      extendBody: true,
+      backgroundColor: const Color(0xFFF9FAFB), // Màu nền xám rất nhạt cho hiện đại
       body: SafeArea(
         bottom: false,
-        child: ResponsiveLayout(
-          // Truyền logic hiển thị vào cả mobile và desktop
-          mobileBody: _buildBody(isGrid: false),
-          desktopBody: Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 1000),
-              child: _buildBody(isGrid: true),
+        child: Stack(
+          children: [
+            // Nội dung chính
+            ResponsiveLayout(
+              mobileBody: _buildBody(isGrid: false),
+              desktopBody: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 1000),
+                  child: _buildBody(isGrid: true),
+                ),
+              ),
             ),
-          ),
+
+            // Nút Generate More Recipe (Nổi ở dưới đáy)
+            Positioned(
+              left: 20,
+              right: 20,
+              bottom: 20,
+              child: SizedBox(
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: _loadRecipes,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: darkGreenColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 5,
+                    shadowColor: darkGreenColor.withOpacity(0.4),
+                  ),
+                  icon: const Icon(Icons.auto_awesome, color: Colors.white),
+                  label: const Text(
+                    "Tạo thêm công thức",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ),
-      // Fix: Thêm nút Generate để người dùng chủ động tìm kiếm công thức
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _loadRecipes,
-        backgroundColor: const Color(0xFF0FBD3B),
-        icon: const Icon(Icons.auto_awesome, color: Colors.white),
-        label: const Text("Gợi ý món mới", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
     );
   }
 
-  // Tách hàm build chính để tái sử dụng
   Widget _buildBody({required bool isGrid}) {
     return CustomScrollView(
       slivers: [
-        // 1. Header (Giữ nguyên)
         const SliverToBoxAdapter(
-          child: AIRecipeHeader(),
+          child: Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: AIRecipeHeader(),
+          ),
         ),
 
-        // 2. Nội dung chính (Dùng Consumer)
         Consumer2<RecipeProvider, InventoryProvider>(
           builder: (context, recipeProvider, inventoryProvider, child) {
             
-            // TRƯỜNG HỢP 1: Tủ lạnh trống
+            // 1. Tủ lạnh trống
             if (inventoryProvider.items.isEmpty) {
-              return const SliverFillRemaining( // Dùng SliverFillRemaining để căn giữa màn hình
-                hasScrollBody: false,
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: 100), // Đẩy lên một chút cho đẹp
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.kitchen_outlined, size: 80, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text("Tủ lạnh trống trơn!", style: TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.bold)),
-                        SizedBox(height: 8),
-                        Text("Hãy thêm nguyên liệu để nhận gợi ý.", style: TextStyle(color: Colors.grey)),
-                      ],
-                    ),
-                  ),
-                ),
+              return _buildStateMessage(
+                icon: Icons.kitchen_outlined,
+                message: "Tủ lạnh trống trơn!",
+                subMessage: "Hãy thêm nguyên liệu để nhận gợi ý.",
               );
             }
 
-            // TRƯỜNG HỢP 2: Đang tải
+            // 2. Đang tải
             if (recipeProvider.isLoading) {
               return const SliverFillRemaining(
                 hasScrollBody: false,
-                child: Center(child: CircularProgressIndicator(color: Color(0xFF0FBD3B))),
+                child: Center(child: CircularProgressIndicator(color: Color(0xFF1B3B36))),
               );
             }
 
-            // TRƯỜNG HỢP 3: Có lỗi
+            // 3. Lỗi
             if (recipeProvider.errorMessage.isNotEmpty) {
-              return SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
-                        const SizedBox(height: 16),
-                        Text(
-                          "Đã có lỗi xảy ra",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey[800]),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          recipeProvider.errorMessage, 
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+              return _buildStateMessage(
+                icon: Icons.error_outline,
+                message: "Đã có lỗi xảy ra",
+                subMessage: recipeProvider.errorMessage,
+                isError: true,
               );
             }
 
-            // TRƯỜNG HỢP 4: Không tìm thấy công thức nào
+            // 4. Không có kết quả
             if (recipeProvider.recipes.isEmpty) {
-              return const SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.search_off, size: 60, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text("Không tìm thấy món ăn nào phù hợp :(", style: TextStyle(color: Colors.grey)),
-                    ],
-                  ),
-                ),
+              return _buildStateMessage(
+                icon: Icons.search_off,
+                message: "Không tìm thấy món ăn nào",
+                subMessage: "Thử cập nhật lại nguyên liệu xem sao nhé.",
               );
             }
 
-            // TRƯỜNG HỢP 5: Hiển thị danh sách (Thành công)
+            // 5. Hiển thị danh sách (Grid hoặc List)
             return isGrid
                 ? _buildGridList(recipeProvider.recipes)
                 : _buildVerticalList(recipeProvider.recipes);
           },
         ),
 
-        // Khoảng trống dưới cùng
+        // Khoảng trống để không bị nút Generate che mất item cuối
         const SliverToBoxAdapter(child: SizedBox(height: 100)),
       ],
     );
   }
 
-  // Widget hiển thị dạng Grid (Tablet/Web)
+  // Widget hiển thị thông báo trạng thái (Empty/Error)
+  Widget _buildStateMessage({
+    required IconData icon,
+    required String message,
+    String? subMessage,
+    bool isError = false,
+  }) {
+    return SliverFillRemaining(
+      hasScrollBody: false,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 70, color: isError ? Colors.redAccent : Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[800],
+              ),
+            ),
+            if (subMessage != null) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  subMessage,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildGridList(List<HouseholdRecipe> recipes) {
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       sliver: SliverGrid(
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.85,
+          childAspectRatio: 0.75, // Tỷ lệ thẻ dài hơn chút để chứa info
           mainAxisSpacing: 20,
           crossAxisSpacing: 20,
         ),
@@ -193,12 +215,11 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
     );
   }
 
-  // Widget hiển thị dạng List (Mobile)
   Widget _buildVerticalList(List<HouseholdRecipe> recipes) {
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) => Padding(
-          padding: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
+          padding: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
           child: RecipeCard(recipe: recipes[index]),
         ),
         childCount: recipes.length,

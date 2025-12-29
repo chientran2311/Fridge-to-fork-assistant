@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
-
+import 'package:go_router/go_router.dart';
 // Import Models & Providers
 import '../../providers/inventory_provider.dart';
 import '../../models/inventory_item.dart';
@@ -86,12 +86,10 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     );
   }
 
-  void _navigateToSettings() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SettingsScreen()),
-    );
-  }
+void _navigateToSettings() {
+  // Đường dẫn phải khớp với cấu trúc router: /fridge/settings
+  context.go('/fridge/settings'); 
+}
 
   void _deleteSelectedItems() {
     // Gọi provider để xóa item thật ở đây

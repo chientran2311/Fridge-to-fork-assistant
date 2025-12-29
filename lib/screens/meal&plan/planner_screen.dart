@@ -4,7 +4,7 @@ import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import 'add_item_overlay.dart';
 import 'weekly_plan_tab.dart';
 import 'shopping_list_tab.dart';
-
+import 'package:go_router/go_router.dart';
 // Import Localization
 import '../../l10n/app_localizations.dart';
 
@@ -41,7 +41,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
 
     return Scaffold(
       backgroundColor: _bgColor,
-
       appBar: isDesktop
           ? null
           : AppBar(
@@ -57,12 +56,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
               actions: [
                 GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const FavoriteRecipesScreen(),
-                      ),
-                    );
+                    // Đường dẫn con của recipes: /recipes/favorites
+                    context.go('/recipes/favorites');
                   },
                   child: Container(
                     width: 40,
@@ -80,12 +75,12 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         )
                       ],
                     ),
-                    child: const Icon(Icons.favorite_border_outlined, size: 20, color: _primaryColor),
+                    child: const Icon(Icons.favorite_border_outlined,
+                        size: 20, color: _primaryColor),
                   ),
                 ),
               ],
             ),
-
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 900),
@@ -116,7 +111,6 @@ class _PlannerScreenState extends State<PlannerScreen> {
           ),
         ),
       ),
-
       floatingActionButton: isDesktop ? null : const _FloatingAddButton(),
     );
   }
@@ -125,7 +119,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
 class _Tabs extends StatelessWidget {
   final PlannerTab currentTab;
   final ValueChanged<PlannerTab> onChanged;
-  
+
   // ✅ Nhận text từ cha
   final String weeklyPlanText;
   final String shoppingListText;
@@ -210,7 +204,7 @@ class _FloatingAddButton extends StatelessWidget {
       onPressed: () {
         showModalBottomSheet(
           context: context,
-          isScrollControlled: true, 
+          isScrollControlled: true,
           backgroundColor: Colors.transparent,
           builder: (_) => const AddItemBottomSheet(),
         );

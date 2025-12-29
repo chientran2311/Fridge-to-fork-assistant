@@ -11,7 +11,7 @@ import 'l10n/app_localizations.dart';
 import 'providers/locale_provider.dart';
 import 'package:fridge_to_fork_assistant/providers/inventory_provider.dart';
 import 'package:fridge_to_fork_assistant/providers/recipe_provider.dart';
-
+import '../providers/auth_provider.dart';
 // Import Router
 import 'package:fridge_to_fork_assistant/router/app_router.dart';
 
@@ -44,6 +44,7 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (_) => RecipeProvider()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
       ],
       // Dùng Consumer để lắng nghe thay đổi ngôn ngữ từ LocaleProvider
       child: Consumer<LocaleProvider>(

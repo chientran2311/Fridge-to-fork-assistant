@@ -157,4 +157,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get confirm => 'Confirm';
+
+  @override
+  String get account => 'Account';
+
+  @override
+  String get household => 'Household & Sharing';
 }

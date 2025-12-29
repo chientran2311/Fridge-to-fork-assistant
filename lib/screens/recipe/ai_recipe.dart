@@ -40,8 +40,7 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
     if (ingredients.isNotEmpty) {
       recipeProvider.getRecipesByIngredients(ingredients);
     } else {
-      // Nếu tủ lạnh trống, có thể gọi gợi ý ngẫu nhiên hoặc hiển thị trạng thái trống
-      // recipeProvider.searchRecipes('pasta'); // Ví dụ
+      // Nếu tủ lạnh trống, không làm gì hoặc reset
     }
   }
 
@@ -63,6 +62,13 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
           ),
         ),
       ),
+      // Fix: Thêm nút Generate để người dùng chủ động tìm kiếm công thức
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _loadRecipes,
+        backgroundColor: const Color(0xFF0FBD3B),
+        icon: const Icon(Icons.auto_awesome, color: Colors.white),
+        label: const Text("Gợi ý món mới", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
     );
   }
 
@@ -81,15 +87,18 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
             
             // TRƯỜNG HỢP 1: Tủ lạnh trống
             if (inventoryProvider.items.isEmpty) {
-              return const SliverToBoxAdapter(
+              return const SliverFillRemaining( // Dùng SliverFillRemaining để căn giữa màn hình
+                hasScrollBody: false,
                 child: Padding(
-                  padding: EdgeInsets.only(top: 50),
+                  padding: EdgeInsets.only(bottom: 100), // Đẩy lên một chút cho đẹp
                   child: Center(
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.kitchen_outlined, size: 60, color: Colors.grey),
+                        Icon(Icons.kitchen_outlined, size: 80, color: Colors.grey),
                         SizedBox(height: 16),
-                        Text("Tủ lạnh trống trơn!", style: TextStyle(fontSize: 18, color: Colors.grey)),
+                        Text("Tủ lạnh trống trơn!", style: TextStyle(fontSize: 18, color: Colors.grey, fontWeight: FontWeight.bold)),
+                        SizedBox(height: 8),
                         Text("Hãy thêm nguyên liệu để nhận gợi ý.", style: TextStyle(color: Colors.grey)),
                       ],
                     ),
@@ -100,21 +109,36 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
 
             // TRƯỜNG HỢP 2: Đang tải
             if (recipeProvider.isLoading) {
-              return const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.only(top: 100),
-                  child: Center(child: CircularProgressIndicator(color: Color(0xFF0FBD3B))),
-                ),
+              return const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(child: CircularProgressIndicator(color: Color(0xFF0FBD3B))),
               );
             }
 
             // TRƯỜNG HỢP 3: Có lỗi
             if (recipeProvider.errorMessage.isNotEmpty) {
-              return SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Center(
-                    child: Text("Lỗi: ${recipeProvider.errorMessage}", style: const TextStyle(color: Colors.red)),
+              return SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+                        const SizedBox(height: 16),
+                        Text(
+                          "Đã có lỗi xảy ra",
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.grey[800]),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          recipeProvider.errorMessage, 
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -122,10 +146,17 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
 
             // TRƯỜNG HỢP 4: Không tìm thấy công thức nào
             if (recipeProvider.recipes.isEmpty) {
-              return const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.only(top: 50),
-                  child: Center(child: Text("Không tìm thấy món ăn nào phù hợp :(")),
+              return const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.search_off, size: 60, color: Colors.grey),
+                      SizedBox(height: 16),
+                      Text("Không tìm thấy món ăn nào phù hợp :(", style: TextStyle(color: Colors.grey)),
+                    ],
+                  ),
                 ),
               );
             }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../models/household_recipe.dart';
-import '../services/spoonacular_service.dart';
+// Import Repository thay vì Service
+import '../data/repositories/recipe_repository.dart'; 
 
 class RecipeProvider extends ChangeNotifier {
-  final SpoonacularService _service = SpoonacularService();
+  // Gọi qua Repository
+  final RecipeRepository _repository = RecipeRepository();
   
   List<HouseholdRecipe> _recipes = [];
   bool _isLoading = false;
@@ -13,9 +15,8 @@ class RecipeProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
-  // --- HÀM 1: Tìm theo nguyên liệu (Đã sửa tên như bạn yêu cầu) ---
+  // --- HÀM 1: Gợi ý món ăn thông minh (AI) ---
   Future<void> getRecipesByIngredients(List<String> ingredients) async {
-    // Reset danh sách nếu input rỗng
     if (ingredients.isEmpty) {
       _recipes = [];
       _errorMessage = "Tủ lạnh đang trống, hãy thêm thực phẩm!";
@@ -23,44 +24,45 @@ class RecipeProvider extends ChangeNotifier {
       return;
     }
 
-    _isLoading = true;
-    _errorMessage = '';
-    notifyListeners(); // Báo UI hiện loading
+    _setLoading(true);
 
     try {
-      // Gọi service
-      _recipes = await _service.getRecipesByIngredients(ingredients);
+      // Provider không cần biết là đang dùng Gemini hay Spoonacular, chỉ cần biết là lấy được recipes
+      _recipes = await _repository.getRecipesByIngredients(ingredients);
       
       if (_recipes.isEmpty) {
-        _errorMessage = "Không tìm thấy công thức nào phù hợp với nguyên liệu của bạn.";
+        _errorMessage = "Không tìm thấy công thức phù hợp. Thử thêm nguyên liệu khác xem?";
       }
     } catch (e) {
-      _errorMessage = "Lỗi tải dữ liệu: $e";
+      _errorMessage = "Có lỗi xảy ra: $e";
       _recipes = [];
     } finally {
-      _isLoading = false;
-      notifyListeners(); // Báo UI tắt loading
+      _setLoading(false);
     }
   }
 
-  // --- HÀM 2: Tìm kiếm theo tên (Đã đưa ra ngoài, không bị lồng nữa) ---
+  // --- HÀM 2: Tìm kiếm món ăn (Search Bar) ---
   Future<void> searchRecipes(String query) async {
     if (query.isEmpty) return;
 
-    _isLoading = true;
-    _errorMessage = '';
-    notifyListeners();
+    _setLoading(true);
 
     try {
-      _recipes = await _service.searchRecipes(query);
+      _recipes = await _repository.searchRecipes(query);
       if (_recipes.isEmpty) {
         _errorMessage = "Không tìm thấy món nào tên là '$query'";
       }
     } catch (e) {
       _errorMessage = "Lỗi tìm kiếm: $e";
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
     }
+  }
+
+  // Hàm phụ trợ để set loading và reset lỗi
+  void _setLoading(bool value) {
+    _isLoading = value;
+    if (value) _errorMessage = ''; // Reset lỗi khi bắt đầu tải mới
+    notifyListeners();
   }
 }

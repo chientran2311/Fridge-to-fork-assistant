@@ -1,61 +1,103 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/inventory_item.dart';
+import '../data/repositories/inventory_repository.dart';
 
 class InventoryProvider extends ChangeNotifier {
-  // --- STATE ---
+  final InventoryRepository _repository = InventoryRepository();
+  
   List<InventoryItem> _items = [];
-  bool _isLoading = true;
+  bool _isLoading = false;
+  
+  // Biến quản lý listener để tránh rò rỉ bộ nhớ
+  StreamSubscription? _userSubscription;
+  StreamSubscription? _inventorySubscription;
 
   List<InventoryItem> get items => _items;
   bool get isLoading => _isLoading;
-
-  // Getter phụ
   List<String> get ingredientNames => _items.map((e) => e.name).toList();
 
-  // --- LISTEN DATA ---
-  void listenToInventory() {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+  InventoryProvider() {
+    _init(); // Tự động chạy khi Provider được tạo
+  }
 
-    FirebaseFirestore.instance
+  // --- 1. LOGIC KHỞI TẠO THÔNG MINH ---
+  void _init() {
+    // Lắng nghe trạng thái Auth thay vì gọi 1 lần rồi thôi
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      _cancelSubscriptions(); // Hủy listener cũ nếu có
+      
+      if (user != null) {
+        // User đã đăng nhập -> Bắt đầu nghe dữ liệu User
+        _listenToUserDoc(user.uid);
+      } else {
+        // User chưa đăng nhập/Đăng xuất -> Xóa dữ liệu local
+        _items = [];
+        _isLoading = false;
+        notifyListeners();
+      }
+    });
+  }
+
+  // --- 2. LẮNG NGHE USER DOC (Để lấy household_id) ---
+  void _listenToUserDoc(String uid) {
+    _isLoading = true;
+    notifyListeners();
+
+    _userSubscription = FirebaseFirestore.instance
         .collection('users')
-        .doc(user.uid)
+        .doc(uid)
         .snapshots()
         .listen((userSnapshot) {
       
       if (userSnapshot.exists) {
         final householdId = userSnapshot.data()?['current_household_id'];
-
-        // Nếu có Household ID thì mới lắng nghe Inventory
-        if (householdId != null) {
-          FirebaseFirestore.instance
-              .collection('households')
-              .doc(householdId)
-              .collection('inventory')
-              .orderBy('expiry_date')
-              .snapshots()
-              .listen((inventorySnapshot) {
-            
-            _items = inventorySnapshot.docs
-                .map((doc) => InventoryItem.fromFirestore(doc))
-                .toList();
-
-            _isLoading = false;
-            notifyListeners();
-          });
-        } else {
-          // Nếu chưa có nhà, danh sách rỗng, tắt loading
-          _items = [];
-          _isLoading = false;
-          notifyListeners();
-        }
+        // Có thay đổi về nhà -> Nghe lại kho
+        _listenToInventory(householdId);
+      } else {
+        _isLoading = false;
+        notifyListeners();
       }
     });
   }
 
-  // --- ADD ITEM (ĐÃ NÂNG CẤP LOGIC TỰ TẠO NHÀ) ---
+  // --- 3. LẮNG NGHE KHO HÀNG (INVENTORY) ---
+  void _listenToInventory(String? householdId) {
+    // Hủy listener kho cũ trước khi tạo mới
+    _inventorySubscription?.cancel();
+
+    if (householdId != null) {
+      _inventorySubscription = _repository.getInventoryStream(householdId).listen(
+        (items) {
+          _items = items;
+          _isLoading = false;
+          notifyListeners(); // Cập nhật UI
+        },
+        onError: (e) {
+          debugPrint("❌ Lỗi lấy kho hàng: $e");
+          _isLoading = false;
+          notifyListeners();
+        },
+      );
+    } else {
+      // User chưa có nhà
+      _items = [];
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Hàm public để UI gọi nếu cần refresh thủ công (Optional)
+  void listenToInventory() {
+    // Hàm này giữ lại để tương thích code cũ ở main.dart, 
+    // nhưng thực tế logic đã nằm trong _init() rồi.
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) _listenToUserDoc(user.uid);
+  }
+
+  // --- ADD ITEM (Giữ nguyên logic của bạn) ---
   Future<void> addItem({
     required String name,
     required double quantity,
@@ -66,61 +108,80 @@ class InventoryProvider extends ChangeNotifier {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception("Bạn chưa đăng nhập");
 
-    try {
-      final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
-      final userDoc = await userRef.get();
-      
-      // 1. Kiểm tra xem user đã có nhà chưa
-      String? householdId = userDoc.data()?['current_household_id'];
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    String? householdId = userDoc.data()?['current_household_id'];
 
-      // 2. [LOGIC MỚI] Nếu chưa có nhà -> Tự động tạo "Nhà Riêng"
-      if (householdId == null) {
-        debugPrint("⚠️ User chưa có nhà. Đang tạo nhà cá nhân...");
-        
-        // Tạo document nhà mới
-        final newHouseRef = FirebaseFirestore.instance.collection('households').doc();
-        householdId = newHouseRef.id;
+    if (householdId == null) {
+       // Tạo nhà mới nếu chưa có
+       householdId = await _repository.createNewHousehold(user.uid);
+    }
 
-        // Lưu thông tin nhà mới
-        await newHouseRef.set({
-          'household_id': householdId,
-          'name': 'Nhà của tôi', // Tên mặc định
-          'owner_id': user.uid,
-          'residents': [user.uid], // User là cư dân duy nhất
-          'created_at': FieldValue.serverTimestamp(),
-        });
+    final newItem = InventoryItem(
+      id: '', 
+      name: name,
+      quantity: quantity,
+      unit: unit,
+      expiryDate: expiryDate,
+      quickTag: category,
+    );
 
-        // Cập nhật ngược lại vào User để lần sau không phải tạo nữa
-        await userRef.update({
-          'current_household_id': householdId,
-        });
-        
-        debugPrint("✅ Đã tạo nhà mới: $householdId");
-      }
+    await _repository.addItem(householdId, newItem, user.uid);
+  }
 
-      // 3. Bây giờ chắc chắn đã có householdId, tiến hành thêm món ăn như bình thường
-      final newItemRef = FirebaseFirestore.instance
+  // --- DỌN DẸP ---
+  void _cancelSubscriptions() {
+    _userSubscription?.cancel();
+    _inventorySubscription?.cancel();
+  }
+
+  @override
+  void dispose() {
+    _cancelSubscriptions();
+    super.dispose();
+  }
+
+
+  // Xóa danh sách items
+  Future<void> deleteItems(List<String> itemIds) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    String? householdId = userDoc.data()?['current_household_id'];
+    if (householdId == null) return;
+
+    final batch = FirebaseFirestore.instance.batch();
+    for (var id in itemIds) {
+      final docRef = FirebaseFirestore.instance
           .collection('households')
           .doc(householdId)
           .collection('inventory')
-          .doc();
-
-      await newItemRef.set({
-        'ingredient_id': newItemRef.id,
-        'household_id': householdId,
-        'name': name,
-        'quantity': quantity,
-        'unit': unit,
-        'expiry_date': Timestamp.fromDate(expiryDate),
-        'quick_tag': category ?? 'Other',
-        'added_by_uid': user.uid,
-        'created_at': FieldValue.serverTimestamp(),
-        'image_url': '',
-      });
-
-    } catch (e) {
-      debugPrint("Lỗi thêm món: $e");
-      rethrow;
+          .doc(id);
+      batch.delete(docRef);
     }
+    await batch.commit();
+  }
+
+  // Cập nhật item
+  Future<void> updateItem(InventoryItem item) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    String? householdId = userDoc.data()?['current_household_id'];
+    if (householdId == null) return;
+
+    await FirebaseFirestore.instance
+        .collection('households')
+        .doc(householdId)
+        .collection('inventory')
+        .doc(item.id)
+        .update({
+          'name': item.name,
+          'quantity': item.quantity,
+          'unit': item.unit,
+          'expiry_date': item.expiryDate != null ? Timestamp.fromDate(item.expiryDate!) : null,
+          'quick_tag': item.quickTag,
+        });
   }
 }

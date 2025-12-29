@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../../l10n/app_localizations.dart';
 class FridgeSearchBar extends StatelessWidget {
   final Function(String)? onSearch;
 
@@ -10,6 +10,7 @@ class FridgeSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context);
     return Container(
       color: const Color(0xFFF8F9FA),
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
@@ -29,7 +30,7 @@ class FridgeSearchBar extends StatelessWidget {
         child: TextField(
           onChanged: onSearch,
           decoration: InputDecoration(
-            hintText: 'Search ingredients...',
+            hintText: s?.searchingredients ?? 'Search ingredients...',
             hintStyle: TextStyle(
               color: Colors.grey[400],
               fontSize: 15,

@@ -17,7 +17,7 @@ import '../../widgets/fridge/delete_confirmation_modal.dart';
 import '../../utils/responsive_ui.dart';
 
 // Import Màn hình Settings
-import '../settings/settings.dart'; 
+
 
 class FridgeHomeScreen extends StatefulWidget {
   const FridgeHomeScreen({super.key});

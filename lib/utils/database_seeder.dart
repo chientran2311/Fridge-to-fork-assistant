@@ -20,10 +20,10 @@ class DatabaseSeeder {
         'uid': _userId,
         'email': 'admin@beptroly.com',
         'display_name': 'Admin Bếp',
-        'photo_url': 'https://i.pravatar.cc/300', // Ảnh avatar mẫu
         'language': 'vi',
-        'fcm_token': '', 
+        'fcm_token': '',
         'current_household_id': _householdId, // Liên kết sang nhà
+        'cuisines': ['Vietnamese', 'Asian', 'Healthy'],
         'created_at': FieldValue.serverTimestamp(),
       });
       debugPrint("✅ Đã tạo Users");
@@ -32,7 +32,7 @@ class DatabaseSeeder {
       // BƯỚC 2: TẠO HOUSEHOLD (Collection: households)
       // ==========================================
       final houseRef = _firestore.collection('households').doc(_householdId);
-      
+
       await houseRef.set({
         'household_id': _householdId,
         'name': 'Gia Đình Mẫu',
@@ -43,7 +43,7 @@ class DatabaseSeeder {
       });
       debugPrint("✅ Đã tạo Households");
 
-      // ==========================================
+      // ==================== ======================
       // BƯỚC 3: TẠO TỦ LẠNH (Sub-collection: inventory)
       // ==========================================
       // Món 1: Thịt bò
@@ -55,7 +55,8 @@ class DatabaseSeeder {
         'unit': 'g',
         'image_url': '',
         // Hết hạn sau 5 ngày
-        'expiry_date': Timestamp.fromDate(DateTime.now().add(const Duration(days: 5))),
+        'expiry_date':
+            Timestamp.fromDate(DateTime.now().add(const Duration(days: 5))),
         'quick_tag': 'meat',
         'added_by_uid': _userId,
         'created_at': FieldValue.serverTimestamp(),
@@ -69,7 +70,8 @@ class DatabaseSeeder {
         'quantity': 10,
         'unit': 'quả',
         'image_url': '',
-        'expiry_date': Timestamp.fromDate(DateTime.now().add(const Duration(days: 2))),
+        'expiry_date':
+            Timestamp.fromDate(DateTime.now().add(const Duration(days: 2))),
         'quick_tag': 'dairy',
         'added_by_uid': _userId,
         'created_at': FieldValue.serverTimestamp(),
@@ -90,18 +92,45 @@ class DatabaseSeeder {
         'difficulty': 'Medium',
         'added_by_uid': _userId,
         'added_at': FieldValue.serverTimestamp(),
-        
+
         // Cấu trúc mảng nguyên liệu (Thay thế bảng Recipe_Required_Ingredients)
         'ingredients': [
           {'name': 'Thịt bò', 'amount': 300, 'unit': 'g'},
           {'name': 'Tiêu đen', 'amount': 1, 'unit': 'thìa'},
           {'name': 'Hành tím', 'amount': 2, 'unit': 'củ'},
         ],
-        
-        'instructions': 'Bước 1: Rửa sạch thịt bò...\nBước 2: Ướp gia vị...\nBước 3: Kho lửa nhỏ.',
+
+        'instructions':
+            'Bước 1: Rửa sạch thịt bò...\nBước 2: Ướp gia vị...\nBước 3: Kho lửa nhỏ.',
       });
       debugPrint("✅ Đã tạo Recipes");
 
+      await houseRef.collection('cooking_history').add({
+        'recipe_id': _recipeId, // ID món ăn
+        'api_recipe_id': 12345,
+        'title': 'Bò Kho Tiêu',
+        'cooked_at': FieldValue.serverTimestamp(),
+        'is_favorite': true, // Thay thế cho rating
+        'servings': 4,
+        'tags': ['Beef', 'Spicy'], // Thêm tag để AI dễ gợi ý món tương tự
+      });
+      debugPrint("✅ Đã tạo Cooking History");
+
+      await houseRef.collection('favorite_recipes').doc('fav_01').set({
+        'local_recipe_id': 'fav_01',
+        'household_id': _householdId,
+        'api_recipe_id': 12345, // ID trùng với món Bò Kho
+        'title': 'Bò Kho Tiêu',
+        'image_url': 'https://spoonacular.com/recipeImages/beef-stew.jpg',
+        'ready_in_minutes': 45,
+        'calories': 350.5,
+        'difficulty': 'Medium',
+        'servings': 4,
+        'added_by_uid': _userId,
+        'added_at': FieldValue.serverTimestamp(),
+        'is_favorite': true,
+        // Lưu tối giản, không cần instruction chi tiết nếu chỉ để hiển thị list
+      });
       // ==========================================
       // BƯỚC 5: TẠO LỊCH ĂN (Sub-collection: meal_plans)
       // ==========================================
@@ -137,9 +166,8 @@ class DatabaseSeeder {
         'note': 'Mua loại củ to',
       });
       debugPrint("✅ Đã tạo Shopping List");
-      
-      debugPrint("🎉 HOÀN TẤT! Dữ liệu mẫu đã sẵn sàng.");
 
+      debugPrint("🎉 HOÀN TẤT! Dữ liệu mẫu đã sẵn sàng.");
     } catch (e) {
       debugPrint("❌ Lỗi khi tạo dữ liệu: $e");
     }

@@ -163,4 +163,64 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get household => 'Gia đình & Chia sẻ';
+
+  @override
+  String get filterTitle => 'Lọc Công Thức';
+
+  @override
+  String get reset => 'Đặt lại';
+
+  @override
+  String get difficulty => 'Độ khó';
+
+  @override
+  String get easy => 'Dễ';
+
+  @override
+  String get medium => 'Vừa';
+
+  @override
+  String get hard => 'Khó';
+
+  @override
+  String get mealType => 'Loại bữa ăn';
+
+  @override
+  String get breakfast => 'Bữa sáng';
+
+  @override
+  String get lunch => 'Bữa trưa';
+
+  @override
+  String get dinner => 'Bữa tối';
+
+  @override
+  String get snack => 'Ăn vặt';
+
+  @override
+  String get cuisine => 'Ẩm thực';
+
+  @override
+  String get italian => 'Ý';
+
+  @override
+  String get mexican => 'Mexico';
+
+  @override
+  String get asian => 'Châu Á';
+
+  @override
+  String get vegan => 'Chay';
+
+  @override
+  String get prepTime => 'Thời gian chuẩn bị';
+
+  @override
+  String get min => 'phút';
+
+  @override
+  String get hours => 'giờ';
+
+  @override
+  String get applyFilters => 'Áp dụng bộ lọc';
 }

@@ -163,4 +163,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get household => 'Household & Sharing';
+
+  @override
+  String get filterTitle => 'Filter Recipes';
+
+  @override
+  String get reset => 'Reset';
+
+  @override
+  String get difficulty => 'Difficulty Level';
+
+  @override
+  String get easy => 'Easy';
+
+  @override
+  String get medium => 'Medium';
+
+  @override
+  String get hard => 'Hard';
+
+  @override
+  String get mealType => 'Meal Type';
+
+  @override
+  String get breakfast => 'Breakfast';
+
+  @override
+  String get lunch => 'Lunch';
+
+  @override
+  String get dinner => 'Dinner';
+
+  @override
+  String get snack => 'Snack';
+
+  @override
+  String get cuisine => 'Cuisine';
+
+  @override
+  String get italian => 'Italian';
+
+  @override
+  String get mexican => 'Mexican';
+
+  @override
+  String get asian => 'Asian';
+
+  @override
+  String get vegan => 'Vegan';
+
+  @override
+  String get prepTime => 'Max Prep Time';
+
+  @override
+  String get min => 'min';
+
+  @override
+  String get hours => 'hours';
+
+  @override
+  String get applyFilters => 'Apply Filters';
 }

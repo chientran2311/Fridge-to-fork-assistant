@@ -13,7 +13,7 @@ import '../../widgets/recipe/ai_recipe/recipe_card.dart'; // Đảm bảo import
 
 class AIRecipeScreen extends StatefulWidget {
   const AIRecipeScreen({super.key});
-
+  
   @override
   State<AIRecipeScreen> createState() => _AIRecipeScreenState();
 }
@@ -34,7 +34,7 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
     
     // Logic: Luôn gọi API để refresh hoặc load mới nếu có nguyên liệu
     if (ingredients.isNotEmpty) {
-      recipeProvider.getRecipesByIngredients(ingredients);
+      recipeProvider.searchRecipes(ingredients: ingredients);
     }
   }
 
@@ -126,11 +126,11 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
             }
 
             // 3. Lỗi
-            if (recipeProvider.errorMessage.isNotEmpty) {
+            if (recipeProvider.errorMessage != null) {
               return _buildStateMessage(
                 icon: Icons.error_outline,
                 message: "Đã có lỗi xảy ra",
-                subMessage: recipeProvider.errorMessage,
+                subMessage: recipeProvider.errorMessage!,
                 isError: true,
               );
             }

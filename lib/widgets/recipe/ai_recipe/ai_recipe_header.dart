@@ -1,25 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart'; // Import Provider
-import 'package:fridge_to_fork_assistant/screens/recipe/filter_modal.dart';
-
-// Import các Provider chứa dữ liệu
-import 'package:fridge_to_fork_assistant/providers/recipe_provider.dart';
-import 'package:fridge_to_fork_assistant/providers/inventory_provider.dart';
+import 'package:provider/provider.dart'; 
+import '../../../screens/recipe/filter_modal.dart';
+import '../../../models/RecipeFilter.dart'; // Đảm bảo đường dẫn đúng
+import '../../../providers/recipe_provider.dart';
+import '../../../providers/inventory_provider.dart';
 
 class AIRecipeHeader extends StatelessWidget {
   const AIRecipeHeader({super.key});
-
+  
   @override
   Widget build(BuildContext context) {
     final Color mainColor = const Color(0xFF1B3B36);
+Future<void> _openFilterModal() async {
+    final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
+    
+    // 1. Mở Modal và truyền filter hiện tại vào
+    final RecipeFilter? result = await FilterModal.show(
+      context, 
+      recipeProvider.currentFilter
+    );
+
+    // 2. Nếu user nhấn Apply (result != null)
+    if (result != null) {
+      // Cập nhật Provider -> Provider sẽ tự gọi searchRecipes() như logic đã viết
+      recipeProvider.updateFilter(result);
+    }
+  }
+    // Lấy Filter hiện tại từ Provider để truyền vào Modal
+    final currentFilter = context.select<RecipeProvider, RecipeFilter>((p) => p.currentFilter);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- Header Row (Giữ nguyên) ---
+          // --- Header Row ---
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -33,7 +49,7 @@ class AIRecipeHeader extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: () {
-                  FilterModal.show(context);
+                  _openFilterModal();
                 },
                 child: Container(
                   width: 40,
@@ -57,16 +73,12 @@ class AIRecipeHeader extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // --- Green Summary Banner (ĐÃ CẬP NHẬT DYNAMIC DATA) ---
+          // --- Green Summary Banner (Giữ nguyên logic của bạn) ---
           Consumer2<RecipeProvider, InventoryProvider>(
             builder: (context, recipeProvider, inventoryProvider, child) {
-              // 1. Lấy số lượng công thức AI đã tìm thấy
               final int recipeCount = recipeProvider.recipes.length;
-              
-              // 2. Lấy số lượng nguyên liệu thực tế đang có trong tủ lạnh
               final int ingredientCount = inventoryProvider.items.length;
 
-              // Logic hiển thị văn bản
               String titleText = "Found $recipeCount recipes";
               if (recipeProvider.isLoading) {
                  titleText = "Searching for recipes...";
@@ -93,7 +105,6 @@ class AIRecipeHeader extends StatelessWidget {
                           children: [
                             TextSpan(
                                 text: "$titleText to rescue your ingredients. "),
-                            // Hiển thị số nguyên liệu thật đang được sử dụng/có sẵn
                             if (ingredientCount > 0)
                               TextSpan(
                                 text: "Ready to cook with $ingredientCount items from your fridge!",

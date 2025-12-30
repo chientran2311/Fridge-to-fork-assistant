@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fridge_to_fork_assistant/screens/recipe/favorite_recipes.dart';
+
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import 'add_item_overlay.dart';
 import 'weekly_plan_tab.dart';

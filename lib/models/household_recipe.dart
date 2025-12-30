@@ -6,10 +6,10 @@ class HouseholdRecipe {
   final int apiRecipeId;
   final String title;
   final String? imageUrl;
-  final int? readyInMinutes;
-  final int? servings;         // Khẩu phần ăn
+  final int readyInMinutes;
+  final int? servings;        
   final double? calories;
-  final String? difficulty;
+  final String? difficulty; // Lưu trữ chuỗi "Easy", "Medium", "Hard"
   final String? instructions;
   final String? addedByUid;
   final DateTime? addedAt;
@@ -22,7 +22,7 @@ class HouseholdRecipe {
     required this.apiRecipeId,
     required this.title,
     this.imageUrl,
-    this.readyInMinutes,
+    this.readyInMinutes = 0, // Mặc định là 0 nếu không có dữ liệu
     this.servings,
     this.calories,
     this.difficulty,
@@ -33,7 +33,18 @@ class HouseholdRecipe {
     this.missedIngredientCount = 0,
   });
 
+  // [CẬP NHẬT] Getter tiện ích: Nếu field difficulty null thì tự tính lại để hiển thị UI
+  String get difficultyLabel {
+    if (difficulty != null && difficulty!.isNotEmpty) {
+      return difficulty!;
+    }
+    return _calculateDifficulty(readyInMinutes);
+  }
+
   factory HouseholdRecipe.fromSpoonacular(Map<String, dynamic> json) {
+    // [CẬP NHẬT] Lấy time ra trước để tính toán, default = 0 nếu null
+    final int time = (json['readyInMinutes'] as num?)?.toInt() ?? 0;
+
     return HouseholdRecipe(
       apiRecipeId: json['id'],
       title: json['title'],
@@ -41,13 +52,16 @@ class HouseholdRecipe {
       usedIngredientCount: json['usedIngredientCount'] ?? 0,
       missedIngredientCount: json['missedIngredientCount'] ?? 0,
       
-      // [FIX] Ép kiểu an toàn: (num?)?.toInt()
-      readyInMinutes: (json['readyInMinutes'] as num?)?.toInt(),
-      servings: (json['servings'] as num?)?.toInt(), 
+      // [CẬP NHẬT] Gán giá trị time đã xử lý null safety
+      readyInMinutes: time,
+      
+      servings: (json['servings'] as num?)?.toInt(),
       
       instructions: json['instructions'],
       calories: _parseCalories(json),
-      difficulty: _calculateDifficulty((json['readyInMinutes'] as num?)?.toInt()),
+      
+      // [CẬP NHẬT] Tự động tính độ khó dựa trên thời gian ngay khi parse từ API
+      difficulty: _calculateDifficulty(time),
     );
   }
 
@@ -59,7 +73,10 @@ class HouseholdRecipe {
       apiRecipeId: data['api_recipe_id'],
       title: data['title'],
       imageUrl: data['image_url'],
-      readyInMinutes: data['ready_in_minutes'],
+      
+      // [CẬP NHẬT] Thêm ?? 0 để an toàn
+      readyInMinutes: data['ready_in_minutes'] ?? 0,
+      
       servings: data['servings'],
       calories: (data['calories'] as num?)?.toDouble(),
       difficulty: data['difficulty'],
@@ -79,6 +96,8 @@ class HouseholdRecipe {
       missedIngredientCount: json['missedIngredientCount'] ?? 0,
       usedIngredientCount: json['usedIngredientCount'] ?? 0,
       servings: (json['servings'] as num?)?.toInt(),
+      // [CẬP NHẬT] Thêm xử lý time cho fromJson thường
+      readyInMinutes: (json['readyInMinutes'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -91,7 +110,7 @@ class HouseholdRecipe {
       'ready_in_minutes': readyInMinutes,
       'servings': servings,
       'calories': calories,
-      'difficulty': difficulty,
+      'difficulty': difficulty, // Lưu giá trị đã tính toán vào DB
       'instructions': instructions,
       'added_by_uid': addedByUid,
       'added_at': addedAt != null ? Timestamp.fromDate(addedAt!) : FieldValue.serverTimestamp(),
@@ -99,17 +118,25 @@ class HouseholdRecipe {
   }
 
   static double? _parseCalories(Map<String, dynamic> json) {
-    if (json['nutrition'] != null && json['nutrition']['nutrients'] != null) {
+    // Kiểm tra an toàn hơn
+    if (json['nutrition'] != null && json['nutrition']['nutrients'] is List) {
       final nutrients = json['nutrition']['nutrients'] as List;
-      final calItem = nutrients.firstWhere(
-        (element) => element['name'] == 'Calories',
-        orElse: () => null,
-      );
-      return (calItem?['amount'] as num?)?.toDouble();
+      // Dùng firstWhereOrNull (cần collection package) hoặc try/catch check range
+      // Cách cơ bản:
+      try {
+        final calItem = nutrients.firstWhere(
+          (element) => element['name'] == 'Calories',
+          orElse: () => null,
+        );
+        return (calItem?['amount'] as num?)?.toDouble();
+      } catch (e) {
+        return null;
+      }
     }
     return null;
   }
 
+  // [CẬP NHẬT] Logic tính toán tập trung
   static String _calculateDifficulty(int? minutes) {
     if (minutes == null) return 'Medium';
     if (minutes <= 30) return 'Easy';

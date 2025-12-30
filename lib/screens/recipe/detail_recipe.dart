@@ -5,6 +5,10 @@ import 'package:fridge_to_fork_assistant/widgets/common/primary_button.dart';
 import 'package:fridge_to_fork_assistant/models/household_recipe.dart';
 import 'package:fridge_to_fork_assistant/providers/inventory_provider.dart';
 
+// [THÊM] Import thư viện Firebase
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../data/services/spoonacular_service.dart';
 
 import 'package:fridge_to_fork_assistant/widgets/recipe/detail/ingredients_section.dart';
@@ -24,11 +28,14 @@ class RecipeDetailScreen extends StatefulWidget {
 
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   final Color mainColor = const Color(0xFF1B3B36);
+  // [THÊM] Màu chủ đạo cho lịch (Everglade)
+  final Color calendarColor = const Color(0xFF214130);
+
   final SpoonacularService _spoonacularService = SpoonacularService();
 
   bool _isLoading = true;
   String? _errorMessage;
-
+  bool _isSaving = false;
   List<Map<String, dynamic>> _processedIngredients = [];
   List<String> _processedInstructions = [];
   int _readyInMinutes = 0;
@@ -132,6 +139,113 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       });
     }
   }
+
+  // ======================================================
+  // [LOGIC MỚI] 1. Hiển thị Lịch chọn ngày
+  // ======================================================
+  Future<void> _showDatePickerAndSave() async {
+    final DateTime now = DateTime.now();
+    
+    // Hiển thị DatePicker
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      // Tùy chỉnh màu sắc (Theme) sang Everglade
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: calendarColor, // Màu Header, vòng tròn chọn (#214130)
+              onPrimary: Colors.white,
+              onSurface: Colors.black, 
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: calendarColor, // Màu nút OK/Cancel
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    // Nếu người dùng chọn ngày -> Tiến hành lưu
+    if (pickedDate != null) {
+      await _saveToCookingHistory(pickedDate);
+    }
+  }
+
+  // ======================================================
+  // [LOGIC MỚI] 2. Lưu vào Firestore (cooking_history)
+  // ======================================================
+  Future<void> _saveToCookingHistory(DateTime date) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Bạn cần đăng nhập"), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    // Bắt đầu Loading: Cập nhật UI
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) throw Exception("Không tìm thấy user");
+      
+      final householdId = userDoc.data()?['current_household_id'];
+      if (householdId == null) throw Exception("Chưa tham gia gia đình");
+
+      final historyData = {
+        'recipe_id': widget.recipe.localRecipeId ?? "api_${widget.recipe.apiRecipeId}",
+        'api_recipe_id': widget.recipe.apiRecipeId,
+        'title': widget.recipe.title,
+        'image_url': widget.recipe.imageUrl,
+        'cooked_at': Timestamp.fromDate(date),
+        'servings': _currentServings,
+        'is_favorite': false,
+        'added_by_uid': user.uid,
+        'created_at': FieldValue.serverTimestamp(),
+        'tags': [],
+      };
+
+      await FirebaseFirestore.instance
+          .collection('households')
+          .doc(householdId)
+          .collection('cooking_history')
+          .add(historyData);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Đã thêm vào lịch ngày ${date.day}/${date.month}!"),
+            backgroundColor: const Color.fromARGB(255, 27, 56, 28),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Lỗi: $e"), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      // Dù thành công hay thất bại, luôn tắt loading
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -265,6 +379,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
+  // ======================================================
+  // [CẬP NHẬT] Nút bấm ở dưới cùng
+  // ======================================================
   Widget _buildBottomBar() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
@@ -279,12 +396,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         ],
       ),
       child: PrimaryButton(
-        text: "Lưu công thức",
-        icon: Icons.bookmark_border,
+        text: "Thêm vào lịch nấu", // Đổi text
+        icon: Icons.calendar_month, // Đổi icon
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Chức năng lưu đang phát triển")),
-          );
+          // Gọi hàm hiển thị lịch
+          _showDatePickerAndSave();
         },
         backgroundColor: mainColor,
       ),

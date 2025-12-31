@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PlannerDetailScreen extends StatefulWidget {
-  const PlannerDetailScreen({super.key});
+  final String recipeId; // ✅ Recipe ID từ meal_card
+  final String householdId; // ✅ Household ID
+  final String mealPlanDate; // ✅ Ngày meal plan
+
+  const PlannerDetailScreen({
+    super.key,
+    required this.recipeId,
+    required this.householdId,
+    required this.mealPlanDate,
+  });
 
   @override
   State<PlannerDetailScreen> createState() => _PlannerDetailScreenState();
@@ -10,21 +21,103 @@ class PlannerDetailScreen extends StatefulWidget {
 class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   int servings = 2;
   DateTime? selectedDate; // 👈 ngày được chọn
+  
+  // ✅ Biến lưu dữ liệu từ Firebase
+  Map<String, dynamic>? recipeData;
+  List<Map<String, dynamic>> ingredients = [];
+  List<String> instructions = [];
+  bool isLoading = true;
+  String? errorMessage;
 
-  final List<Map<String, dynamic>> ingredients = [
-    {"name": "2 ripe Avocados", "inFridge": true, "checked": true},
-    {"name": "200g Spinach", "inFridge": false, "checked": false},
-    {"name": "500g Pasta", "inFridge": false, "checked": false},
-    {"name": "1 Lemon", "inFridge": true, "checked": true},
-    {"name": "3 Garlic Cloves", "inFridge": false, "checked": false},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchRecipeData();
+  }
 
-  final List<String> instructions = [
-    "Boil the pasta in salted water according to the package instructions until al dente. Reserve 1/2 cup of pasta water before draining.",
-    "While pasta cooks, combine avocado, spinach, lemon juice, garlic, and olive oil in a blender. Blend until smooth and creamy.",
-    "Drain the pasta and return it to the pot. Pour the green sauce over the pasta. Add the reserved pasta water a little at a time to loosen the sauce if needed.",
-    "Toss gently until well coated. Season with salt and pepper to taste. Serve immediately topped with optional parmesan or pine nuts.",
-  ];
+  // ✅ Fetch recipe từ Firebase và load ingredient names từ master collection
+  Future<void> _fetchRecipeData() async {
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId == null) throw Exception('User not logged in');
+
+      final recipeDoc = await FirebaseFirestore.instance
+          .collection('households')
+          .doc(widget.householdId)
+          .collection('household_recipes')
+          .doc(widget.recipeId)
+          .get();
+
+      if (!recipeDoc.exists) throw Exception('Recipe not found');
+
+      final data = recipeDoc.data() as Map<String, dynamic>;
+      
+      // ✅ Parse ingredients - fetch ingredient names từ master ingredients collection
+      final ingredientsList = <Map<String, dynamic>>[];
+      final rawIngredients = data['ingredients'] as List<dynamic>? ?? [];
+      
+      for (var ing in rawIngredients) {
+        final ingredientId = ing['ingredient_id'] ?? '';
+        final amount = ing['amount'] ?? 0;
+        final unit = ing['unit'] ?? '';
+        
+        // Fetch ingredient từ master ingredients collection để lấy tên
+        String ingredientName = 'Unknown';
+        try {
+          final ingDoc = await FirebaseFirestore.instance
+              .collection('ingredients')
+              .doc(ingredientId)
+              .get();
+          
+          if (ingDoc.exists) {
+            ingredientName = ingDoc.data()?['name'] ?? 'Unknown';
+          }
+        } catch (e) {
+          debugPrint('⚠️ Error fetching ingredient $ingredientId: $e');
+        }
+        
+        ingredientsList.add({
+          'name': ingredientName,
+          'amount': amount,
+          'unit': unit,
+          'checked': false,
+          'inFridge': false, // TODO: Check against inventory
+        });
+      }
+
+      // ✅ Parse instructions - nếu là string, split by newline; nếu là array, convert to list
+      final instructionsList = <String>[];
+      final rawInstructions = data['instructions'];
+      
+      if (rawInstructions is String) {
+        // Split by newline if it's a string
+        instructionsList.addAll(
+          rawInstructions.split('\n').where((s) => s.trim().isNotEmpty)
+        );
+      } else if (rawInstructions is List<dynamic>) {
+        // If it's already a list, map to strings
+        instructionsList.addAll(
+          rawInstructions.map((inst) => inst.toString())
+        );
+      }
+
+      setState(() {
+        recipeData = data;
+        ingredients = ingredientsList;
+        instructions = instructionsList;
+        isLoading = false;
+      });
+
+      debugPrint('✅ Recipe loaded: ${data['title']}');
+      debugPrint('✅ Ingredients parsed: ${ingredients.length} items');
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Error loading recipe: ${e.toString()}';
+        isLoading = false;
+      });
+      debugPrint('❌ Error fetching recipe: $e');
+    }
+  }
   
 
   // ================= ADD TO CALENDAR LOGIC =================
@@ -60,6 +153,42 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   }
   @override
   Widget build(BuildContext context) {
+    // ✅ Hiển thị loading state
+    if (isLoading) {
+      return Scaffold(
+        appBar: AppBar(leading: BackButton(onPressed: () => Navigator.pop(context))),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // ✅ Hiển thị error state
+    if (errorMessage != null) {
+      return Scaffold(
+        appBar: AppBar(leading: BackButton(onPressed: () => Navigator.pop(context))),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const SizedBox(height: 16),
+              Text(
+                errorMessage ?? 'Unknown error',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // ✅ Hiển thị detail với data từ Firebase
+    final title = recipeData?['title'] ?? 'Unknown Recipe';
+    final readyInMinutes = recipeData?['ready_in_minutes'] ?? 0;
+    final difficulty = recipeData?['difficulty'] ?? 'Medium';
+    final calories = recipeData?['calories'] ?? 0;
+    final imageUrl = recipeData?['image_url'] ?? 'https://images.unsplash.com/photo-1504674900247-0877df9cc836';
+
     return Scaffold(
       backgroundColor: Colors.white,
 
@@ -96,8 +225,12 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
             height: 320,
             width: double.infinity,
             child: Image.network(
-              "https://images.unsplash.com/photo-1504674900247-0877df9cc836",
+              imageUrl,
               fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                color: Colors.grey[300],
+                child: const Icon(Icons.image_not_supported),
+              ),
             ),
           ),
 
@@ -152,44 +285,44 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                       const SizedBox(height: 20),
 
                       // ================= TITLE =================
-                      const Text(
-                        "Creamy Avocado & Spinach\nPesto Pasta",
-                        style: TextStyle(
+                      Text(
+                        title,
+                        style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                           height: 1.3,
                         ),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
-                        "By GreenChef • Italian Inspired",
-                        style: TextStyle(color: Colors.grey),
+                      Text(
+                        recipeData?['author'] ?? 'Unknown Chef',
+                        style: const TextStyle(color: Colors.grey),
                       ),
 
                       const SizedBox(height: 16),
 
                       // ================= TAGS =================
                       Row(
-                        children: const [
+                        children: [
                           _InfoChip(
                             icon: Icons.schedule,
-                            text: "15 Mins",
-                            bgColor: Color(0xFFE9F5EC),
-                            textColor: Color(0xFF2E7D32),
+                            text: "$readyInMinutes Mins",
+                            bgColor: const Color(0xFFE9F5EC),
+                            textColor: const Color(0xFF2E7D32),
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           _InfoChip(
                             icon: Icons.flash_on,
-                            text: "Easy",
-                            bgColor: Color(0xFFFFF1E6),
-                            textColor: Color(0xFFF57C00),
+                            text: difficulty,
+                            bgColor: const Color(0xFFFFF1E6),
+                            textColor: const Color(0xFFF57C00),
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           _InfoChip(
                             icon: Icons.local_fire_department,
-                            text: "320 Kcal",
-                            bgColor: Color(0xFFE8F0FE),
-                            textColor: Color(0xFF1A73E8),
+                            text: "${(calories * servings).toInt()} Kcal",
+                            bgColor: const Color(0xFFE8F0FE),
+                            textColor: const Color(0xFF1A73E8),
                           ),
                         ],
                       ),
@@ -255,7 +388,11 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
                                   });
                                 },
                               ),
-                              Expanded(child: Text(item["name"])),
+                              Expanded(
+                                child: Text(
+                                  '${item["amount"]} ${item["unit"]} ${item["name"]}',
+                                ),
+                              ),
                               if (item["inFridge"])
                                 Container(
                                   padding: const EdgeInsets.symmetric(

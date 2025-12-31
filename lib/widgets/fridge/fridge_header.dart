@@ -5,6 +5,7 @@ class FridgeHeader extends StatelessWidget {
   final VoidCallback onCancel;
   final VoidCallback onSave;
   final VoidCallback onSettings;
+  // final VoidCallback onSeed;
 
   const FridgeHeader({
     super.key,
@@ -12,6 +13,7 @@ class FridgeHeader extends StatelessWidget {
     required this.onCancel,
     required this.onSave,
     required this.onSettings,
+    // required this.onSeed,
   });
 
   @override
@@ -66,26 +68,52 @@ class FridgeHeader extends StatelessWidget {
               ),
             )
           else
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.settings_outlined, size: 20),
-                onPressed: onSettings,
-                color: const Color(0xFF1A1A1A),
-                padding: EdgeInsets.zero,
-              ),
+                  child: IconButton(
+                    icon: const Icon(Icons.download_outlined, size: 20),
+                    onPressed: null,
+                    color: const Color(0xFF2D5F4F),
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.settings_outlined, size: 20),
+                    onPressed: onSettings,
+                    color: const Color(0xFF1A1A1A),
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
             ),
         ],
       ),

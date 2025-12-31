@@ -23,11 +23,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
   PlannerTab _currentTab = PlannerTab.weeklyPlan;
 
   void _onTabChanged(PlannerTab tab) {
+    debugPrint('📱 PlannerScreen: Tab switched to ${tab.name}');
     setState(() => _currentTab = tab);
   }
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🏗️  PlannerScreen: build() called | currentTab: ${_currentTab.name}');
     final isDesktop = context.isDesktop;
 
     return Scaffold(
@@ -77,33 +79,42 @@ class _PlannerScreenState extends State<PlannerScreen> {
               ],
             ),
 
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 900),
-          child: SingleChildScrollView(
+      body: Column(
+        children: [
+          // ✅ Fixed tab bar at top (not scrollable)
+          Container(
+            color: _bgColor,
             padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                /// 🔹 TABS
-                _Tabs(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 900),
+                child: _Tabs(
                   currentTab: _currentTab,
                   onChanged: _onTabChanged,
                 ),
-
-                const SizedBox(height: 24),
-
-          
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 250),
-                  child: _currentTab == PlannerTab.weeklyPlan
-                      ? const WeeklyPlanContent()
-                      : const ShoppingListTab(),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+
+          // ✅ Expandable scrollable content area
+          Expanded(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 900),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: IndexedStack(
+                    index: _currentTab == PlannerTab.weeklyPlan ? 0 : 1,
+                    children: const [
+                      WeeklyPlanContent(key: ValueKey('weekly')),
+                      ShoppingListTab(key: ValueKey('shopping')),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
 
       

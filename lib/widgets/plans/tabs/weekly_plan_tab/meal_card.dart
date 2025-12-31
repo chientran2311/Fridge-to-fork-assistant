@@ -9,11 +9,17 @@ class MealCard extends StatelessWidget {
   final String label;
   final String title;
   final int kcal;
+  final String recipeId; // ✅ Thêm recipe ID
+  final String householdId; // ✅ Thêm household ID
+  final String mealPlanDate; // ✅ Thêm ngày meal plan
 
   const MealCard({
     required this.label,
     required this.title,
     required this.kcal,
+    required this.recipeId,
+    required this.householdId,
+    required this.mealPlanDate,
   });
 
   @override
@@ -24,7 +30,11 @@ class MealCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => const PlannerDetailScreen(),
+            builder: (_) => PlannerDetailScreen(
+              recipeId: recipeId,
+              householdId: householdId,
+              mealPlanDate: mealPlanDate,
+            ),
           ),
         );
       },

@@ -85,4 +85,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'fridge-to-fork-a17de.firebasestorage.app',
     measurementId: 'G-ZS36W7WQ1H',
   );
+
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/widgets/fridge/models/fridge_item.dart';
 import 'package:fridge_to_fork_assistant/screens/fridge/fridge_barcode_scan.dart';
 import 'package:dotted_border/dotted_border.dart';
+import '../../models/ingredient.dart';
+import '../../services/firebase_service.dart';
 
 
 class AddItemBottomSheet extends StatefulWidget {
@@ -17,11 +19,16 @@ class AddItemBottomSheet extends StatefulWidget {
 }
 
 class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
+  final FirebaseService _firebaseService = FirebaseService();
+  
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController(text: '1');
   String _selectedUnit = 'pcs';
   DateTime? _selectedExpiryDate;
   String _selectedCategory = 'Vegetables';
+  
+  // Store scanned ingredient data
+  Ingredient? _scannedIngredient;
 
   final List<String> _units = ['pcs', 'g', 'kg', 'ml', 'L', 'pack', 'block'];
   final List<String> _categories = ['Vegetables', 'Dairy', 'Meat', 'Fruit', 'Other'];
@@ -58,7 +65,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
     }
   }
 
-  void _addItem() {
+  void _addItem() async {
     if (_nameController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -69,21 +76,95 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
       return;
     }
 
-    final newItem = FridgeItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: _nameController.text.trim(),
-      quantity: int.tryParse(_quantityController.text) ?? 1,
-      unit: _selectedUnit,
-      category: _selectedCategory,
-      imageUrl: _getCategoryEmoji(_selectedCategory),
-      expiryDate: _selectedExpiryDate,
-      expiryDays: _selectedExpiryDate != null 
-          ? _selectedExpiryDate!.difference(DateTime.now()).inDays 
-          : null,
+    // If we have scanned ingredient, use its ID directly
+    if (_scannedIngredient != null) {
+      final success = await _firebaseService.addInventoryItem(
+        ingredientId: _scannedIngredient!.ingredientId,
+        quantity: double.tryParse(_quantityController.text) ?? 1,
+        unit: _selectedUnit,
+        expiryDate: _selectedExpiryDate,
+      );
+      
+      if (success) {
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to add item'),
+            backgroundColor: Color(0xFFDC3545),
+          ),
+        );
+      }
+    } else {
+      // Legacy behavior - create FridgeItem (for manual entry)
+      final newItem = FridgeItem(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: _nameController.text.trim(),
+        quantity: int.tryParse(_quantityController.text) ?? 1,
+        unit: _selectedUnit,
+        category: _selectedCategory,
+        imageUrl: _getCategoryEmoji(_selectedCategory),
+        expiryDate: _selectedExpiryDate,
+        expiryDays: _selectedExpiryDate != null 
+            ? _selectedExpiryDate!.difference(DateTime.now()).inDays 
+            : null,
+      );
+      
+      widget.onAdd(newItem);
+      Navigator.pop(context);
+    }
+  }
+
+  void _scanBarcode() async {
+    final barcode = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const FridgeBarcodeScanScreen(),
+      ),
     );
     
-    widget.onAdd(newItem);
-    Navigator.pop(context);
+    if (barcode != null) {
+      // Fetch ingredient from Firebase
+      final ingredient = await _firebaseService.getIngredientByBarcode(barcode);
+      
+      if (ingredient != null) {
+        setState(() {
+          _scannedIngredient = ingredient;
+          _nameController.text = ingredient.name;
+          _selectedUnit = ingredient.defaultUnit;
+          _selectedCategory = _mapCategoryToUI(ingredient.category);
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Found: ${ingredient.name}'),
+            backgroundColor: const Color(0xFF28A745),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Barcode not found: $barcode'),
+            backgroundColor: const Color(0xFFDC3545),
+          ),
+        );
+      }
+    }
+  }
+
+  String _mapCategoryToUI(String category) {
+    switch (category.toLowerCase()) {
+      case 'vegetable':
+        return 'Vegetables';
+      case 'dairy':
+        return 'Dairy';
+      case 'meat':
+        return 'Meat';
+      case 'fruit':
+        return 'Fruit';
+      default:
+        return 'Other';
+    }
   }
 
   String _getCategoryEmoji(String category) {
@@ -384,12 +465,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                           5, 15, 189, 59), // Màu nền (backgroundColor cũ)
                       borderRadius: BorderRadius.circular(12),
                       child: InkWell(
-                        onTap: () {
-                          Navigator.pushReplacement(context,
-                              MaterialPageRoute(builder: (context) {
-                            return const FridgeBarcodeScanScreen();
-                          }));
-                        },
+                        onTap: _scanBarcode,
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
                           width:

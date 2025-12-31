@@ -2,8 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/screens/main_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/auth/login.dart';
-import 'package:fridge_to_fork_assistant/screens/fridge/fridge_home.dart'; 
-void main() {
+import 'package:fridge_to_fork_assistant/screens/fridge/fridge_home.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 

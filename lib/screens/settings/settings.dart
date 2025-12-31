@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
+import 'debug_tools.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -133,7 +134,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onTap: () {},
                   ),
                   _buildDivider(),
-                
+                  _buildListTile(
+                    icon: Icons.bug_report,
+                    title: "Debug Tools",
+                    trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const DebugToolsScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ]),
 
                 const SizedBox(height: 40),

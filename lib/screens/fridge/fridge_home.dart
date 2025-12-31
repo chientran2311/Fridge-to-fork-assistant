@@ -11,6 +11,8 @@ import '../../widgets/fridge/add_item_bottom_sheet.dart';
 import '../../widgets/fridge/delete_confirmation_modal.dart';
 import 'package:fridge_to_fork_assistant/screens/settings/settings.dart';
 import 'package:fridge_to_fork_assistant/widgets/fridge/models/fridge_item.dart';
+import '../../models/inventory_item.dart';
+import '../../services/firebase_service.dart';
 
 // LƯU Ý: Không cần import 'bottom_nav.dart' ở đây nữa vì MainScreen đã lo việc đó.
 
@@ -24,23 +26,53 @@ class FridgeHomeScreen extends StatefulWidget {
 class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
   bool _isMultiSelectMode = false;
   final Set<String> _selectedItems = {};
+  final FirebaseService _firebaseService = FirebaseService();
   
-  // XÓA: int _currentNavIndex = 0; -> Biến này không cần thiết vì MainScreen quản lý index
+  List<FridgeItem> _eatMeFirstItems = [];
+  List<FridgeItem> _inStockItems = [];
+  bool _isLoading = true;
 
-  // Dữ liệu mẫu (Giữ nguyên)
-  final List<FridgeItem> _eatMeFirstItems = [
-    FridgeItem(id: '1', name: 'Whole Milk', quantity: 1, unit: 'pcs', category: 'Dairy', expiryDays: 1, imageUrl: '🥛'),
-    FridgeItem(id: '2', name: 'Baby Spinach', quantity: 1, unit: 'pcs', category: 'Vegetables', expiryDays: 3, imageUrl: '🌿'),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadInventoryData();
+  }
 
-  final List<FridgeItem> _inStockItems = [
-    FridgeItem(id: '3', name: 'Avocados', quantity: 2, unit: 'pcs', category: 'Vegetables', imageUrl: '🥑'),
-    FridgeItem(id: '4', name: 'Large Eg...', quantity: 6, unit: 'pcs', category: 'Dairy', imageUrl: '🥚'),
-    FridgeItem(id: '5', name: 'Cheddar', quantity: 1, unit: 'block', category: 'Dairy', imageUrl: '🧀'),
-    FridgeItem(id: '6', name: 'Tomatoes', quantity: 500, unit: 'g', category: 'Vegetables', imageUrl: '🍅'),
-    FridgeItem(id: '7', name: 'Strawb...', quantity: 1, unit: 'pack', category: 'Vegetables', imageUrl: '🍓'),
-    FridgeItem(id: '8', name: 'Peppers', quantity: 3, unit: 'pcs', category: 'Vegetables', imageUrl: '🫑'),
-  ];
+  void _loadInventoryData() {
+    _firebaseService.getInventoryStream().listen((inventoryItems) {
+      setState(() {
+        _eatMeFirstItems = [];
+        _inStockItems = [];
+        
+        for (final item in inventoryItems) {
+          final fridgeItem = _convertToFridgeItem(item);
+          if (item.isExpiringSoon) {
+            _eatMeFirstItems.add(fridgeItem);
+          } else {
+            _inStockItems.add(fridgeItem);
+          }
+        }
+        
+        _isLoading = false;
+      });
+    }, onError: (error) {
+      debugPrint('Error loading inventory: $error');
+      setState(() => _isLoading = false);
+    });
+  }
+
+  FridgeItem _convertToFridgeItem(InventoryItem inventoryItem) {
+    return FridgeItem(
+      id: inventoryItem.inventoryId,
+      name: inventoryItem.ingredientName ?? 'Unknown',
+      quantity: inventoryItem.quantity.toInt(),
+      unit: inventoryItem.unit,
+      category: inventoryItem.ingredientCategory ?? 'Other',
+      imageUrl: inventoryItem.getCategoryEmoji(),
+      expiryDays: inventoryItem.expiryDays,
+      expiryDate: inventoryItem.expiryDate,
+    );
+  }
 
   // ==================== MULTI-SELECT METHODS (Giữ nguyên) ====================
   void _toggleItemSelection(String itemId) {
@@ -67,37 +99,56 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     });
   }
 
-  // ==================== ITEM CRUD METHODS (Giữ nguyên) ====================
-  void _addItem(FridgeItem newItem) {
-    setState(() {
-      if (newItem.expiryDays != null && newItem.expiryDays! <= 3) {
-        _eatMeFirstItems.add(newItem);
-      } else {
-        _inStockItems.add(newItem);
-      }
-    });
-    _showSuccessSnackbar('Item added successfully');
+  // ==================== ITEM CRUD METHODS ====================
+  void _addItem(FridgeItem newItem) async {
+    setState(() => _isLoading = true);
+    
+    final success = await _firebaseService.addInventoryItem(
+      ingredientId: newItem.id,
+      quantity: newItem.quantity.toDouble(),
+      unit: newItem.unit,
+      expiryDate: newItem.expiryDate,
+    );
+    
+    setState(() => _isLoading = false);
+    
+    if (success) {
+      _showSuccessSnackbar('Item added successfully');
+    } else {
+      _showErrorSnackbar('Failed to add item');
+    }
   }
 
-  void _updateItem(FridgeItem updatedItem) {
-    setState(() {
-      final eatMeIndex = _eatMeFirstItems.indexWhere((i) => i.id == updatedItem.id);
-      final inStockIndex = _inStockItems.indexWhere((i) => i.id == updatedItem.id);
-      
-      if (eatMeIndex != -1) {
-        _eatMeFirstItems[eatMeIndex] = updatedItem;
-      } else if (inStockIndex != -1) {
-        _inStockItems[inStockIndex] = updatedItem;
-      }
-    });
+  void _updateItem(FridgeItem updatedItem) async {
+    setState(() => _isLoading = true);
+    
+    final success = await _firebaseService.updateInventoryItem(
+      inventoryId: updatedItem.id,
+      quantity: updatedItem.quantity.toDouble(),
+      unit: updatedItem.unit,
+      expiryDate: updatedItem.expiryDate,
+    );
+    
+    setState(() => _isLoading = false);
+    
+    if (!success) {
+      _showErrorSnackbar('Failed to update item');
+    }
   }
 
-  void _deleteSelectedItems() {
-    setState(() {
-      _eatMeFirstItems.removeWhere((item) => _selectedItems.contains(item.id));
-      _inStockItems.removeWhere((item) => _selectedItems.contains(item.id));
-      _exitMultiSelectMode();
-    });
+  void _deleteSelectedItems() async {
+    setState(() => _isLoading = true);
+    
+    final success = await _firebaseService.deleteInventoryItems(
+      inventoryIds: _selectedItems.toList(),
+    );
+    
+    setState(() => _isLoading = false);
+    _exitMultiSelectMode();
+    
+    if (!success) {
+      _showErrorSnackbar('Failed to delete items');
+    }
   }
 
   // ==================== BOTTOM SHEETS & MODALS (Giữ nguyên) ====================
@@ -153,6 +204,25 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     );
   }
 
+  void _showErrorSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error, color: Colors.white),
+            const SizedBox(width: 12),
+            Text(message, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+          ],
+        ),
+        backgroundColor: const Color(0xFFDC3545),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
   void _onItemTap(FridgeItem item) {
     if (_isMultiSelectMode) {
       _toggleItemSelection(item.id);
@@ -182,7 +252,9 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         // Thêm padding bottom để nội dung không bị BottomNav của MainScreen che mất khi cuộn xuống cuối
-        child: Column(
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
           children: [
             FridgeHeader(
               isMultiSelectMode: _isMultiSelectMode,

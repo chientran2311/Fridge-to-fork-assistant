@@ -109,6 +109,15 @@ class _ShoppingListTabState extends State<ShoppingListTab>
             final ingredientName = ingredientData?['name'] ?? 'Unknown';
             final category = ingredientData?['category'] ?? 'other';
 
+            // 🐛 Debug: Log if ingredient not found
+            if (!ingredientDoc.exists) {
+              debugPrint('❌ Ingredient $ingredientId NOT FOUND in ingredients collection');
+            } else if (ingredientName == 'Unknown') {
+              debugPrint('⚠️ Ingredient $ingredientId found but missing name field');
+            } else {
+              debugPrint('✅ Ingredient: $ingredientName (ID: $ingredientId)');
+            }
+
             final item = {
               'item_id': '$dateKey-$ingredientId',
               'ingredient_name': ingredientName,
@@ -233,16 +242,14 @@ class _ShoppingListTabState extends State<ShoppingListTab>
               ...dates.map((dateKey) {
                 final items = _itemsByDate[dateKey]!;
                 return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ✅ Date header
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF214130).withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                    // ✅ Date header - left aligned, no box
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 12, left: 0),
                       child: Text(
                         _formatDisplayDate(dateKey),
+                        textAlign: TextAlign.start,
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,

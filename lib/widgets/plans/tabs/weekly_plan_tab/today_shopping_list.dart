@@ -6,7 +6,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 //
 
 class ShoppingList extends StatefulWidget {
-  const ShoppingList({super.key});
+  final VoidCallback? onViewAllTap;
+
+  const ShoppingList({super.key, this.onViewAllTap});
 
   @override
   State<ShoppingList> createState() => _ShoppingListState();
@@ -110,13 +112,11 @@ class _ShoppingListState extends State<ShoppingList> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              "Quick Shopping List",
+              "Today Shopping List",
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             GestureDetector(
-              onTap: () {
-                // TODO: Navigate to full shopping list
-              },
+              onTap: widget.onViewAllTap,
               child: const Text("View All", style: TextStyle(color: Colors.grey)),
             ),
           ],

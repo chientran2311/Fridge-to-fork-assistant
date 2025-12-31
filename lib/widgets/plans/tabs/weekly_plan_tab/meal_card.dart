@@ -63,11 +63,6 @@ class MealCard extends StatelessWidget {
                   left: 12,
                   child: Tag(text: label),
                 ),
-                const Positioned(
-                  bottom: 12,
-                  right: 12,
-                  child: Tag(text: "High Waste", filled: true),
-                ),
               ],
             ),
             Padding(
@@ -89,7 +84,7 @@ class MealCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          "$kcal kcal",
+                          "$kcal kcal / serving",
                           style: const TextStyle(color: Colors.grey),
                         ),
                       ],

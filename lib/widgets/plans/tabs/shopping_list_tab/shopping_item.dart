@@ -60,15 +60,7 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
   }
 
   Future<void> _loadUnits() async {
-    try {
-      final unitsSnapshot = await _firestore.collection('units').get();
-      final units = unitsSnapshot.docs.map((doc) => doc['name'] as String).toList();
-      setState(() => availableUnits = units);
-    } catch (e) {
-      debugPrint('Error loading units: $e');
-      // Fallback units
-      setState(() => availableUnits = ['g', 'kg', 'ml', 'l', 'pcs', 'cup', 'tbsp']);
-    }
+    setState(() => availableUnits = ['pcs', 'g', 'kg', 'ml', 'L', 'pack', 'block']);
   }
 
   Future<void> _updateQuantity(int newQuantity) async {

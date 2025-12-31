@@ -105,9 +105,18 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   padding: const EdgeInsets.all(16),
                   child: IndexedStack(
                     index: _currentTab == PlannerTab.weeklyPlan ? 0 : 1,
-                    children: const [
-                      WeeklyPlanContent(key: ValueKey('weekly')),
-                      ShoppingListTab(key: ValueKey('shopping')),
+                    children: [
+                      WeeklyPlanContent(
+                        key: const ValueKey('weekly'),
+                        onTabChange: (tabIndex) {
+                          if (tabIndex == 1) {
+                            _onTabChanged(PlannerTab.shoppingList);
+                          } else if (tabIndex == 0) {
+                            _onTabChanged(PlannerTab.weeklyPlan);
+                          }
+                        },
+                      ),
+                      ShoppingListTab(key: const ValueKey('shopping')),
                     ],
                   ),
                 ),

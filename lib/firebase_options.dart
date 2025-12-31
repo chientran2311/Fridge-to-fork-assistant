@@ -22,17 +22,6 @@ class DefaultFirebaseOptions {
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
-      case TargetPlatform.iOS:
-        return ios;
-      case TargetPlatform.macOS:
-        return macos;
-      case TargetPlatform.windows:
-        return windows;
-      case TargetPlatform.linux:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
       default:
         throw UnsupportedError(
           'DefaultFirebaseOptions are not supported for this platform.',
@@ -56,34 +45,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1062697430678',
     projectId: 'fridge-to-fork-a17de',
     storageBucket: 'fridge-to-fork-a17de.firebasestorage.app',
-  );
-
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCOpOWppMEXmXC-He0kQH2UT-n92ErAuh4',
-    appId: '1:1062697430678:ios:84749f8cc092acb1a95cb7',
-    messagingSenderId: '1062697430678',
-    projectId: 'fridge-to-fork-a17de',
-    storageBucket: 'fridge-to-fork-a17de.firebasestorage.app',
-    iosBundleId: 'com.example.fridgeToForkAssistant',
-  );
-
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCOpOWppMEXmXC-He0kQH2UT-n92ErAuh4',
-    appId: '1:1062697430678:ios:84749f8cc092acb1a95cb7',
-    messagingSenderId: '1062697430678',
-    projectId: 'fridge-to-fork-a17de',
-    storageBucket: 'fridge-to-fork-a17de.firebasestorage.app',
-    iosBundleId: 'com.example.fridgeToForkAssistant',
-  );
-
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyAqzATgT5NNhigt5TutL2hI1dL4lp2QHRc',
-    appId: '1:1062697430678:web:99aabbf8521e316fa95cb7',
-    messagingSenderId: '1062697430678',
-    projectId: 'fridge-to-fork-a17de',
-    authDomain: 'fridge-to-fork-a17de.firebaseapp.com',
-    storageBucket: 'fridge-to-fork-a17de.firebasestorage.app',
-    measurementId: 'G-ZS36W7WQ1H',
   );
 
 }

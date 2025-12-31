@@ -3,13 +3,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../../widgets/plans/tabs/weekly_plan_tab/meal_card.dart';
-import '../../../../widgets/plans/tabs/weekly_plan_tab/quick_shopping_list.dart';
+import '../../../../widgets/plans/tabs/weekly_plan_tab/today_shopping_list.dart';
 import '../../../../widgets/plans/tabs/weekly_plan_tab/day_item.dart';
 import '../../../../widgets/plans/tabs/weekly_plan_tab/plan_dinner_card.dart';
 import '../../../../utils/firebase_seeder.dart';
 
 class WeeklyPlanContent extends StatefulWidget {
-  const WeeklyPlanContent({super.key});
+  final Function(int)? onTabChange;
+
+  const WeeklyPlanContent({super.key, this.onTabChange});
 
   @override
   State<WeeklyPlanContent> createState() => _WeeklyPlanContentState();
@@ -77,7 +79,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
     try {
       debugPrint('🔄 Loading meal plans...');
       
-      // ✅ Hardcode lấy dữ liệu từ seeder user (user_01)
+      // ✅ Hardcode lấy dữ liệu từ seeder user (user_seed_01)
       const userId = 'user_01';
       const householdId = 'house_01';
       
@@ -193,90 +195,87 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
   Widget build(BuildContext context) {
     super.build(context); // ✅ Call super for AutomaticKeepAliveClientMixin
     
-    return RefreshIndicator(
-      onRefresh: () async {
-        // ✅ Reset flag when user pulls to refresh
-        _hasLoadedData = false;
-        await _loadMealPlans();
-      },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(), // ✅ Allow refresh even when empty
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          key: const ValueKey('weekly'),
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ---------- DEBUG BUTTON ----------
-            // Padding(
-            //   padding: const EdgeInsets.symmetric(vertical: 8),
-            //   child: ElevatedButton.icon(
-            //     onPressed: _runSeeder,
-            //     icon: const Icon(Icons.refresh),
-            //     label: const Text('Run Seeder (Debug)'),
-            //     style: ElevatedButton.styleFrom(
-            //       backgroundColor: Colors.orange,
-            //     ),
-            //   ),
-            // ),
+    return Column(
+      children: [
+        // ---------- DAY SELECTOR (FIXED AT TOP) ----------
+        Container(
+          color: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: SizedBox(
+            height: 80,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: weekDays.length,
+              itemBuilder: (context, index) {
+                final date = weekDays[index];
 
-            // ---------- DAY SELECTOR ----------
-            SizedBox(
-              height: 80,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: weekDays.length,
-                itemBuilder: (context, index) {
-                  final date = weekDays[index];
+                final hasMealPlan = _hasMealPlan(date);
+                final isActive = selectedDayIndex == index;
 
-                  final hasMealPlan = _hasMealPlan(date);
-                  final isActive = selectedDayIndex == index;
-
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: GestureDetector(
-                      onTap: () {
-                        setState(() => selectedDayIndex = index);
-                      },
-                      child: DayItem(
-                        day: _weekdayLabel(date),
-                        date: date.day.toString(),
-                        active: isActive,
-                        hasMealPlan: hasMealPlan,
-                      ),
+                return Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() => selectedDayIndex = index);
+                    },
+                    child: DayItem(
+                      day: _weekdayLabel(date),
+                      date: date.day.toString(),
+                      active: isActive,
+                      hasMealPlan: hasMealPlan,
                     ),
-                  );
-                },
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        
+        // ---------- SCROLLABLE CONTENT ----------
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              // ✅ Reset flag when user pulls to refresh
+              _hasLoadedData = false;
+              await _loadMealPlans();
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+
+                  // ---------- TITLE ----------
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "Meal Plans",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      if (_isLoading)
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // ---------- DYNAMIC MEAL CARDS ----------
+                  _buildMealCardsForSelectedDay(),
+                  
+                  const SizedBox(height: 40), // ✅ Spacing at bottom for scroll
+                ],
               ),
             ),
-
-const SizedBox(height: 20),
-
-            // ---------- TITLE ----------
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Meal Plans",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                if (_isLoading)
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-              ],
-            ),
-
-            const SizedBox(height: 16),
-
-            // ---------- DYNAMIC MEAL CARDS ----------
-            _buildMealCardsForSelectedDay(),
-            
-            const SizedBox(height: 40), // ✅ Spacing at bottom for scroll
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -378,12 +377,12 @@ const SizedBox(height: 20),
 
                     // Tính calories dựa trên servings
                     final baseCalories = (recipe['calories'] as num?)?.toInt() ?? 0;
-                    final totalCalories = (baseCalories * servings).toInt();
+                    
 
                     return MealCard(
                       label: mealType.toUpperCase(),
                       title: recipe['title'] ?? 'Untitled',
-                      kcal: totalCalories,
+                      kcal: baseCalories,
                       recipeId: recipeId, // ✅ Pass recipe ID
                       householdId: _householdId, // ✅ Pass household ID
                       mealPlanDate: _formatDateKey(selectedDate), // ✅ Pass meal plan date
@@ -396,7 +395,14 @@ const SizedBox(height: 20),
           },
         ),
         const SizedBox(height: 24),
-        const ShoppingList(),
+        ShoppingList(
+          onViewAllTap: () {
+            // Navigate to Shopping List tab (index 1)
+            if (widget.onTabChange != null) {
+              widget.onTabChange!(1);
+            }
+          },
+        ),
       ],
     );
   }

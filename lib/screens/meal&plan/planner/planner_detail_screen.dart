@@ -38,12 +38,12 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
   // ✅ Fetch recipe từ Firebase và load ingredient names từ master collection
   Future<void> _fetchRecipeData() async {
     try {
-      final userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId == null) throw Exception('User not logged in');
+      // 👉 TEMP: Hardcode household ID for testing
+      const String householdId = 'house_01';
 
       final recipeDoc = await FirebaseFirestore.instance
           .collection('households')
-          .doc(widget.householdId)
+          .doc(householdId)
           .collection('household_recipes')
           .doc(widget.recipeId)
           .get();

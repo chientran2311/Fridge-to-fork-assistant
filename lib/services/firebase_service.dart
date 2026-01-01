@@ -10,6 +10,20 @@ class FirebaseService {
   static const String DEFAULT_HOUSEHOLD_ID = 'house_01';
   static const String DEFAULT_USER_ID = 'user_01';
 
+  FirebaseService() {
+    // Enable offline persistence for better UX
+    _enableOfflinePersistence();
+  }
+
+  void _enableOfflinePersistence() async {
+    try {
+      await _firestore.settings.persistenceEnabled;
+      debugPrint('✅ Firestore offline persistence enabled');
+    } catch (e) {
+      debugPrint('⚠️ Could not enable offline persistence: $e');
+    }
+  }
+
   // =============================
   // INGREDIENT METHODS
   // =============================
@@ -61,34 +75,63 @@ class FirebaseService {
         .doc(houseId)
         .collection('inventory')
         .snapshots()
+        .timeout(
+          const Duration(seconds: 30),
+          onTimeout: (sink) {
+            debugPrint('⚠️ Firestore stream timeout - check internet connection');
+            sink.addError('Connection timeout. Please check your internet connection.');
+          },
+        )
         .asyncMap((snapshot) async {
       List<InventoryItem> items = [];
       
       for (var doc in snapshot.docs) {
-        final inventoryItem = InventoryItem.fromFirestore(doc);
-        
-        // Populate ingredient data
         try {
-          final ingredientDoc = await _firestore
-              .collection('ingredients')
-              .doc(inventoryItem.ingredientId)
-              .get();
+          final inventoryItem = InventoryItem.fromFirestore(doc);
           
-          if (ingredientDoc.exists) {
-            final ingredient = Ingredient.fromFirestore(ingredientDoc);
-            inventoryItem.ingredientName = ingredient.name;
-            inventoryItem.ingredientBarcode = ingredient.barcode;
-            inventoryItem.ingredientCategory = ingredient.category;
-            inventoryItem.ingredientImageUrl = ingredient.imageUrl;
+          // Populate ingredient data with timeout
+          try {
+            final ingredientDoc = await _firestore
+                .collection('ingredients')
+                .doc(inventoryItem.ingredientId)
+                .get()
+                .timeout(
+                  const Duration(seconds: 10),
+                  onTimeout: () {
+                    debugPrint('⚠️ Timeout fetching ingredient: ${inventoryItem.ingredientId}');
+                    throw Exception('Timeout fetching ingredient data');
+                  },
+                );
+            
+            if (ingredientDoc.exists) {
+              final ingredient = Ingredient.fromFirestore(ingredientDoc);
+              inventoryItem.ingredientName = ingredient.name;
+              inventoryItem.ingredientBarcode = ingredient.barcode;
+              inventoryItem.ingredientCategory = ingredient.category;
+              inventoryItem.ingredientImageUrl = ingredient.imageUrl;
+            } else {
+              debugPrint('⚠️ Ingredient not found: ${inventoryItem.ingredientId}');
+              inventoryItem.ingredientName = 'Unknown Item';
+            }
+          } catch (e) {
+            debugPrint('❌ Error populating ingredient data for ${inventoryItem.ingredientId}: $e');
+            // Set default values instead of failing completely
+            inventoryItem.ingredientName = 'Unknown Item';
+            inventoryItem.ingredientCategory = 'Other';
           }
+          
+          items.add(inventoryItem);
         } catch (e) {
-          debugPrint('Error populating ingredient data: $e');
+          debugPrint('❌ Error processing inventory item ${doc.id}: $e');
+          // Continue processing other items even if one fails
         }
-        
-        items.add(inventoryItem);
       }
       
       return items;
+    }).handleError((error) {
+      debugPrint('❌ Stream error in getInventoryStream: $error');
+      // Re-throw to let UI handle it
+      throw error;
     });
   }
 
@@ -101,6 +144,20 @@ class FirebaseService {
     String? householdId,
     String? userId,
   }) async {
+    // Validation
+    if (ingredientId.isEmpty) {
+      debugPrint('❌ Invalid ingredientId: cannot be empty');
+      return false;
+    }
+    if (quantity <= 0) {
+      debugPrint('❌ Invalid quantity: must be greater than 0');
+      return false;
+    }
+    if (unit.isEmpty) {
+      debugPrint('❌ Invalid unit: cannot be empty');
+      return false;
+    }
+    
     try {
       final houseId = householdId ?? DEFAULT_HOUSEHOLD_ID;
       final uid = userId ?? DEFAULT_USER_ID;
@@ -121,11 +178,19 @@ class FirebaseService {
         addedByUid: uid,
       );
 
-      await inventoryRef.set(inventoryItem.toFirestore());
+      await inventoryRef
+          .set(inventoryItem.toFirestore())
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () => throw Exception('Connection timeout. Please check your internet.'),
+          );
       debugPrint('✅ Inventory item added: ${inventoryRef.id}');
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('❌ Error adding inventory item: $e');
+      return false;
+    } catch (e) {
+      debugPrint('❌ Unexpected error adding inventory item: $e');
       return false;
     }
   }
@@ -150,12 +215,18 @@ class FirebaseService {
         'quantity': quantity,
         'unit': unit,
         'expiry_date': expiryDate != null ? Timestamp.fromDate(expiryDate) : null,
-      });
+      }).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw Exception('Connection timeout. Please check your internet.'),
+      );
       
       debugPrint('✅ Inventory item updated: $inventoryId');
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('❌ Error updating inventory item: $e');
+      return false;
+    } catch (e) {
+      debugPrint('❌ Unexpected error updating inventory item: $e');
       return false;
     }
   }
@@ -166,6 +237,11 @@ class FirebaseService {
     String? householdId,
   }) async {
     try {
+      if (inventoryIds.isEmpty) {
+        debugPrint('⚠️ No items to delete');
+        return true;
+      }
+      
       final houseId = householdId ?? DEFAULT_HOUSEHOLD_ID;
       final batch = _firestore.batch();
       
@@ -178,11 +254,17 @@ class FirebaseService {
         batch.delete(docRef);
       }
       
-      await batch.commit();
+      await batch.commit().timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw Exception('Connection timeout. Please check your internet.'),
+      );
       debugPrint('✅ Deleted ${inventoryIds.length} inventory items');
       return true;
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('❌ Error deleting inventory items: $e');
+      return false;
+    } catch (e) {
+      debugPrint('❌ Unexpected error deleting inventory items: $e');
       return false;
     }
   }

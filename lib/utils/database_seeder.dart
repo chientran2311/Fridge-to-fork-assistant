@@ -1,202 +1,204 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
-class DatabaseSeederV2 {
+class DatabaseSeeder {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // =============================
-  // FIXED IDS
-  // =============================
-  final String userId = 'user_01';
-  final String householdId = 'house_01';
+  // IDs cố định để dễ dàng liên kết dữ liệu với nhau
+  final String _userId = 'user_seed_01';
+  final String _householdId = 'house_seed_01';
 
-  final String beefId = 'ing_0001';
-  final String eggId = 'ing_0002';
-  final String onionId = 'ing_0003';
+  // IDs Nguyên liệu gốc (Master Data)
+  final String _beefId = 'ing_beef_01';
+  final String _milkId = 'ing_milk_01';
 
-  final String recipeId = 'recipe_01';
+  final String _recipeId = 'recipe_seed_01';
 
   Future<void> seedDatabase() async {
     try {
-      debugPrint('🚀 START SEEDING DATABASE V2');
+      debugPrint("🚀 Bắt đầu tạo dữ liệu mẫu...");
 
-      // =====================================================
-      // 1️⃣ INGREDIENTS (MASTER DATA – BARCODE)
-      // =====================================================
-      await _firestore.collection('ingredients').doc(beefId).set({
-        'ingredient_id': beefId,
-        'name': 'Beef',
+      await _firestore.collection('ingredients').doc(_beefId).set({
+        'ingredient_id': _beefId,
+        'name': 'Thịt bò',
         'barcode': '8938505974194',
         'category': 'meat',
         'default_unit': 'g',
-        'image_url': '',
-        'nutrition': {
-          'calories': 250,
-          'protein': 26,
-          'fat': 15,
-        },
+        'image_url':
+            'https://spoonacular.com/cdn/ingredients_100x100/beef-cubes-raw.png',
         'created_at': FieldValue.serverTimestamp(),
       });
 
-      await _firestore.collection('ingredients').doc(eggId).set({
-        'ingredient_id': eggId,
-        'name': 'Chicken egg',
+      await _firestore.collection('ingredients').doc(_milkId).set({
+        'ingredient_id': _milkId,
+        'name': 'Sữa tươi TH True Milk',
         'barcode': '8938505974200',
         'category': 'dairy',
-        'default_unit': 'pcs',
-        'image_url': '',
-        'nutrition': {
-          'calories': 70,
-          'protein': 6,
-          'fat': 5,
-        },
+        'default_unit': 'ml',
+        'image_url': 'https://spoonacular.com/cdn/ingredients_100x100/milk.png',
         'created_at': FieldValue.serverTimestamp(),
       });
-
-      await _firestore.collection('ingredients').doc(onionId).set({
-        'ingredient_id': onionId,
-        'name': 'Purple onion',
-        'barcode': '8938505974217',
-        'category': 'vegetable',
-        'default_unit': 'pcs',
-        'image_url': '',
-        'nutrition': {
-          'calories': 40,
-          'protein': 1.2,
-          'fat': 0.1,
-        },
-        'created_at': FieldValue.serverTimestamp(),
-      });
-
-      debugPrint('✅ Ingredients created');
-
-      // =====================================================
-      // 2️⃣ USERS
-      // =====================================================
-      await _firestore.collection('users').doc(userId).set({
-        'uid': userId,
+      debugPrint("✅ 1. Đã tạo Master Ingredients");
+      // ==========================================
+      // BƯỚC 1: TẠO USER (Collection: users)
+      // ==========================================
+      await _firestore.collection('users').doc(_userId).set({
+        'uid': _userId,
         'email': 'admin@beptroly.com',
         'display_name': 'Admin Bếp',
-        'photo_url': 'https://i.pravatar.cc/300',
+        'photo_url': '',
         'language': 'vi',
-        'current_household_id': householdId,
+        'fcm_token':
+            '', // Quan trọng: App sẽ update token vào đây sau khi login
+        'current_household_id': _householdId,
+        'cuisines': ['Vietnamese', 'Healthy'],
         'created_at': FieldValue.serverTimestamp(),
       });
+      debugPrint("✅ 2. Đã tạo User");
 
-      debugPrint('✅ User created');
-
-      // =====================================================
-      // 3️⃣ HOUSEHOLDS
-      // =====================================================
-      final houseRef =
-          _firestore.collection('households').doc(householdId);
+      // ==========================================
+      // BƯỚC 2: TẠO HOUSEHOLD (Collection: households)
+      // ==========================================
+      final houseRef = _firestore.collection('households').doc(_householdId);
 
       await houseRef.set({
-        'household_id': householdId,
-        'name': 'Gia Đình Demo',
-        'owner_id': userId,
+        'household_id': _householdId,
+        'name': 'Gia Đình Mẫu',
+        'owner_id': _userId,
         'invite_code': 'ABC-123',
-        'members': [userId],
+        'members': [_userId], // Mảng chứa UID các thành viên
         'created_at': FieldValue.serverTimestamp(),
       });
+      debugPrint("✅ Đã tạo Households");
 
-      debugPrint('✅ Household created');
+      // ==================== ======================
+      // BƯỚC 3: TẠO TỦ LẠNH (Sub-collection: inventory)
+      // ==========================================
+      // Món 1: Thịt bò
 
-      // =====================================================
-      // 4️⃣ INVENTORY (STOCK – LINK INGREDIENT)
-      // =====================================================
       await houseRef.collection('inventory').doc('inv_01').set({
-        'inventory_id': 'inv_01',
-        'ingredient_id': beefId,
-        'household_id': householdId,
+        'ingredient_id': 'inv_01',
+        'household_id': _householdId,
+        'name': 'Thịt bò',
         'quantity': 500,
         'unit': 'g',
+        'image_url': '',
+        // Hết hạn sau 5 ngày
         'expiry_date':
-            Timestamp.fromDate(DateTime.now().add(const Duration(days: 5))),
-        'added_by_uid': userId,
+            Timestamp.fromDate(DateTime.now().add(const Duration(days: 1))),
+        'quick_tag': 'meat',
+        'added_by_uid': _userId,
         'created_at': FieldValue.serverTimestamp(),
       });
 
+      // Món 2: Trứng gà (Sắp hết hạn để test thông báo)
       await houseRef.collection('inventory').doc('inv_02').set({
-        'inventory_id': 'inv_02',
-        'ingredient_id': eggId,
-        'household_id': householdId,
+        'ingredient_id': 'inv_02',
+        'household_id': _householdId,
+        'name': 'Trứng gà',
         'quantity': 10,
         'unit': 'quả',
+        'image_url': '',
         'expiry_date':
             Timestamp.fromDate(DateTime.now().add(const Duration(days: 2))),
-        'added_by_uid': userId,
+        'quick_tag': 'dairy',
+        'added_by_uid': _userId,
         'created_at': FieldValue.serverTimestamp(),
       });
+      debugPrint("✅ Đã tạo Inventory");
 
-      debugPrint('✅ Inventory created');
-
-      // =====================================================
-      // 5️⃣ HOUSEHOLD RECIPES (LINK INGREDIENT)
-      // =====================================================
-      await houseRef.collection('household_recipes').doc(recipeId).set({
-        'local_recipe_id': recipeId,
-        'household_id': householdId,
+      // ==========================================
+      // BƯỚC 4: TẠO CÔNG THỨC (Sub-collection: household_recipes)
+      // ==========================================
+      await houseRef.collection('household_recipes').doc(_recipeId).set({
+        'local_recipe_id': _recipeId,
+        'household_id': _householdId,
+        'api_recipe_id': 12345, // ID giả định từ API Spoonacular
         'title': 'Bò Kho Tiêu',
-        'image_url': '',
+        'image_url': 'https://spoonacular.com/recipeImages/beef-stew.jpg',
         'ready_in_minutes': 45,
+        'calories': 350.5,
         'difficulty': 'Medium',
-        'added_by_uid': userId,
+        'added_by_uid': _userId,
         'added_at': FieldValue.serverTimestamp(),
+
+        // Cấu trúc mảng nguyên liệu (Thay thế bảng Recipe_Required_Ingredients)
         'ingredients': [
-          {
-            'ingredient_id': beefId,
-            'amount': 300,
-            'unit': 'g',
-          },
-          {
-            'ingredient_id': onionId,
-            'amount': 2,
-            'unit': 'củ',
-          },
+          {'name': 'Thịt bò', 'amount': 300, 'unit': 'g'},
+          {'name': 'Tiêu đen', 'amount': 1, 'unit': 'thìa'},
+          {'name': 'Hành tím', 'amount': 2, 'unit': 'củ'},
         ],
+
         'instructions':
-            'Bước 1: Sơ chế thịt bò\nBước 2: Ướp gia vị\nBước 3: Kho nhỏ lửa',
+            'Bước 1: Rửa sạch thịt bò...\nBước 2: Ướp gia vị...\nBước 3: Kho lửa nhỏ.',
       });
+      debugPrint("✅ Đã tạo Recipes");
 
-      debugPrint('✅ Recipe created');
+      await houseRef.collection('cooking_history').add({
+        'recipe_id': _recipeId, // ID món ăn
+        'api_recipe_id': 12345,
+        'title': 'Bò Kho Tiêu',
+        'cooked_at': FieldValue.serverTimestamp(),
+        'is_favorite': true, // Thay thế cho rating
+        'servings': 4,
+        'tags': ['Beef', 'Spicy'], // Thêm tag để AI dễ gợi ý món tương tự
+      });
+      debugPrint("✅ Đã tạo Cooking History");
 
-      // =====================================================
-      // 6️⃣ MEAL PLANS
-      // =====================================================
+      await houseRef.collection('favorite_recipes').doc('fav_01').set({
+        'local_recipe_id': 'fav_01',
+        'household_id': _householdId,
+        'api_recipe_id': 12345, // ID trùng với món Bò Kho
+        'title': 'Bò Kho Tiêu',
+        'image_url': 'https://spoonacular.com/recipeImages/beef-stew.jpg',
+        'ready_in_minutes': 45,
+        'calories': 350.5,
+        'difficulty': 'Medium',
+        'servings': 4,
+        'added_by_uid': _userId,
+        'added_at': FieldValue.serverTimestamp(),
+        'is_favorite': true,
+        // Lưu tối giản, không cần instruction chi tiết nếu chỉ để hiển thị list
+      });
+      // ==========================================
+      // BƯỚC 5: TẠO LỊCH ĂN (Sub-collection: meal_plans)
+      // ==========================================
       await houseRef.collection('meal_plans').doc('plan_01').set({
         'plan_id': 'plan_01',
-        'household_id': householdId,
-        'date': Timestamp.fromDate(DateTime.now()),
+        'household_id': _householdId,
+        'date': Timestamp.fromDate(DateTime.now()), // Lịch ăn hôm nay
         'meal_type': 'Dinner',
-        'local_recipe_id': recipeId,
+        'local_recipe_id': _recipeId, // Trỏ về công thức Bò Kho ở trên
+        'display_title': 'Bò Kho Tiêu',
+        'display_image': 'https://spoonacular.com/recipeImages/beef-stew.jpg',
         'servings': 4,
         'is_cooked': false,
-        'planned_by_uid': userId,
+        'planned_by_uid': _userId,
         'created_at': FieldValue.serverTimestamp(),
       });
+      debugPrint("✅ Đã tạo Meal Plans");
 
-      debugPrint('✅ Meal plan created');
-
-      // =====================================================
-      // 7️⃣ SHOPPING LIST
-      // =====================================================
+      // ==========================================
+      // BƯỚC 6: TẠO SHOPPING LIST (Sub-collection: shopping_list)
+      // ==========================================
       await houseRef.collection('shopping_list').doc('shop_01').set({
         'item_id': 'shop_01',
-        'household_id': householdId,
-        'ingredient_id': onionId,
+        'household_id': _householdId,
+        'name': 'Hành tím',
         'quantity': 2,
         'unit': 'củ',
         'is_checked': false,
         'is_auto_generated': true,
-        'for_recipe_id': recipeId,
+        'for_recipe_id': _recipeId, // Mua để nấu Bò Kho
+        'target_date': Timestamp.fromDate(DateTime.now()),
         'created_at': FieldValue.serverTimestamp(),
+        'note': 'Mua loại củ to',
       });
+      debugPrint("✅ Đã tạo Shopping List");
 
-      debugPrint('🎉 SEED DATABASE V2 COMPLETED');
-
+      debugPrint("🎉 HOÀN TẤT! Dữ liệu mẫu đã sẵn sàng.");
     } catch (e) {
-      debugPrint('❌ SEED ERROR: $e');
+      debugPrint("❌ Lỗi khi tạo dữ liệu: $e");
     }
   }
 }

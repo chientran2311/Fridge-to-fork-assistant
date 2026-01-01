@@ -15,7 +15,7 @@ class _DebugToolsScreenState extends State<DebugToolsScreen> {
   void _runSeeder() async {
     setState(() => _isSeeding = true);
     
-    final seeder = DatabaseSeederV2();
+    final seeder = DatabaseSeeder();
     await seeder.seedDatabase();
     
     setState(() => _isSeeding = false);

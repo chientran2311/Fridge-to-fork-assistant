@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:fridge_to_fork_assistant/screens/main_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/auth/login.dart';
-import 'package:fridge_to_fork_assistant/screens/fridge/fridge_home.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
@@ -23,7 +21,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         // fontFamily: GoogleFonts.merriweather().fontFamily,
-        fontFamily: GoogleFonts.montserrat().fontFamily,
+        fontFamily: GoogleFonts.merriweather().fontFamily,
       ),
       home: const LoginScreen(),
     );

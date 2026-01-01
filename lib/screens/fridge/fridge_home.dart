@@ -40,6 +40,8 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
 
   void _loadInventoryData() {
     _firebaseService.getInventoryStream().listen((inventoryItems) {
+      if (!mounted) return;
+      
       setState(() {
         _eatMeFirstItems = [];
         _inStockItems = [];
@@ -56,8 +58,38 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
         _isLoading = false;
       });
     }, onError: (error) {
-      debugPrint('Error loading inventory: $error');
+      debugPrint('❌ Error loading inventory: $error');
+      if (!mounted) return;
+      
       setState(() => _isLoading = false);
+      
+      // Show user-friendly error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.cloud_off, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Connection error. Please check your internet and try again.',
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: const Color(0xFFDC3545),
+          duration: const Duration(seconds: 5),
+          action: SnackBarAction(
+            label: 'Retry',
+            textColor: Colors.white,
+            onPressed: () {
+              setState(() => _isLoading = true);
+              _loadInventoryData();
+            },
+          ),
+        ),
+      );
     });
   }
 
@@ -113,9 +145,9 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     setState(() => _isLoading = false);
     
     if (success) {
-      _showSuccessSnackbar('Item added successfully');
+      _showSuccessSnackbar('${newItem.name} added to fridge');
     } else {
-      _showErrorSnackbar('Failed to add item');
+      _showErrorSnackbar('Could not add item. Check your internet connection.');
     }
   }
 
@@ -131,12 +163,15 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     
     setState(() => _isLoading = false);
     
-    if (!success) {
-      _showErrorSnackbar('Failed to update item');
+    if (success) {
+      _showSuccessSnackbar('Item updated successfully');
+    } else {
+      _showErrorSnackbar('Could not update item. Check your internet connection.');
     }
   }
 
   void _deleteSelectedItems() async {
+    final itemCount = _selectedItems.length;
     setState(() => _isLoading = true);
     
     final success = await _firebaseService.deleteInventoryItems(
@@ -146,8 +181,10 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     setState(() => _isLoading = false);
     _exitMultiSelectMode();
     
-    if (!success) {
-      _showErrorSnackbar('Failed to delete items');
+    if (success) {
+      _showSuccessSnackbar('$itemCount ${itemCount == 1 ? "item" : "items"} deleted');
+    } else {
+      _showErrorSnackbar('Could not delete items. Check your internet connection.');
     }
   }
 

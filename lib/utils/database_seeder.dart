@@ -7,12 +7,39 @@ class DatabaseSeeder {
   // IDs cố định để dễ dàng liên kết dữ liệu với nhau
   final String _userId = 'user_seed_01';
   final String _householdId = 'house_seed_01';
+
+  // IDs Nguyên liệu gốc (Master Data)
+  final String _beefId = 'ing_beef_01';
+  final String _eggId = 'ing_egg_01';
+  final String _milkId = 'ing_milk_01';
+
   final String _recipeId = 'recipe_seed_01';
 
   Future<void> seedDatabase() async {
     try {
       debugPrint("🚀 Bắt đầu tạo dữ liệu mẫu...");
 
+      await _firestore.collection('ingredients').doc(_beefId).set({
+        'ingredient_id': _beefId,
+        'name': 'Thịt bò',
+        'barcode': '8938505974194',
+        'category': 'meat',
+        'default_unit': 'g',
+        'image_url':
+            'https://spoonacular.com/cdn/ingredients_100x100/beef-cubes-raw.png',
+        'created_at': FieldValue.serverTimestamp(),
+      });
+
+      await _firestore.collection('ingredients').doc(_milkId).set({
+        'ingredient_id': _milkId,
+        'name': 'Sữa tươi TH True Milk',
+        'barcode': '8938505974200',
+        'category': 'dairy',
+        'default_unit': 'ml',
+        'image_url': 'https://spoonacular.com/cdn/ingredients_100x100/milk.png',
+        'created_at': FieldValue.serverTimestamp(),
+      });
+      debugPrint("✅ 1. Đã tạo Master Ingredients");
       // ==========================================
       // BƯỚC 1: TẠO USER (Collection: users)
       // ==========================================
@@ -20,13 +47,15 @@ class DatabaseSeeder {
         'uid': _userId,
         'email': 'admin@beptroly.com',
         'display_name': 'Admin Bếp',
+        'photo_url': '',
         'language': 'vi',
-        'fcm_token': '',
-        'current_household_id': _householdId, // Liên kết sang nhà
-        'cuisines': ['Vietnamese', 'Asian', 'Healthy'],
+        'fcm_token':
+            '', // Quan trọng: App sẽ update token vào đây sau khi login
+        'current_household_id': _householdId,
+        'cuisines': ['Vietnamese', 'Healthy'],
         'created_at': FieldValue.serverTimestamp(),
       });
-      debugPrint("✅ Đã tạo Users");
+      debugPrint("✅ 2. Đã tạo User");
 
       // ==========================================
       // BƯỚC 2: TẠO HOUSEHOLD (Collection: households)
@@ -47,6 +76,7 @@ class DatabaseSeeder {
       // BƯỚC 3: TẠO TỦ LẠNH (Sub-collection: inventory)
       // ==========================================
       // Món 1: Thịt bò
+
       await houseRef.collection('inventory').doc('inv_01').set({
         'ingredient_id': 'inv_01',
         'household_id': _householdId,
@@ -56,7 +86,7 @@ class DatabaseSeeder {
         'image_url': '',
         // Hết hạn sau 5 ngày
         'expiry_date':
-            Timestamp.fromDate(DateTime.now().add(const Duration(days: 5))),
+            Timestamp.fromDate(DateTime.now().add(const Duration(days: 1))),
         'quick_tag': 'meat',
         'added_by_uid': _userId,
         'created_at': FieldValue.serverTimestamp(),

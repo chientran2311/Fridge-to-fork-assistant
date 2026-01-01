@@ -2,20 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/household_recipe.dart';
-import '../data/services/spoonacular_service.dart';
+import '../data/repositories/recipe_repository.dart'; // [Thay đổi] Dùng Repo
 import '../models/RecipeFilter.dart';
 
 class RecipeProvider extends ChangeNotifier {
-  // Nên dùng Repository nếu có, nhưng ở đây tôi giữ nguyên Service theo code của bạn
-  final SpoonacularService _spoonacularService = SpoonacularService();
+  // [Thay đổi] Sử dụng Repository thay vì Service trực tiếp
+  final RecipeRepository _recipeRepository = RecipeRepository();
 
   // --- STATE ---
   List<HouseholdRecipe> _recipes = [];
   List<HouseholdRecipe> _favoriteRecipes = [];
+  List<HouseholdRecipe> _recommendedRecipes = []; // [Mới] List gợi ý thông minh
   
   RecipeFilter _currentFilter = RecipeFilter();
   List<String> _currentIngredients = [];
-  String _currentQuery = ""; // Lưu lại từ khóa tìm kiếm nếu có
+  String _currentQuery = ""; 
 
   bool _isLoading = false;
   String _errorMessage = "";
@@ -23,23 +24,18 @@ class RecipeProvider extends ChangeNotifier {
   // --- GETTERS ---
   List<HouseholdRecipe> get recipes => _recipes;
   List<HouseholdRecipe> get favoriteRecipes => _favoriteRecipes;
+  List<HouseholdRecipe> get recommendedRecipes => _recommendedRecipes; // [Mới]
+  
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage.isNotEmpty ? _errorMessage : null;
   RecipeFilter get currentFilter => _currentFilter;
 
-  // --- 1. LOGIC TÌM KIẾM (API) ---
+  // --- 1. LOGIC TÌM KIẾM (Search & Filter) ---
 
-  /// Hàm tìm kiếm trung tâm: Gọi API dựa trên Nguyên liệu, Filter và Tên món
   Future<void> searchRecipes({List<String>? ingredients, String? query}) async {
-    // Cập nhật state nội bộ nếu có tham số truyền vào
-    if (ingredients != null) {
-      _currentIngredients = ingredients;
-    }
-    if (query != null) {
-      _currentQuery = query;
-    }
+    if (ingredients != null) _currentIngredients = ingredients;
+    if (query != null) _currentQuery = query;
 
-    // Nếu không có nguyên liệu và không có từ khóa tìm kiếm thì không chạy (tránh tốn quota API)
     if (_currentIngredients.isEmpty && _currentQuery.isEmpty) return;
 
     _isLoading = true;
@@ -47,10 +43,10 @@ class RecipeProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      print("🔍 Provider đang tìm kiếm: Ingredients=${_currentIngredients.length}, Query=$_currentQuery, Filter=${_currentFilter.cuisine}");
+      print("🔍 Provider: Searching via Repository...");
       
-      // [QUAN TRỌNG] Gọi hàm searchRecipes mới đã cập nhật ở bước trước
-      final results = await _spoonacularService.searchRecipes(
+      // Gọi qua Repository
+      final results = await _recipeRepository.searchRecipes(
         query: _currentQuery.isNotEmpty ? _currentQuery : null,
         ingredients: _currentIngredients.isNotEmpty ? _currentIngredients : null,
         filter: _currentFilter,
@@ -60,7 +56,7 @@ class RecipeProvider extends ChangeNotifier {
 
     } catch (e) {
       _errorMessage = e.toString();
-      _recipes = []; // Xóa danh sách cũ nếu lỗi
+      _recipes = [];
       print("❌ Error fetching recipes: $e");
     } finally {
       _isLoading = false;
@@ -68,18 +64,64 @@ class RecipeProvider extends ChangeNotifier {
     }
   }
 
-  // Cập nhật Filter và tự động tìm kiếm lại
   void updateFilter(RecipeFilter newFilter) {
     _currentFilter = newFilter;
     notifyListeners();
-    
-    // Gọi lại hàm tìm kiếm với filter mới
     searchRecipes(); 
   }
 
-  // --- 2. LOGIC YÊU THÍCH (FIRESTORE) ---
+  // --- [MỚI] 2. LOGIC GỢI Ý THÔNG MINH (Fetch History -> AI) ---
+  Future<void> fetchSmartRecommendations() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-  // Lắng nghe realtime từ bảng 'favorite_recipes'
+    // Không set isLoading toàn cục để tránh xoay cả màn hình nếu đang xem tab khác
+    // Hoặc set loading cục bộ nếu cần thiết. Ở đây tôi set nhẹ để UI biết.
+    _isLoading = true; 
+    notifyListeners();
+
+    try {
+      // 1. Lấy Household ID
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final householdId = userDoc.data()?['current_household_id'];
+      
+      if (householdId == null) throw Exception("Chưa tham gia Household");
+
+      // 2. Chuẩn bị dữ liệu Favorites (Lấy top 10 món mới nhất)
+      final favTitles = _favoriteRecipes.take(10).map((e) => e.title).toList();
+
+      // 3. Chuẩn bị dữ liệu Cooking History (Fetch từ Firestore)
+      // Giả sử bảng cooking_history nằm trong household
+      final historySnapshot = await FirebaseFirestore.instance
+          .collection('households')
+          .doc(householdId)
+          .collection('cooking_history')
+          .orderBy('cooked_at', descending: true)
+          .limit(10)
+          .get();
+      
+      final historyTitles = historySnapshot.docs
+          .map((doc) => doc.data()['title'] as String? ?? "")
+          .where((t) => t.isNotEmpty)
+          .toList();
+
+      // 4. Gọi Repository xử lý (AI + Search)
+      _recommendedRecipes = await _recipeRepository.getSmartRecommendations(
+        favoriteTitles: favTitles,
+        historyTitles: historyTitles,
+      );
+
+    } catch (e) {
+      print("❌ Lỗi fetchSmartRecommendations: $e");
+      // Không gán vào _errorMessage chính để tránh hiện lỗi đỏ lòm khi chỉ là tính năng gợi ý
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // --- 3. LOGIC YÊU THÍCH (FIRESTORE) ---
+  // (Giữ nguyên code cũ của bạn)
   void listenToFavorites() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -112,9 +154,9 @@ class RecipeProvider extends ChangeNotifier {
     return _favoriteRecipes.any((element) => element.apiRecipeId == apiRecipeId);
   }
 
-  // Thêm/Xóa vào bảng 'favorite_recipes'
   Future<void> toggleFavorite(HouseholdRecipe recipe, BuildContext context) async {
-    final user = FirebaseAuth.instance.currentUser;
+     // (Giữ nguyên logic cũ của bạn)
+     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng đăng nhập!")));
       return;
@@ -130,13 +172,11 @@ class RecipeProvider extends ChangeNotifier {
           .doc(householdId)
           .collection('favorite_recipes');
 
-      // Kiểm tra tồn tại
       final existingDocs = await collectionRef
           .where('api_recipe_id', isEqualTo: recipe.apiRecipeId)
           .get();
 
       if (existingDocs.docs.isNotEmpty) {
-        // --- XÓA ---
         for (var doc in existingDocs.docs) {
           await doc.reference.delete();
         }
@@ -146,7 +186,6 @@ class RecipeProvider extends ChangeNotifier {
           );
         }
       } else {
-        // --- THÊM MỚI ---
         final recipeToSave = {
           ...recipe.toFirestore(),
           'added_by_uid': user.uid,

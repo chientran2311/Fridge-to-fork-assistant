@@ -3,10 +3,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart'; 
 import 'package:go_router/go_router.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
-
+import '../../l10n/app_localizations.dart';
 // Import Provider và Model
 import '../../providers/recipe_provider.dart';
 import '../../models/household_recipe.dart';
+
+late AppLocalizations s;
 
 class FavoriteRecipesScreen extends StatefulWidget {
   const FavoriteRecipesScreen({super.key});
@@ -18,7 +20,6 @@ class FavoriteRecipesScreen extends StatefulWidget {
 class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
   final Color mainColor = const Color(0xFF1B3B36);
   String _selectedFilter = "All";
-
   // Mock filters 
   final List<String> filters = ["All", "Breakfast", "Lunch", "Dinner", "Snacks"];
 
@@ -32,13 +33,13 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    s = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F7),
       body: SafeArea(
         child: Consumer<RecipeProvider>(
           builder: (context, recipeProvider, child) {
             final favorites = recipeProvider.favoriteRecipes;
-
             if (favorites.isEmpty && !recipeProvider.isLoading) {
                return _buildEmptyState(); 
             }
@@ -75,7 +76,7 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => context.go('/recipes'),
-                  child: const Text("Khám phá ngay"),
+                  child: Text(s.discovermore, style: const TextStyle(fontSize: 14)),
                 )
               ],
             ),
@@ -170,7 +171,7 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
           const SizedBox(width: 16),
           Expanded(
             child: Text(
-              "Món Yêu Thích",
+              "${s.favoriterecipe} ❤️",
               style: GoogleFonts.merriweather(
                 fontSize: 24,
                 fontWeight: FontWeight.w900,
@@ -332,6 +333,7 @@ class FavoriteRecipeCard extends StatelessWidget {
                     ),
                     const Spacer(), 
                     Row(
+                      
                       children: [
                         Expanded(
                           child: SizedBox(
@@ -339,7 +341,7 @@ class FavoriteRecipeCard extends StatelessWidget {
                             child: ElevatedButton.icon(
                               onPressed: () {}, 
                               icon: const Icon(Icons.calendar_today, size: 14, color: Colors.black54),
-                              label: const Text("Schedule", style: TextStyle(color: Colors.black54, fontSize: 11, fontWeight: FontWeight.bold)),
+                              label: Text(s.schedule, style: const TextStyle(color: Colors.black54, fontSize: 11, fontWeight: FontWeight.bold)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFF5F5F5),
                                 elevation: 0,
@@ -358,7 +360,7 @@ class FavoriteRecipeCard extends StatelessWidget {
                                 context.go('/recipes/detail', extra: recipe);
                               },
                               icon: const Icon(Icons.restaurant_menu, size: 14, color: Colors.white),
-                              label: const Text("Cook Now", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                              label: Text(s.cooknow, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: mainColor,
                                 elevation: 0,
@@ -407,13 +409,12 @@ class DiscoverMoreCard extends StatelessWidget {
                 child: const Icon(Icons.add, color: Colors.black54),
               ),
               const SizedBox(height: 12),
-              const Text(
-                "Discover More",
+              Text(
+                s.discovermore,
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 4),
-              Text(
-                "Browse AI suggestions",
+              Text(s.browseai,
                 style: TextStyle(color: Colors.grey[500], fontSize: 12),
               ),
             ],

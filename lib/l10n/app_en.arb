@@ -79,5 +79,11 @@
   "prepTime": "Max Prep Time",
   "min": "min",
   "hours": "hours",
-  "applyFilters": "Apply Filters"
+  "applyFilters": "Apply Filters",
+  "recipetab": "AI suggestion",
+  "schedule": "Schedule",
+  "cooknow": "Cook Now",
+  "discovermore": "Discover more",
+  "browseai" : "Browse AI suggestions",
+  "favoriterecipe" : "Favorite Recipe"
 }

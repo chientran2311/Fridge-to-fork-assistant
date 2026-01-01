@@ -79,5 +79,11 @@
   "prepTime": "Thời gian chuẩn bị",
   "min": "phút",
   "hours": "giờ",
-  "applyFilters": "Áp dụng bộ lọc"
+  "applyFilters": "Áp dụng bộ lọc",
+  "recipetab": "Trợ lý AI gợi ý",
+  "schedule": "Lên lịch",
+  "cooknow": "Nấu ngay",
+  "discovermore": "Khám phá thêm",
+  "browseai" : "Các gợi ý từ AI",
+  "favoriterecipe" : "Món ăn yêu thích"
 }

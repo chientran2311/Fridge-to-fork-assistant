@@ -1,64 +1,84 @@
 import '../services/spoonacular_service.dart';
 import '../services/gemini_service.dart';
 import '../../models/household_recipe.dart';
-import '../../models/RecipeFilter.dart'; // Đừng quên import Filter
+import '../../models/RecipeFilter.dart';
 
 class RecipeRepository {
-  // Dependency Injection: Khởi tạo các Service
   final SpoonacularService _spoonacularService = SpoonacularService();
   final GeminiService _geminiService = GeminiService();
 
-  /// --- CHIẾN LƯỢC 1: TÌM BẰNG NGUYÊN LIỆU (AI TRƯỚC -> API SAU) ---
-  /// Ưu tiên dùng Gemini AI để gợi ý món ăn sáng tạo.
-  /// Nếu AI thất bại hoặc trả về rỗng, dùng Spoonacular.
-  Future<List<HouseholdRecipe>> getRecipesByIngredients(
-      List<String> ingredients) async {
-    // Nếu không có nguyên liệu, trả về rỗng ngay
-    if (ingredients.isEmpty) return [];
-
+  // --- [MỚI] CHIẾN LƯỢC 3: SMART RECOMMENDATION (AI + API) ---
+  /// 1. Gemini phân tích Favorites/History -> Ra Filter
+  /// 2. Spoonacular tìm kiếm thực tế dựa trên Filter đó
+  Future<List<HouseholdRecipe>> getSmartRecommendations({
+    required List<String> favoriteTitles,
+    required List<String> historyTitles,
+  }) async {
     try {
-      // BƯỚC 1: Thử gọi Gemini AI trước
-      print("🤖 Repository: Đang hỏi đầu bếp AI (Gemini)...");
-      final recipes = await _geminiService.recommendRecipes(ingredients);
+      // BƯỚC 1: Hỏi Gemini
+      final suggestion = await _geminiService.analyzeUserTaste(
+        favoriteTitles: favoriteTitles,
+        historyTitles: historyTitles,
+      );
 
-      if (recipes.isNotEmpty) {
-        print("✅ Gemini đã tìm thấy ${recipes.length} món.");
-        return recipes;
+      // Default fallback
+      String query = "trending";
+      RecipeFilter filter = RecipeFilter();
+
+      // BƯỚC 2: Parse kết quả từ Gemini
+      if (suggestion != null) {
+        query = suggestion['query'] ?? "popular";
+        
+        filter = RecipeFilter(
+          cuisine: suggestion['cuisine'],
+          difficulty: suggestion['difficulty'],
+          maxPrepTime: (suggestion['maxPrepTime'] as num?)?.toInt() ?? 60,
+        );
       }
 
-      // BƯỚC 2: Nếu Gemini trả về rỗng, Fallback về Spoonacular
-      print("⚠️ AI trả về rỗng, chuyển sang Spoonacular...");
-      // Gọi hàm searchRecipes của Service (chỉ truyền ingredients)
-      return await _spoonacularService.searchRecipes(ingredients: ingredients);
+      print("✨ Repository: Tìm kiếm theo gợi ý AI -> Query: '$query', Cuisine: '${filter.cuisine}'");
+
+      // BƯỚC 3: Gọi Spoonacular (dùng hàm searchRecipes có sẵn logic Filter)
+      return await _spoonacularService.searchRecipes(
+        query: query,
+        filter: filter,
+      );
+
     } catch (e) {
-      print("❌ Lỗi Gemini trong Repo: $e");
-
-      // BƯỚC 3: Dự phòng cuối cùng - Nếu Gemini lỗi (mạng, key...), gọi Spoonacular
-      print("🔄 Đang thử lại với Spoonacular...");
-      try {
-        return await _spoonacularService.searchRecipes(
-            ingredients: ingredients);
-      } catch (sError) {
-        print("❌ Cả 2 service đều lỗi: $sError");
-        rethrow; // Ném lỗi ra Provider/UI để hiện thông báo
-      }
+      print("❌ Lỗi Smart Recommendation: $e");
+      // Fallback: Tìm món random popular
+      return await _spoonacularService.searchRecipes(query: "healthy");
     }
   }
 
-  /// --- CHIẾN LƯỢC 2: TÌM KIẾM TỔNG QUÁT (SEARCH BAR + FILTER) ---
-  /// Dùng trực tiếp Spoonacular vì API này mạnh về tìm kiếm theo từ khóa và bộ lọc chuẩn.
-  Future<List<HouseholdRecipe>> searchRecipes(
-      {String? query, List<String>? ingredients, RecipeFilter? filter}) async {
+  // --- CHIẾN LƯỢC 1: TÌM BẰNG NGUYÊN LIỆU (Giữ nguyên logic cũ) ---
+  Future<List<HouseholdRecipe>> getRecipesByIngredients(List<String> ingredients) async {
+    if (ingredients.isEmpty) return [];
     try {
-      // Gọi sang Service với các tham số có tên (named arguments)
-      return await _spoonacularService.searchRecipes(
-        query: query,
-        ingredients: ingredients,
-        filter: filter,
-      );
+      // Ưu tiên Gemini tạo công thức giả lập trước (tùy nhu cầu của bạn)
+      // Hoặc gọi thẳng Spoonacular nếu muốn chính xác.
+      // Ở đây giữ logic cũ của bạn:
+      final recipes = await _geminiService.recommendRecipes(ingredients);
+      if (recipes.isNotEmpty) return recipes;
+      
+      return await _spoonacularService.searchRecipes(ingredients: ingredients);
     } catch (e) {
-      print("❌ Lỗi tìm kiếm trong Repo: $e");
-      rethrow;
+      print("❌ Lỗi Gemini/API: $e");
+      // Fallback cuối cùng
+      return await _spoonacularService.searchRecipes(ingredients: ingredients);
     }
+  }
+
+  // --- CHIẾN LƯỢC 2: TÌM KIẾM TỔNG QUÁT ---
+  Future<List<HouseholdRecipe>> searchRecipes({
+    String? query, 
+    List<String>? ingredients, 
+    RecipeFilter? filter
+  }) async {
+    return await _spoonacularService.searchRecipes(
+      query: query,
+      ingredients: ingredients,
+      filter: filter,
+    );
   }
 }

@@ -238,7 +238,7 @@ void _navigateToSettings() {
           : FloatingActionButton(
               onPressed: _showAddItemDialog,
               shape: const CircleBorder(),
-              backgroundColor: const Color(0xFF0FBD3B),
+              backgroundColor: const Color.fromARGB(255, 36, 75, 45),
               child: const Icon(Icons.add, size: 28, color: Colors.white),
             ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,

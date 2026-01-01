@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import '../../utils/database_seeder.dart';
 import 'package:go_router/go_router.dart';
-// Import Localization
 import '../../l10n/app_localizations.dart';
 
-// Import các Widgets UI
+// Widgets
 import 'package:fridge_to_fork_assistant/widgets/auth/common_auth_widgets.dart';
 import 'package:fridge_to_fork_assistant/widgets/auth/login_header.dart';
 import 'package:fridge_to_fork_assistant/widgets/auth/login_footer.dart';
 import 'package:fridge_to_fork_assistant/widgets/auth/social_buttons.dart';
 import '../../data/services/auth_service.dart';
 import '../../widgets/notification.dart';
+
+// [NEW] Import Notification Service
+import '../../data/services/notification_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -21,11 +23,11 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // --- CẤU HÌNH UI ---
+  // UI Config
   final Color mainColor = const Color(0xFF1B3B36);
   final Color secondaryColor = const Color(0xFFF0F1F1);
 
-  // --- LOGIC AUTH ---
+  // Logic Auth
   final AuthService _authService = AuthService();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -41,14 +43,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    // Lấy instance ngôn ngữ để dùng trong hàm async
     final s = AppLocalizations.of(context)!;
-
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      CustomToast.show(context, s.loginErrorMissing, isError: true); // ✅ Updated
+      CustomToast.show(context, s.loginErrorMissing, isError: true);
       return;
     }
 
@@ -60,11 +60,20 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     if (!mounted) return;
-
     setState(() => _isLoading = false);
 
     if (errorMessage == null) {
-      CustomToast.show(context, s.loginSuccess); // ✅ Updated
+      CustomToast.show(context, s.loginSuccess);
+      
+      // [NEW] LƯU FCM TOKEN VÀO FIRESTORE NGAY KHI LOGIN THÀNH CÔNG
+      // Backend cần cái này để gửi thông báo hết hạn
+      try {
+        await NotificationService().saveTokenToDatabase();
+        print("✅ Đã lưu FCM Token sau khi login");
+      } catch (e) {
+        print("⚠️ Lỗi lưu token: $e");
+      }
+
       if (mounted) {
         context.go('/fridge'); 
       }
@@ -112,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildLoginForm(BuildContext context) {
-    final s = AppLocalizations.of(context)!; // ✅ Lấy ngôn ngữ
+    final s = AppLocalizations.of(context)!;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -121,31 +130,24 @@ class _LoginScreenState extends State<LoginScreen> {
         LoginHeader(mainColor: mainColor),
         const SizedBox(height: 32),
 
-        // Email Field
         CustomAuthField(
-          label: s.emailLabel, // ✅ Updated
-          hintText: s.emailHint, // ✅ Updated
+          label: s.emailLabel,
+          hintText: s.emailHint,
           mainColor: mainColor,
           controller: _emailController,
         ),
         const SizedBox(height: 20),
 
-        // Password Field
         CustomAuthField(
-          label: s.passwordLabel, // ✅ Updated
-          hintText: s.passwordHint, // ✅ Updated
+          label: s.passwordLabel,
+          hintText: s.passwordHint,
           isPassword: true,
           isObscure: _isObscure,
-          onIconTap: () {
-            setState(() {
-              _isObscure = !_isObscure;
-            });
-          },
+          onIconTap: () => setState(() => _isObscure = !_isObscure),
           mainColor: mainColor,
           controller: _passwordController,
         ),
 
-        // Forgot Password
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
@@ -153,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // TODO: Logic quên mật khẩu
             },
             child: Text(
-              s.forgotPassword, // ✅ Updated
+              s.forgotPassword,
               style: TextStyle(
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w600,
@@ -163,14 +165,13 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 24),
 
-        // Login Button
         SizedBox(
           width: double.infinity,
           height: 56,
           child: _isLoading 
             ? Center(child: CircularProgressIndicator(color: mainColor))
             : PrimaryButton(
-                text: s.loginButton, // ✅ Updated
+                text: s.loginButton,
                 onPressed: _handleLogin,
               ),
         ),
@@ -181,7 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const SignupFooter(),
         const SizedBox(height: 50),
 
-        // --- DEV AREA ---
+        // DEV AREA
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
@@ -192,17 +193,17 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             children: [
               Text(
-                s.devAreaTitle, // ✅ Updated
+                s.devAreaTitle,
                 style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
               ),
               TextButton.icon(
                 icon: const Icon(Icons.cloud_upload, color: Colors.red),
-                label: Text(s.devSeedDatabase, style: const TextStyle(color: Colors.red)), // ✅ Updated
+                label: Text(s.devSeedDatabase, style: const TextStyle(color: Colors.red)),
                 onPressed: () async {
-                  CustomToast.show(context, s.devSeeding); // ✅ Updated
+                  CustomToast.show(context, s.devSeeding);
                   await DatabaseSeeder().seedDatabase();
                   if (context.mounted) {
-                     CustomToast.show(context, s.devSeedSuccess); // ✅ Updated
+                     CustomToast.show(context, s.devSeedSuccess);
                   }
                 },
               ),

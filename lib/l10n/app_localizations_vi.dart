@@ -223,4 +223,22 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get applyFilters => 'Áp dụng bộ lọc';
+
+  @override
+  String get recipetab => 'Trợ lý AI gợi ý';
+
+  @override
+  String get schedule => 'Lên lịch';
+
+  @override
+  String get cooknow => 'Nấu ngay';
+
+  @override
+  String get discovermore => 'Khám phá thêm';
+
+  @override
+  String get browseai => 'Các gợi ý từ AI';
+
+  @override
+  String get favoriterecipe => 'Món ăn yêu thích';
 }

@@ -84,7 +84,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('✅ Đã thêm món mới thành công!'),
-            backgroundColor: Color(0xFF0FBD3B),
+            backgroundColor:  Color.fromARGB(255, 36, 75, 45),
           ),
         );
       }
@@ -302,7 +302,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _addItem,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0FBD3B), // Màu xanh chủ đạo
+                    backgroundColor: const Color.fromARGB(255, 36, 75, 45),// Màu xanh chủ đạo
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
                   ),

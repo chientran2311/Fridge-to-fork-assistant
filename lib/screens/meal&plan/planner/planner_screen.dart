@@ -127,7 +127,7 @@ class _PlannerScreenState extends State<PlannerScreen> {
       ),
 
       
-      floatingActionButton: isDesktop ? null : const _FloatingAddButton(),
+     
     );
   }
 }
@@ -202,27 +202,4 @@ class _TabButton extends StatelessWidget {
     );
   }
 }
-
-
-class _FloatingAddButton extends StatelessWidget {
-  const _FloatingAddButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return FloatingActionButton(
-      shape: const CircleBorder(),
-      backgroundColor: _primaryColor,
-      onPressed: () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => const AddItemBottomSheet(),
-        );
-      },
-      child: const Icon(Icons.add, size: 32, color: Colors.white),
-    );
-  }
-}
-
 

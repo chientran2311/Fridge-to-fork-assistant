@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
+import 'package:table_calendar/table_calendar.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 class FavoriteRecipesScreen extends StatefulWidget {
@@ -18,7 +20,7 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
   final List<Map<String, dynamic>> favorites = [
     {
       "type": "image",
-      "image": "https://images.unsplash.com/photo-1525351484163-7529414395d8?auto=format&fit=crop&w=600&q=80",
+      "image": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=600&q=80",
       "category": "BREAKFAST",
       "kcal": "350 kcal",
       "title": "Avocado Toast & Egg",
@@ -96,7 +98,10 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
                   padding: const EdgeInsets.only(bottom: 20),
                   child: SizedBox(
                     height: 310, // Chiều cao cố định cho card mobile
-                    child: FavoriteRecipeCard(data: favorites[index]),
+                    child: FavoriteRecipeCard(
+                      data: favorites[index],
+                      onSchedule: () => _showScheduleCalendar(context, favorites[index]),
+                    ),
                   ),
                 );
               },
@@ -129,7 +134,10 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
                 if (index == favorites.length) {
                   return const DiscoverMoreCard();
                 }
-                return FavoriteRecipeCard(data: favorites[index]);
+                return FavoriteRecipeCard(
+                  data: favorites[index],
+                  onSchedule: () => _showScheduleCalendar(context, favorites[index]),
+                );
               },
               childCount: favorites.length + 1,
             ),
@@ -211,13 +219,22 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
       ),
     );
   }
+
+  void _showScheduleCalendar(BuildContext context, Map<String, dynamic> recipeData) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => ScheduleCalendarDialog(recipeData: recipeData),
+    );
+  }
 }
 
 // --- WIDGET: CARD MÓN ĂN YÊU THÍCH (Giữ nguyên logic Card đã tối ưu) ---
 class FavoriteRecipeCard extends StatelessWidget {
   final Map<String, dynamic> data;
+  final VoidCallback? onSchedule;
 
-  const FavoriteRecipeCard({super.key, required this.data});
+  const FavoriteRecipeCard({super.key, required this.data, this.onSchedule});
 
   @override
   Widget build(BuildContext context) {
@@ -326,7 +343,7 @@ class FavoriteRecipeCard extends StatelessWidget {
                         child: SizedBox(
                           height: 38,
                           child: ElevatedButton.icon(
-                            onPressed: () {},
+                            onPressed: onSchedule,
                             icon: const Icon(Icons.calendar_today, size: 14, color: Colors.black54),
                             label: const Text("Schedule", style: TextStyle(color: Colors.black54, fontSize: 11, fontWeight: FontWeight.bold)),
                             style: ElevatedButton.styleFrom(
@@ -414,7 +431,11 @@ class DashedRectPainter extends CustomPainter {
   final Color color;
   final double gap;
 
-  DashedRectPainter({this.strokeWidth = 1.0, this.color = Colors.black, this.gap = 5.0});
+  DashedRectPainter({
+    this.strokeWidth = 1.0,
+    this.color = Colors.black,
+    this.gap = 5.0,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -428,9 +449,315 @@ class DashedRectPainter extends CustomPainter {
     double r = 24.0;
     
     var path = Path()..addRRect(RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, x, y), Radius.circular(r)));
-    canvas.drawPath(path, dashedPaint); 
+    canvas.drawPath(path, dashedPaint);
   }
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+// ============== CALENDAR SCHEDULE DIALOG ==============
+class ScheduleCalendarDialog extends StatefulWidget {
+  final Map<String, dynamic> recipeData;
+
+  const ScheduleCalendarDialog({super.key, required this.recipeData});
+
+  @override
+  State<ScheduleCalendarDialog> createState() => _ScheduleCalendarDialogState();
+}
+
+class _ScheduleCalendarDialogState extends State<ScheduleCalendarDialog> {
+  late DateTime _selectedDate;
+  late DateTime _focusedDate;
+  String? _selectedMealType = 'Breakfast';
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  bool _isScheduling = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDate = DateTime.now();
+    _focusedDate = DateTime.now();
+  }
+
+  Future<void> _scheduleRecipe() async {
+    if (_selectedDate == null || _selectedMealType == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a date and meal type')),
+      );
+      return;
+    }
+
+    setState(() => _isScheduling = true);
+
+    try {
+      // Add meal plan to Firestore
+      final householdId = 'house_seed_01'; // Temp hardcoded
+      final dateKey = _selectedDate.toIso8601String().split('T')[0];
+
+      await _firestore
+          .collection('households')
+          .doc(householdId)
+          .collection('meal_plans')
+          .add({
+        'date': Timestamp.fromDate(_selectedDate),
+        'meal_type': _selectedMealType,
+        'local_recipe_id': widget.recipeData['title'], // Using title as ID for now
+        'display_title': widget.recipeData['title'],
+        'display_image': widget.recipeData['image'] ?? '',
+        'servings': 4,
+        'is_cooked': false,
+        'planned_by_uid': 'user_seed_01',
+        'created_at': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '✅ ${widget.recipeData['title']} scheduled for ${_selectedDate.day}/${_selectedDate.month}',
+          ),
+          backgroundColor: const Color(0xFF214130),
+        ),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _isScheduling = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 400),
+        padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Schedule Meal',
+                    style: GoogleFonts.merriweather(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+
+              // Recipe Info
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF214130).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    if (widget.recipeData['type'] == 'image')
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          widget.recipeData['image'],
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    else
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: widget.recipeData['color'],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(widget.recipeData['icon'], size: 32),
+                      ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.recipeData['title'],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            widget.recipeData['kcal'],
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Calendar
+              Text(
+                'Select Date',
+                style: GoogleFonts.merriweather(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: TableCalendar(
+                  firstDay: DateTime.now(),
+                  lastDay: DateTime.now().add(const Duration(days: 365)),
+                  focusedDay: _focusedDate,
+                  selectedDayPredicate: (day) {
+                    return isSameDay(_selectedDate, day);
+                  },
+                  onDaySelected: (selectedDay, focusedDay) {
+                    setState(() {
+                      _selectedDate = selectedDay;
+                      _focusedDate = focusedDay;
+                    });
+                  },
+                  calendarStyle: CalendarStyle(
+                    selectedDecoration: BoxDecoration(
+                      color: const Color(0xFF214130),
+                      shape: BoxShape.circle,
+                    ),
+                    todayDecoration: BoxDecoration(
+                      color: const Color(0xFF214130).withOpacity(0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    defaultDecoration: const BoxDecoration(shape: BoxShape.circle),
+                    weekendDecoration: const BoxDecoration(shape: BoxShape.circle),
+                  ),
+                  headerStyle: HeaderStyle(
+                    formatButtonVisible: false,
+                    titleCentered: true,
+                    titleTextStyle: GoogleFonts.merriweather(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Meal Type Selection
+              Text(
+                'Select Meal Type',
+                style: GoogleFonts.merriweather(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              Row(
+                children: ['Breakfast', 'Lunch', 'Dinner', 'Snack']
+                    .map((mealType) => Expanded(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() => _selectedMealType = mealType);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: _selectedMealType == mealType
+                                    ? const Color(0xFF214130)
+                                    : Colors.grey[200],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                mealType,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: _selectedMealType == mealType
+                                      ? Colors.white
+                                      : Colors.black,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ))
+                    .toList(),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Schedule Button
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _isScheduling ? null : _scheduleRecipe,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF214130),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: _isScheduling
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Schedule Recipe',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+extension DateOnlyCompare on DateTime {
+  bool isSameDay(DateTime other) {
+    return year == other.year && month == other.month && day == other.day;
+  }
 }

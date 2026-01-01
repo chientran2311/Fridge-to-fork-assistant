@@ -26,13 +26,8 @@ class DayItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: active 
           ? const Color(0xFF214130) 
-          : hasMealPlan 
-            ? const Color(0xFFE8F5E9) // Xanh lá nhạt báo hiệu có meal plan
-            : Colors.white,
+          : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: hasMealPlan && !active
-          ? Border.all(color: const Color(0xFF4CAF50), width: 2)
-          : null,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -53,8 +48,9 @@ class DayItem extends StatelessWidget {
               color: active ? Colors.white : Colors.black,
             ),
           ),
-          if (hasMealPlan && !active) ...[
-            const SizedBox(height: 4),
+          const SizedBox(height: 8),
+          // ✅ Green dot indicator for meal plan (always shown at bottom)
+          if (hasMealPlan)
             Container(
               width: 6,
               height: 6,
@@ -62,8 +58,9 @@ class DayItem extends StatelessWidget {
                 color: Color(0xFF4CAF50),
                 shape: BoxShape.circle,
               ),
-            ),
-          ],
+            )
+          else
+            const SizedBox(width: 6, height: 6), // ✅ Keep spacing consistent
         ],
       ),
     );

@@ -12,6 +12,7 @@ class MealCard extends StatelessWidget {
   final String recipeId; // ✅ Thêm recipe ID
   final String householdId; // ✅ Thêm household ID
   final String mealPlanDate; // ✅ Thêm ngày meal plan
+  final String mealType; // ✅ Thêm meal type để biết thứ tự
 
   const MealCard({
     required this.label,
@@ -20,6 +21,7 @@ class MealCard extends StatelessWidget {
     required this.recipeId,
     required this.householdId,
     required this.mealPlanDate,
+    required this.mealType,
   });
 
   @override
@@ -34,6 +36,7 @@ class MealCard extends StatelessWidget {
               recipeId: recipeId,
               householdId: householdId,
               mealPlanDate: mealPlanDate,
+              mealType: mealType,
             ),
           ),
         );

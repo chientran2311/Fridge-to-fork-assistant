@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../utils/database_seeder.dart';
 import 'barcode_generator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DebugToolsScreen extends StatefulWidget {
   const DebugToolsScreen({super.key});
@@ -15,18 +17,58 @@ class _DebugToolsScreenState extends State<DebugToolsScreen> {
   void _runSeeder() async {
     setState(() => _isSeeding = true);
     
-    final seeder = DatabaseSeederV2();
-    await seeder.seedDatabase();
-    
-    setState(() => _isSeeding = false);
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Database seeding completed!'),
-          backgroundColor: Color(0xFF28A745),
-        ),
+    try {
+      // Lấy user hiện tại
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Vui lòng đăng nhập trước!'), backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
+      
+      // Lấy household_id từ Firestore
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      
+      final householdId = userDoc.data()?['current_household_id'] as String?;
+      
+      if (householdId == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Không tìm thấy household!'), backgroundColor: Colors.red),
+          );
+        }
+        return;
+      }
+      
+      // Chạy seeder với userId và householdId
+      final seeder = DatabaseSeeder();
+      await seeder.seedDatabase(
+        userId: user.uid,
+        householdId: householdId,
       );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Database seeding completed!'),
+            backgroundColor: Color(0xFF28A745),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSeeding = false);
     }
   }
 

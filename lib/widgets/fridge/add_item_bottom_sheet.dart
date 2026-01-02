@@ -1,37 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:fridge_to_fork_assistant/widgets/fridge/models/fridge_item.dart';
-import 'package:fridge_to_fork_assistant/screens/fridge/fridge_barcode_scan.dart';
-import 'package:dotted_border/dotted_border.dart';
-import '../../models/ingredient.dart';
-import '../../services/firebase_service.dart';
+import 'package:provider/provider.dart';
+// import 'package:dotted_border/dotted_border.dart'; // Bỏ comment nếu đã cài thư viện này
+import '../../providers/inventory_provider.dart';
+// import '../../screens/fridge/fridge_barcode_scan.dart'; // Bỏ comment nếu đã có file này
 
-
-class AddItemBottomSheet extends StatefulWidget {
-  final Function(FridgeItem) onAdd;
-
-  const AddItemBottomSheet({
-    super.key,
-    required this.onAdd,
-  });
+class AddItemDialog extends StatefulWidget {
+  const AddItemDialog({super.key});
 
   @override
-  State<AddItemBottomSheet> createState() => _AddItemBottomSheetState();
+  State<AddItemDialog> createState() => _AddItemDialogState();
 }
 
-class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
-  final FirebaseService _firebaseService = FirebaseService();
-  
+class _AddItemDialogState extends State<AddItemDialog> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController(text: '1');
-  String _selectedUnit = 'pcs';
-  DateTime? _selectedExpiryDate;
-  String _selectedCategory = 'Vegetables';
   
-  // Store scanned ingredient data
-  Ingredient? _scannedIngredient;
+  String _selectedUnit = 'kg';
+  DateTime? _selectedExpiryDate;
+  String _selectedCategory = 'Rau củ';
+  bool _isLoading = false;
 
-  final List<String> _units = ['pcs', 'g', 'kg', 'ml', 'L', 'pack', 'block'];
-  final List<String> _categories = ['Vegetables', 'Dairy', 'Meat', 'Fruit', 'Other'];
+  final List<String> _units = ['cái', 'g', 'kg', 'ml', 'L', 'hộp', 'gói'];
+  final List<String> _categories = ['Rau củ', 'Sữa/Trứng', 'Thịt', 'Trái cây', 'Khác'];
 
   @override
   void dispose() {
@@ -41,6 +31,8 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
   }
 
   void _selectExpiryDate() async {
+    FocusScope.of(context).unfocus();
+    
     final date = await showDatePicker(
       context: context,
       initialDate: DateTime.now().add(const Duration(days: 7)),
@@ -49,9 +41,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF2D5F4F),
-            ),
+            colorScheme: const ColorScheme.light(primary: Color(0xFF0FBD3B)),
           ),
           child: child!,
         );
@@ -59,480 +49,261 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
     );
     
     if (date != null) {
-      setState(() {
-        _selectedExpiryDate = date;
-      });
+      setState(() => _selectedExpiryDate = date);
     }
   }
 
-  void _addItem() async {
-    if (_nameController.text.trim().isEmpty) {
+  Future<void> _addItem() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter ingredient name'),
-          backgroundColor: Color(0xFFDC3545),
-        ),
+        const SnackBar(content: Text('Vui lòng nhập tên thực phẩm'), backgroundColor: Colors.red),
       );
       return;
     }
 
-    // If we have scanned ingredient, use its ID directly
-    if (_scannedIngredient != null) {
-      final success = await _firebaseService.addInventoryItem(
-        ingredientId: _scannedIngredient!.ingredientId,
-        quantity: double.tryParse(_quantityController.text) ?? 1,
+    setState(() => _isLoading = true);
+
+    try {
+      await Provider.of<InventoryProvider>(context, listen: false).addItem(
+        name: name,
+        quantity: double.tryParse(_quantityController.text) ?? 1.0,
         unit: _selectedUnit,
-        expiryDate: _selectedExpiryDate,
+        expiryDate: _selectedExpiryDate ?? DateTime.now().add(const Duration(days: 7)),
+        category: _selectedCategory,
       );
-      
-      if (success) {
+
+      if (mounted) {
         Navigator.pop(context);
-      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Failed to add item'),
-            backgroundColor: Color(0xFFDC3545),
+            content: Text('✅ Đã thêm món mới thành công!'),
+            backgroundColor: Color(0xFF0FBD3B),
           ),
         );
       }
-    } else {
-      // Legacy behavior - create FridgeItem (for manual entry)
-      final newItem = FridgeItem(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: _nameController.text.trim(),
-        quantity: int.tryParse(_quantityController.text) ?? 1,
-        unit: _selectedUnit,
-        category: _selectedCategory,
-        imageUrl: _getCategoryEmoji(_selectedCategory),
-        expiryDate: _selectedExpiryDate,
-        expiryDays: _selectedExpiryDate != null 
-            ? _selectedExpiryDate!.difference(DateTime.now()).inDays 
-            : null,
-      );
-      
-      widget.onAdd(newItem);
-      Navigator.pop(context);
-    }
-  }
-
-  void _scanBarcode() async {
-    final barcode = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const FridgeBarcodeScanScreen(),
-      ),
-    );
-    
-    if (barcode != null) {
-      // Fetch ingredient from Firebase
-      final ingredient = await _firebaseService.getIngredientByBarcode(barcode);
-      
-      if (ingredient != null) {
-        setState(() {
-          _scannedIngredient = ingredient;
-          _nameController.text = ingredient.name;
-          _selectedUnit = ingredient.defaultUnit;
-          _selectedCategory = _mapCategoryToUI(ingredient.category);
-        });
-        
+    } catch (e) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Found: ${ingredient.name}'),
-            backgroundColor: const Color(0xFF28A745),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Barcode not found: $barcode'),
-            backgroundColor: const Color(0xFFDC3545),
-          ),
+           SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
         );
       }
-    }
-  }
-
-  String _mapCategoryToUI(String category) {
-    switch (category.toLowerCase()) {
-      case 'vegetable':
-        return 'Vegetables';
-      case 'dairy':
-        return 'Dairy';
-      case 'meat':
-        return 'Meat';
-      case 'fruit':
-        return 'Fruit';
-      default:
-        return 'Other';
-    }
-  }
-
-  String _getCategoryEmoji(String category) {
-    switch (category.toLowerCase()) {
-      case 'vegetables':
-        return '🥗';
-      case 'dairy':
-        return '🥛';
-      case 'meat':
-        return '🥩';
-      case 'fruit':
-        return '🍎';
-      default:
-        return '🍽️';
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Handle Bar
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            
-            // Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24), 
+        ),
+        padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Add Item',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2D3436),
-                    ),
+                    'Thêm thực phẩm', 
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2D3436))
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                    color: const Color(0xFF2D3436),
+                    icon: const Icon(Icons.close), 
+                    onPressed: () {
+                      FocusScope.of(context).unfocus();
+                      Navigator.pop(context);
+                    }
                   ),
                 ],
               ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Form Content
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 20),
+
+              // Form Fields
+              const Text('Tên món', style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _nameController,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  hintText: 'Ví dụ: Sữa tươi',
+                  filled: true,
+                  fillColor: const Color(0xFFF5F5F5),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Quantity & Unit
+              Row(
                 children: [
-                  // Ingredient Name
-                  const Text(
-                    'Ingredient Name',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF2D3436),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      hintText: 'Enter ingredient name (e.g. Homemade Milk)',
-                      hintStyle: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 14,
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFF5F5F5),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Quantity and Expiry Date Row
-                  Row(
-                    children: [
-                      // Quantity
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Số lượng', style: TextStyle(fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 8),
+                        Row(
                           children: [
-                            const Text(
-                              'Quantity',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF2D3436),
+                            Expanded(
+                              child: TextField(
+                                controller: _quantityController,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: const Color(0xFFF5F5F5),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Row(
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(12)),
+                              child: DropdownButton<String>(
+                                value: _selectedUnit,
+                                underline: const SizedBox(),
+                                items: _units.map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
+                                onChanged: (val) => setState(() => _selectedUnit = val!),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  
+                  // Expiry Date
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Hết hạn', style: TextStyle(fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 8),
+                        InkWell(
+                          onTap: _selectExpiryDate,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                            decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(12)),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller: _quantityController,
-                                    keyboardType: TextInputType.number,
-                                    decoration: InputDecoration(
-                                      hintText: '1',
-                                      filled: true,
-                                      fillColor: const Color(0xFFF5F5F5),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      contentPadding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 14,
-                                      ),
-                                    ),
-                                  ),
+                                Text(
+                                  _selectedExpiryDate != null
+                                      ? '${_selectedExpiryDate!.day}/${_selectedExpiryDate!.month}/${_selectedExpiryDate!.year}'
+                                      : 'Chọn ngày',
+                                  style: TextStyle(color: _selectedExpiryDate != null ? Colors.black : Colors.grey),
                                 ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF5F5F5),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: DropdownButton<String>(
-                                    value: _selectedUnit,
-                                    underline: const SizedBox(),
-                                    icon: const Icon(Icons.arrow_drop_down),
-                                    items: _units.map((String unit) {
-                                      return DropdownMenuItem<String>(
-                                        value: unit,
-                                        child: Text(unit),
-                                      );
-                                    }).toList(),
-                                    onChanged: (String? newValue) {
-                                      if (newValue != null) {
-                                        setState(() {
-                                          _selectedUnit = newValue;
-                                        });
-                                      }
-                                    },
-                                  ),
-                                ),
+                                const Icon(Icons.calendar_today_outlined, size: 18, color: Color(0xFF0FBD3B)),
                               ],
                             ),
-                          ],
-                        ),
-                      ),
-                      
-                      const SizedBox(width: 16),
-                      
-                      // Expiry Date
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Expiry Date',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF2D3436),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            InkWell(
-                              onTap: _selectExpiryDate,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 14,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF5F5F5),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      _selectedExpiryDate != null
-                                          ? '${_selectedExpiryDate!.day}/${_selectedExpiryDate!.month}/${_selectedExpiryDate!.year}'
-                                          : 'Select Date',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: _selectedExpiryDate != null
-                                            ? const Color(0xFF2D3436)
-                                            : Colors.grey[400],
-                                      ),
-                                    ),
-                                    Icon(
-                                      Icons.calendar_today_outlined,
-                                      size: 18,
-                                      color: const Color(0xFF0FBD3B),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Quick Tags
-                  const Text(
-                    'Quick Tags',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF2D3436),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _categories.map((category) {
-                      final isSelected = category == _selectedCategory;
-                      return InkWell(
-                        onTap: () {
-                          setState(() {
-                            _selectedCategory = category;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isSelected 
-                                ? const Color.fromARGB(10, 15, 189, 59) 
-                                : const Color(0xFFF5F5F5),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isSelected
-                                  ? const Color.fromARGB(20, 15, 189, 59)
-                                  : Colors.transparent,
-                            ),
-                          ),
-                          child: Text(
-                            category,
-                            style: TextStyle(
-                              color: isSelected ? const Color(0xFF0A8A2B): const Color(0xFF2D3436),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  
-                  const SizedBox(height: 20),
-                  
-                  // Scan Barcode Button
-                  DottedBorder(
-                    borderType: BorderType.RRect,
-                    radius: const Radius.circular(12), // Bo góc giống code cũ
-                    padding: EdgeInsets.zero, // Quan trọng để inkwell tràn viền
-                    color: const Color.fromARGB(150, 15, 189,
-                        59), // Màu viền (đậm hơn chút cho rõ nét đứt)
-                    strokeWidth: 1.5, // Độ dày nét đứt
-                    dashPattern: const [6, 4], // [độ dài nét, khoảng cách]
-                    child: Material(
-                      color: const Color.fromARGB(
-                          5, 15, 189, 59), // Màu nền (backgroundColor cũ)
-                      borderRadius: BorderRadius.circular(12),
-                      child: InkWell(
-                        onTap: _scanBarcode,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          width:
-                              double.infinity, // minimumSize: width infinity cũ
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 14), // padding cũ
-                          alignment: Alignment.center,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(
-                                Icons.qr_code_scanner,
-                                color: Color(0xFF0A8A2B), // foregroundColor cũ
-                              ),
-                              SizedBox(
-                                  width: 8), // Khoảng cách giữa icon và text
-                              Text(
-                                'Scan Barcode',
-                                style: TextStyle(
-                                  color:
-                                      Color(0xFF0A8A2B), // foregroundColor cũ
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  
-                  const SizedBox(height: 12),
-                  
-                  // Add to Fridge Button
-                  ElevatedButton(
-                    onPressed: _addItem,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2D5F4F),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      minimumSize: const Size(double.infinity, 52),
-                      elevation: 0,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.check),
-                        SizedBox(width: 8),
-                        Text(
-                          'Add to Fridge',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  
-                  const SizedBox(height: 20),
                 ],
               ),
-            ),
-          ],
+              
+              const SizedBox(height: 20),
+              
+              // Category Chips
+              const Text('Phân loại', style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _categories.map((category) {
+                  final isSelected = category == _selectedCategory;
+                  return InkWell(
+                    onTap: () => setState(() => _selectedCategory = category),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color.fromARGB(10, 15, 189, 59) : const Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: isSelected ? const Color(0xFF0FBD3B) : Colors.transparent),
+                      ),
+                      child: Text(
+                        category,
+                        style: TextStyle(
+                          color: isSelected ? const Color(0xFF0A8A2B) : const Color(0xFF2D3436),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Scan Barcode Button (commented out - uncomment when dotted_border is installed)
+              /* 
+              DottedBorder(
+                borderType: BorderType.RRect,
+                radius: const Radius.circular(12),
+                padding: EdgeInsets.zero,
+                color: const Color.fromARGB(150, 15, 189, 59),
+                strokeWidth: 1.5,
+                dashPattern: const <double>[6, 4],
+                child: Material(
+                  color: const Color.fromARGB(5, 15, 189, 59),
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    onTap: () {
+                      // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const FridgeBarcodeScanScreen()));
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Icon(Icons.qr_code_scanner, color: Color(0xFF0A8A2B)),
+                          SizedBox(width: 8),
+                          Text('Quét mã vạch', style: TextStyle(color: Color(0xFF0A8A2B), fontWeight: FontWeight.w500)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              */
+              
+              // Add Button
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _addItem,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0FBD3B),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
+                  child: _isLoading 
+                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Thêm vào Tủ Lạnh', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

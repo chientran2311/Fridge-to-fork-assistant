@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../widgets/plans/tabs/weekly_plan_tab/meal_card.dart';
 import '../../../../widgets/plans/tabs/weekly_plan_tab/today_shopping_list.dart';
 import '../../../../widgets/plans/tabs/weekly_plan_tab/day_item.dart';
-import '../../../../widgets/plans/tabs/weekly_plan_tab/plan_dinner_card.dart';
 import '../../../../utils/firebase_seeder.dart';
+import '../../../../providers/recipe_provider.dart';
+import 'add_recipe_screen.dart';
 
 class WeeklyPlanContent extends StatefulWidget {
   final Function(int)? onTabChange;
@@ -24,7 +26,8 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
   late int selectedDayIndex;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  late String _householdId;
+  String? _userId; // ✅ User ID từ FirebaseAuth
+  String? _householdId; // ✅ Household ID từ user document
   Map<String, List<Map<String, dynamic>>> _mealPlansByDate = {};
   bool _isLoading = true;
   bool _hasLoadedData = false; // ✅ Track if data already loaded
@@ -96,14 +99,44 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
     try {
       debugPrint('🔄 Loading meal plans...');
       
-      // ✅ Hardcode lấy dữ liệu từ seeder user (user_seed_01)
-      const userId = 'user_01';
-      const householdId = 'house_01';
+      // ✅ Lấy user hiện tại từ FirebaseAuth
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        debugPrint('❌ No user logged in');
+        setState(() {
+          _isLoading = false;
+          _hasLoadedData = true;
+        });
+        return;
+      }
       
-      _householdId = householdId;
+      _userId = currentUser.uid;
+      
+      debugPrint('👤 Current User ID: $_userId');
+      
+      // ✅ Lấy household_id từ user document
+      final userDoc = await _firestore.collection('users').doc(_userId).get();
+      
+      debugPrint('📄 User document exists: ${userDoc.exists}');
+      if (userDoc.exists) {
+        debugPrint('📄 User document data: ${userDoc.data()}');
+        debugPrint('📄 current_household_id field: ${userDoc.data()?['current_household_id']}');
+      }
+      
+      if (!userDoc.exists || userDoc.data()?['current_household_id'] == null) {
+        debugPrint('❌ User document not found or no current_household_id');
+        debugPrint('💡 Tip: Run the database seeder to create user data');
+        setState(() {
+          _isLoading = false;
+          _hasLoadedData = true;
+        });
+        return;
+      }
+      
+      _householdId = userDoc.data()!['current_household_id'] as String;
 
-      debugPrint('🏠 Household ID (Demo): $_householdId');
-      debugPrint('👤 User ID (Demo): $userId');
+      debugPrint('🏠 Household ID: $_householdId');
+      debugPrint('👤 User ID: $_userId');
 
       // Fetch ALL meal plans từ household
       final mealPlansSnapshot = await _firestore
@@ -142,6 +175,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         final dateKey = _formatDateKey(date);
         debugPrint('   Final DateKey: $dateKey');
         debugPrint('   Meal Type: ${data['meal_type']}');
+        debugPrint('   🔑 local_recipe_id: ${data['local_recipe_id']}');
         debugPrint('========================================');
         debugPrint('');
         
@@ -185,12 +219,24 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
   // ✅ Add meal plan to Firebase when recipe is dropped on a day
   Future<void> _addMealPlan(DateTime date, String recipeId, String mealType, {int servings = 1}) async {
     try {
-      const householdId = 'house_01';
-      const userId = 'user_01';
+      // ✅ Kiểm tra xem đã có userId và householdId chưa
+      if (_userId == null || _householdId == null) {
+        debugPrint('❌ Cannot add meal plan: userId or householdId is null');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ Vui lòng đăng nhập để thêm kế hoạch'),
+              duration: Duration(seconds: 2),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
       
       final newDocRef = _firestore
           .collection('households')
-          .doc(householdId)
+          .doc(_householdId)
           .collection('meal_plans')
           .doc();
 
@@ -201,9 +247,9 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         'local_recipe_id': recipeId,
         'servings': servings,
         'created_at': Timestamp.now(),
-        'household_id': householdId,
+        'household_id': _householdId,
         'is_cooked': false,
-        'planned_by_uid': userId,
+        'planned_by_uid': _userId,
       });
 
       // ✅ Reload meal plans to show the new addition
@@ -400,44 +446,85 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
     }
   }
 
-  // ✅ Load available recipes from favorite_recipes + household_recipes
+  // ✅ Load available recipes from favorite_recipes + API + household_recipes
   Future<void> _loadAvailableRecipes() async {
     try {
-      const householdId = 'house_01';
-      const userId = 'user_01';
+      // ✅ Lấy user hiện tại
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        debugPrint('❌ No user logged in');
+        setState(() {
+          _availableRecipes = [];
+        });
+        return;
+      }
+      
+      final userId = currentUser.uid;
+      
+      // ✅ Lấy household_id từ user document nếu chưa có
+      String? householdId = _householdId;
+      if (householdId == null) {
+        final userDoc = await _firestore.collection('users').doc(userId).get();
+        if (!userDoc.exists || userDoc.data()?['current_household_id'] == null) {
+          debugPrint('❌ User document not found or no current_household_id');
+          setState(() {
+            _availableRecipes = [];
+          });
+          return;
+        }
+        householdId = userDoc.data()!['current_household_id'] as String;
+      }
       
       debugPrint('');
       debugPrint('🔄 _loadAvailableRecipes() START');
       debugPrint('   Loading from:');
-      debugPrint('   - users/$userId/favorite_recipes');
+      debugPrint('   - households/$householdId/favorite_recipes');
       debugPrint('   - households/$householdId/household_recipes');
+      debugPrint('   - API (via RecipeProvider)');
       
-      // 1️⃣ Load favorite recipes
+      // 1️⃣ Load favorite recipes from household/favorite_recipes
       List<Map<String, dynamic>> favoriteRecipes = [];
+      Set<int> favoriteApiIds = {};
       try {
         final favoriteSnapshot = await _firestore
-            .collection('users')
-            .doc(userId)
+            .collection('households')
+            .doc(householdId)
             .collection('favorite_recipes')
             .get();
 
         debugPrint('   Favorite recipes found: ${favoriteSnapshot.docs.length}');
         
-        favoriteRecipes = favoriteSnapshot.docs
-            .map((doc) => {
-                  'id': doc.id,
-                  'title': doc['title'] ?? 'Untitled',
-                  'image': doc['image'] ?? '',
-                  'calories': doc['calories'] ?? 0,
-                  'isFavorite': true,
-                })
-            .toList();
+        for (var doc in favoriteSnapshot.docs) {
+          try {
+            final data = doc.data();
+            final imageUrl = (data['image_url'] ?? data['image'] ?? '') as String;
+            final calories = data['calories'];
+            final caloriesInt = calories is int ? calories : (calories as num?)?.toInt() ?? 250;
+            final apiRecipeId = data['api_recipe_id'];
+            
+            if (apiRecipeId != null) {
+              favoriteApiIds.add(apiRecipeId as int);
+            }
+            
+            favoriteRecipes.add({
+              'id': doc.id,
+              'api_recipe_id': apiRecipeId,
+              'title': data['title'] ?? 'Untitled',
+              'image': imageUrl,
+              'calories': caloriesInt,
+              'isFavorite': true,
+            });
+          } catch (e) {
+            debugPrint('   ⚠️ Error parsing favorite recipe ${doc.id}: $e');
+          }
+        }
       } catch (e) {
         debugPrint('⚠️ Error loading favorite recipes: $e');
       }
 
-      // 2️⃣ Load household recipes
+      // 2️⃣ Load recipes from household_recipes (recipes saved from API)
       List<Map<String, dynamic>> householdRecipes = [];
+      Set<int> householdApiIds = {};
       try {
         final householdSnapshot = await _firestore
             .collection('households')
@@ -453,31 +540,82 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
             final imageUrl = (data['image_url'] ?? data['image'] ?? '') as String;
             final calories = data['calories'];
             final caloriesInt = calories is int ? calories : (calories as num?)?.toInt() ?? 250;
+            final apiRecipeId = data['api_recipe_id'];
             
-            debugPrint('   ✅ Recipe ${doc.id}: ${data['title']} | Calories: $caloriesInt | Image: ${imageUrl.isNotEmpty}');
+            if (apiRecipeId != null) {
+              householdApiIds.add(apiRecipeId as int);
+            }
+            
+            // Check if this recipe is in favorites
+            final isFav = apiRecipeId != null && favoriteApiIds.contains(apiRecipeId);
             
             householdRecipes.add({
               'id': doc.id,
+              'api_recipe_id': apiRecipeId,
               'title': data['title'] ?? 'Untitled',
               'image': imageUrl,
               'calories': caloriesInt,
-              'isFavorite': false,
+              'isFavorite': isFav,
             });
           } catch (e) {
-            debugPrint('   ⚠️ Error parsing recipe ${doc.id}: $e');
+            debugPrint('   ⚠️ Error parsing household recipe ${doc.id}: $e');
           }
         }
       } catch (e) {
-        debugPrint('⚠️ Error loading household recipes collection: $e');
+        debugPrint('⚠️ Error loading household recipes: $e');
       }
 
-      // 3️⃣ Merge: Favorite recipes first, then household recipes (avoiding duplicates)
-      final Set<String> favoriteIds = favoriteRecipes.map((r) => r['id']).cast<String>().toSet();
-      final filteredHousehold = householdRecipes
-          .where((recipe) => !favoriteIds.contains(recipe['id']))
-          .toList();
+      // 3️⃣ Load recipes from API via RecipeProvider (from Recipe screen)
+      List<Map<String, dynamic>> apiRecipes = [];
+      try {
+        if (mounted) {
+          final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
+          
+          final recipes = recipeProvider.recipes;
+          debugPrint('   API recipes in provider: ${recipes.length}');
+          
+          // Convert to Map format
+          for (var recipe in recipes) {
+            final apiId = recipe.apiRecipeId;
+            final isFav = apiId != null && favoriteApiIds.contains(apiId);
+            
+            apiRecipes.add({
+              'id': recipe.localRecipeId ?? recipe.apiRecipeId.toString(),
+              'api_recipe_id': apiId,
+              'title': recipe.title,
+              'image': recipe.imageUrl ?? '',
+              'calories': recipe.calories,
+              'isFavorite': isFav,
+            });
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error loading API recipes: $e');
+      }
 
-      final allRecipes = [...favoriteRecipes, ...filteredHousehold];
+      // 4️⃣ Merge: Favorite recipes first, then household recipes, then API recipes (avoiding duplicates)
+      final Set<int> allUsedApiIds = {...favoriteApiIds, ...householdApiIds};
+      final Set<String> allUsedLocalIds = {
+        ...favoriteRecipes.map((r) => r['id'] as String),
+        ...householdRecipes.map((r) => r['id'] as String),
+      };
+      
+      // Filter API recipes to avoid duplicates
+      final filteredApiRecipes = apiRecipes.where((recipe) {
+        final apiId = recipe['api_recipe_id'];
+        final localId = recipe['id'] as String;
+        // Skip if already in favorites or household recipes
+        if (apiId != null && allUsedApiIds.contains(apiId)) return false;
+        if (allUsedLocalIds.contains(localId)) return false;
+        return true;
+      }).toList();
+
+      // Combine all recipes
+      final allRecipes = [
+        ...favoriteRecipes,  // Favorites first
+        ...householdRecipes.where((r) => !favoriteApiIds.contains(r['api_recipe_id'])), // Non-favorite household recipes
+        ...filteredApiRecipes, // New API recipes
+      ];
 
       if (mounted) {
         setState(() {
@@ -485,11 +623,15 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         });
       }
       
-      debugPrint('✅ Loaded ${favoriteRecipes.length} favorite + ${filteredHousehold.length} household = ${allRecipes.length} total recipes');
-      debugPrint('🔄 _loadAvailableRecipes() COMPLETE - _availableRecipes list updated');
+      debugPrint('✅ Loaded:');
+      debugPrint('   - ${favoriteRecipes.length} favorite recipes');
+      debugPrint('   - ${householdRecipes.length} household recipes');
+      debugPrint('   - ${filteredApiRecipes.length} new API recipes');
+      debugPrint('   = ${allRecipes.length} total recipes available');
+      debugPrint('🔄 _loadAvailableRecipes() COMPLETE');
       
       if (allRecipes.isEmpty) {
-        debugPrint('⚠️ WARNING: No recipes found! Check Firebase paths and data.');
+        debugPrint('⚠️ WARNING: No recipes found! Search for recipes in Recipe screen first.');
       }
     } catch (e) {
       debugPrint('❌ Error loading recipes: $e');
@@ -499,9 +641,28 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
     }
   }
 
-  // ✅ Show recipe selection bottom sheet with drag-drop
-  void _showRecipeBottomSheet(DateTime selectedDate) {
-    debugPrint('🔵 Opening recipe bottom sheet with ${_availableRecipes.length} recipes');
+  // ✅ Navigate to add recipe screen (hides bottom navigation)
+  void _showRecipeBottomSheet(DateTime selectedDate, List<Map<String, dynamic>> recipes) {
+    debugPrint('🔵 Opening add recipe screen with ${recipes.length} recipes');
+    
+    // ✅ Sử dụng ROOT Navigator để mở màn hình BÊN NGOÀI MainScreen
+    // Điều này sẽ ẩn bottom navigation bar hoàn toàn
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (context) => AddRecipeScreen(
+          selectedDate: selectedDate,
+          recipes: recipes,
+          onAddMealPlan: (date, recipeId, mealType, servings) async {
+            await _addMealPlan(date, recipeId, mealType, servings: servings);
+          },
+        ),
+      ),
+    );
+  }
+
+  // ✅ OLD: Show recipe selection bottom sheet with drag-drop (DEPRECATED - use screen above instead)
+  void _showRecipeBottomSheetOld(DateTime selectedDate, List<Map<String, dynamic>> recipes) {
+    debugPrint('🔵 Opening recipe bottom sheet with ${recipes.length} recipes');
     
     showModalBottomSheet(
       context: context,
@@ -510,9 +671,18 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         DateTime pickedDate = selectedDate;
         String selectedMealType = 'breakfast';
         int servings = 1;
+        String recipeFilter = 'all'; // ✅ Filter: 'all', 'favorite', 'api'
 
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
+            // ✅ Filter recipes based on selected filter
+            List<Map<String, dynamic>> filteredRecipes = recipes;
+            if (recipeFilter == 'favorite') {
+              filteredRecipes = recipes.where((r) => r['isFavorite'] == true).toList();
+            } else if (recipeFilter == 'api') {
+              filteredRecipes = recipes.where((r) => r['isFavorite'] != true).toList();
+            }
+            
             return Container(
               height: MediaQuery.of(context).size.height * 0.85,
               decoration: const BoxDecoration(
@@ -696,9 +866,47 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                     ),
                   ),
                   const Divider(height: 1),
-                  // ✅ Draggable Recipe Cards - Display ALL recipes
+                  // ✅ Recipe Filter Tabs
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _recipeFilterButton(
+                            'Tất cả',
+                            'all',
+                            recipeFilter,
+                            recipes.length,
+                            () => setModalState(() => recipeFilter = 'all'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _recipeFilterButton(
+                            'Yêu thích',
+                            'favorite',
+                            recipeFilter,
+                            recipes.where((r) => r['isFavorite'] == true).length,
+                            () => setModalState(() => recipeFilter = 'favorite'),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _recipeFilterButton(
+                            'Từ API',
+                            'api',
+                            recipeFilter,
+                            recipes.where((r) => r['isFavorite'] != true).length,
+                            () => setModalState(() => recipeFilter = 'api'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  // ✅ Draggable Recipe Cards - Display FILTERED recipes
                   Expanded(
-                    child: _availableRecipes.isEmpty
+                    child: filteredRecipes.isEmpty
                         ? Center(
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -709,20 +917,24 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
-                                  'Không có công thức nào',
+                                  recipeFilter == 'favorite' 
+                                    ? 'Không có công thức yêu thích'
+                                    : recipeFilter == 'api'
+                                      ? 'Không có công thức từ API'
+                                      : 'Không có công thức nào',
                                   style: TextStyle(color: Colors.grey[600]),
                                 ),
                               ],
                             ),
                           )
                         : ListView.builder(
-                            padding: const EdgeInsets.all(12),
-                            itemCount: _availableRecipes.length,
+                            padding: const EdgeInsets.all(16),
+                            itemCount: filteredRecipes.length,
                             itemBuilder: (context, index) {
-                              final recipe = _availableRecipes[index];
+                              final recipe = filteredRecipes[index];
                               debugPrint('   📋 Recipe [$index]: ${recipe['title']}');
                               return Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.only(bottom: 12),
                                 child: _buildDraggableRecipeCard(
                                   recipe,
                                   pickedDate,
@@ -766,7 +978,35 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
     );
   }
 
-  // ✅ Build draggable recipe card - requires 1 second hold to drag
+  // ✅ Build recipe filter button
+  Widget _recipeFilterButton(String label, String type, String selected, int count,
+      VoidCallback onTap) {
+    final isSelected = type == selected;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF214130) : Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+          border: isSelected 
+            ? Border.all(color: const Color(0xFF214130), width: 2)
+            : null,
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : Colors.black87,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ✅ Build draggable recipe card - requires 0.5 second hold to drag
   Widget _buildDraggableRecipeCard(
     Map<String, dynamic> recipe,
     DateTime selectedDate,
@@ -794,54 +1034,82 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         debugPrint('✨ [${recipe['title']}] Drag COMPLETED');
       },
       feedback: Container(
-        width: 300,
-        padding: const EdgeInsets.all(12),
+        width: 320,
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
         child: Row(
           children: [
-            if ((recipe['image'] as String).isNotEmpty)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  recipe['image'],
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      Container(
+            Stack(
+              children: [
+                if ((recipe['image'] as String).isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      recipe['image'],
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Container(
+                        width: 80,
+                        height: 80,
+                        color: Colors.grey[300],
+                      ),
+                    ),
+                  )
+                else
+                  Container(
                     width: 60,
                     height: 60,
-                    color: Colors.grey[300],
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
-                ),
-              )
-            else
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            const SizedBox(width: 12),
+                // ✅ Heart icon for favorites
+                if (recipe['isFavorite'] == true)
+                  Positioned(
+                    top: 3,
+                    right: 3,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.favorite,
+                        size: 14,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     recipe['title'],
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 14,
@@ -854,6 +1122,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -863,65 +1132,114 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         ),
       ),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: Colors.grey[300]!, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            if ((recipe['image'] as String).isNotEmpty)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  recipe['image'],
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      Container(
+            Stack(
+              children: [
+                if ((recipe['image'] as String).isNotEmpty)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      recipe['image'],
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Container(
+                        width: 60,
+                        height: 60,
+                        color: Colors.grey[300],
+                        child: Icon(Icons.restaurant, color: Colors.grey[400], size: 28),
+                      ),
+                    ),
+                  )
+                else
+                  Container(
                     width: 60,
                     height: 60,
-                    color: Colors.grey[300],
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.restaurant, color: Colors.grey[400], size: 28),
                   ),
-                ),
-              )
-            else
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            const SizedBox(width: 12),
+                // ✅ Heart icon for favorites
+                if (recipe['isFavorite'] == true)
+                  Positioned(
+                    top: 3,
+                    right: 3,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.favorite,
+                        size: 14,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     recipe['title'],
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
+                      height: 1.3,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '${recipe['calories']} kcal',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                  Row(
+                    children: [
+                      Icon(Icons.local_fire_department, 
+                        size: 14, 
+                        color: Colors.orange[700]
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        '${recipe['calories']} kcal',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.drag_handle, color: Colors.grey),
+            const SizedBox(width: 6),
+            Icon(Icons.drag_indicator, color: Colors.grey[400], size: 20),
           ],
         ),
       ),
@@ -1037,6 +1355,26 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
               ),
             ),
             
+            // ---------- TITLE (FIXED) ----------
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Meal Plans",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  if (_isLoading)
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                ],
+              ),
+            ),
+            
             // ---------- SCROLLABLE CONTENT ----------
             Expanded(
               child: RefreshIndicator(
@@ -1051,26 +1389,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 20),
-
-                      // ---------- TITLE ----------
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            "Meal Plans",
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          if (_isLoading)
-                            const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
 
                       // ---------- DYNAMIC MEAL CARDS ----------
                       _buildMealCardsForSelectedDay(),
@@ -1088,9 +1407,11 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
           bottom: 24,
           right: 24,
           child: FloatingActionButton(
-            onPressed: () {
+            onPressed: () async {
               final selectedDate = weekDays[selectedDayIndex];
-              _showRecipeBottomSheet(selectedDate);
+              await _loadAvailableRecipes();
+              if (!mounted) return;
+              _showRecipeBottomSheet(selectedDate, _availableRecipes);
             },
             backgroundColor: const Color(0xFF214130),
             child: const Icon(Icons.add, color: Colors.white),
@@ -1138,12 +1459,20 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
             final recipeId = mealPlan['local_recipe_id'] ?? '';
             final servings = mealPlan['servings'] ?? 1;
 
+            debugPrint('');
+            debugPrint('🔍 ========== PREPARING TO FETCH RECIPE ==========');
+            debugPrint('   Recipe ID from meal plan: $recipeId');
+            debugPrint('   Meal Type: $mealType');
+            debugPrint('   Will fetch from: households/$_householdId/household_recipes/$recipeId');
+            debugPrint('==================================================');
+            debugPrint('');
+
             return Column(
               children: [
                 FutureBuilder<DocumentSnapshot>(
                   future: _firestore
                       .collection('households')
-                      .doc(_householdId)
+                      .doc(_householdId!)
                       .collection('household_recipes')
                       .doc(recipeId)
                       .get()
@@ -1158,34 +1487,43 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                         title: 'Loading recipe...',
                         kcal: 0,
                         recipeId: recipeId,
-                        householdId: _householdId,
+                        householdId: _householdId!,
                         mealPlanDate: _formatDateKey(selectedDate),
+                        mealType: mealType,
                       );
                     }
 
                     // Error state
                     if (snapshot.hasError) {
                       debugPrint('❌ Recipe fetch error: ${snapshot.error}');
+                      debugPrint('   Recipe ID: $recipeId');
+                      debugPrint('   Household ID: $_householdId');
+                      debugPrint('   Path: households/$_householdId/household_recipes/$recipeId');
                       return MealCard(
                         label: mealType.toUpperCase(),
                         title: 'Error loading recipe',
                         kcal: 0,
                         recipeId: recipeId,
-                        householdId: _householdId,
+                        householdId: _householdId!,
                         mealPlanDate: _formatDateKey(selectedDate),
+                        mealType: mealType,
                       );
                     }
 
                     // No data
                     if (!snapshot.hasData || snapshot.data?.data() == null) {
                       debugPrint('⚠️ Recipe $recipeId not found');
+                      debugPrint('   Snapshot has data: ${snapshot.hasData}');
+                      debugPrint('   Document exists: ${snapshot.data?.exists}');
+                      debugPrint('   Path: households/$_householdId/household_recipes/$recipeId');
                       return MealCard(
                         label: mealType.toUpperCase(),
-                        title: 'Recipe not found',
+                        title: 'Recipe not found ($recipeId)',
                         kcal: 0,
                         recipeId: recipeId,
-                        householdId: _householdId,
+                        householdId: _householdId!,
                         mealPlanDate: _formatDateKey(selectedDate),
+                        mealType: mealType,
                       );
                     }
 
@@ -1205,8 +1543,9 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                       title: recipe['title'] ?? 'Untitled',
                       kcal: baseCalories,
                       recipeId: recipeId, // ✅ Pass recipe ID
-                      householdId: _householdId, // ✅ Pass household ID
+                      householdId: _householdId!, // ✅ Pass household ID
                       mealPlanDate: _formatDateKey(selectedDate), // ✅ Pass meal plan date
+                      mealType: mealType,
                     );
                   },
                 ),

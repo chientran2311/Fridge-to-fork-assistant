@@ -18,13 +18,23 @@ class LoginHeader extends StatelessWidget {
             color: mainColor.withOpacity(0.1), // Màu xanh nhạt nền icon
             shape: BoxShape.circle,
           ),
-          child: Icon(Icons.kitchen, size: 40, color: mainColor),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0), // Căn lề để ảnh nằm gọn đẹp trong vòng tròn
+            child: Image.asset(
+              'assets/images/dreamy_chef_icon_app.png',
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                // Fallback: Nếu chưa có ảnh hoặc lỗi config, hiện lại Icon bếp
+                return Icon(Icons.kitchen, size: 40, color: mainColor);
+              },
+            ),
+          ),
         ),
         const SizedBox(height: 24),
 
         // 2. Welcome Text
         Text(
-          "Welcome Back!",
+          "An3tocom!",
           style: GoogleFonts.merriweather(
             fontSize: 28,
             fontWeight: FontWeight.bold,

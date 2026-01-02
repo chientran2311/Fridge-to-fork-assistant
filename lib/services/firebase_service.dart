@@ -52,7 +52,7 @@ class FirebaseService {
   // INVENTORY METHODS
   // =============================
   
-  /// Get all inventory items for a household with ingredient data populated
+  /// Get all inventory items for a household
   Stream<List<InventoryItem>> getInventoryStream({String? householdId}) {
     final houseId = householdId ?? DEFAULT_HOUSEHOLD_ID;
     
@@ -61,49 +61,25 @@ class FirebaseService {
         .doc(houseId)
         .collection('inventory')
         .snapshots()
-        .asyncMap((snapshot) async {
-      List<InventoryItem> items = [];
-      
-      for (var doc in snapshot.docs) {
-        final inventoryItem = InventoryItem.fromFirestore(doc);
-        
-        // Populate ingredient data
-        try {
-          final ingredientDoc = await _firestore
-              .collection('ingredients')
-              .doc(inventoryItem.ingredientId)
-              .get();
-          
-          if (ingredientDoc.exists) {
-            final ingredient = Ingredient.fromFirestore(ingredientDoc);
-            inventoryItem.ingredientName = ingredient.name;
-            inventoryItem.ingredientBarcode = ingredient.barcode;
-            inventoryItem.ingredientCategory = ingredient.category;
-            inventoryItem.ingredientImageUrl = ingredient.imageUrl;
-          }
-        } catch (e) {
-          debugPrint('Error populating ingredient data: $e');
-        }
-        
-        items.add(inventoryItem);
-      }
-      
-      return items;
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => InventoryItem.fromFirestore(doc))
+          .toList();
     });
   }
 
   /// Add new inventory item
   Future<bool> addInventoryItem({
-    required String ingredientId,
+    required String name,
     required double quantity,
     required String unit,
     DateTime? expiryDate,
+    String? imageUrl,
+    String? quickTag,
     String? householdId,
-    String? userId,
   }) async {
     try {
       final houseId = householdId ?? DEFAULT_HOUSEHOLD_ID;
-      final uid = userId ?? DEFAULT_USER_ID;
       
       final inventoryRef = _firestore
           .collection('households')
@@ -112,13 +88,13 @@ class FirebaseService {
           .doc();
 
       final inventoryItem = InventoryItem(
-        inventoryId: inventoryRef.id,
-        ingredientId: ingredientId,
-        householdId: houseId,
+        id: inventoryRef.id,
+        name: name,
         quantity: quantity,
         unit: unit,
         expiryDate: expiryDate,
-        addedByUid: uid,
+        imageUrl: imageUrl,
+        quickTag: quickTag,
       );
 
       await inventoryRef.set(inventoryItem.toFirestore());
@@ -133,24 +109,31 @@ class FirebaseService {
   /// Update inventory item
   Future<bool> updateInventoryItem({
     required String inventoryId,
-    required double quantity,
-    required String unit,
+    String? name,
+    double? quantity,
+    String? unit,
     DateTime? expiryDate,
+    String? imageUrl,
+    String? quickTag,
     String? householdId,
   }) async {
     try {
       final houseId = householdId ?? DEFAULT_HOUSEHOLD_ID;
+      
+      Map<String, dynamic> updateData = {};
+      if (name != null) updateData['name'] = name;
+      if (quantity != null) updateData['quantity'] = quantity;
+      if (unit != null) updateData['unit'] = unit;
+      if (expiryDate != null) updateData['expiry_date'] = Timestamp.fromDate(expiryDate);
+      if (imageUrl != null) updateData['image_url'] = imageUrl;
+      if (quickTag != null) updateData['quick_tag'] = quickTag;
       
       await _firestore
           .collection('households')
           .doc(houseId)
           .collection('inventory')
           .doc(inventoryId)
-          .update({
-        'quantity': quantity,
-        'unit': unit,
-        'expiry_date': expiryDate != null ? Timestamp.fromDate(expiryDate) : null,
-      });
+          .update(updateData);
       
       debugPrint('✅ Inventory item updated: $inventoryId');
       return true;

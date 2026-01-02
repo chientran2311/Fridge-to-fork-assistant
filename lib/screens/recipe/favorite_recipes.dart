@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart'; 
+import 'package:go_router/go_router.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Import Provider và Model
+import '../../providers/recipe_provider.dart';
+import '../../models/household_recipe.dart';
 
 class FavoriteRecipesScreen extends StatefulWidget {
   const FavoriteRecipesScreen({super.key});
@@ -49,36 +54,74 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
   final List<String> filters = ["All", "Breakfast", "Lunch", "Dinner", "Snacks"];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<RecipeProvider>(context, listen: false).listenToFavorites();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F7),
-      // ĐÃ XÓA bottomNavigationBar TẠI ĐÂY
       body: SafeArea(
-        child: ResponsiveLayout(
-          // --- MOBILE: Dùng List thay vì Grid ---
-          mobileBody: _buildMobileList(),
-          
-          // --- TABLET: Grid 2 cột ---
-          tabletBody: _buildGridContent(crossAxisCount: 2, aspectRatio: 0.8),
-          
-          // --- DESKTOP: Grid 3 cột, căn giữa ---
-          desktopBody: Center(
-            child: Container(
-              constraints: const BoxConstraints(maxWidth: 1200),
-              child: _buildGridContent(crossAxisCount: 3, aspectRatio: 0.85),
-            ),
-          ),
+        child: Consumer<RecipeProvider>(
+          builder: (context, recipeProvider, child) {
+            final favorites = recipeProvider.favoriteRecipes;
+
+            if (favorites.isEmpty && !recipeProvider.isLoading) {
+               return _buildEmptyState(); 
+            }
+
+            return ResponsiveLayout(
+              mobileBody: _buildMobileList(favorites),
+              tabletBody: _buildGridContent(favorites, crossAxisCount: 2, aspectRatio: 0.8),
+              desktopBody: Center(
+                child: Container(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: _buildGridContent(favorites, crossAxisCount: 3, aspectRatio: 0.85),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  // Layout cho Mobile: Dùng SliverList
-  Widget _buildMobileList() {
+  // --- [FIXED] Hàm này dùng Column nên child phải là Box Widget ---
+  Widget _buildEmptyState() {
+    return Column(
+      children: [
+        _buildHeader(), // Đã sửa hàm này trả về Padding (Box) nên không lỗi nữa
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.favorite_border, size: 60, color: Colors.grey[300]),
+                const SizedBox(height: 16),
+                Text("Chưa có món yêu thích nào", style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => context.go('/recipes'),
+                  child: const Text("Khám phá ngay"),
+                )
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMobileList(List<HouseholdRecipe> favorites) {
     return CustomScrollView(
       slivers: [
-        _buildHeader(), // Header có nút Back
-        _buildFilterChips(),
+        // [FIXED] Vì Header giờ là Box, cần bọc lại bằng SliverToBoxAdapter khi dùng trong CustomScrollView
+        SliverToBoxAdapter(child: _buildHeader()), 
+        _buildFilterChips(), // Widget này vẫn trả về Sliver nên để nguyên
         const SliverToBoxAdapter(child: SizedBox(height: 20)),
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -113,11 +156,11 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
     );
   }
 
-  // Layout cho Web/Tablet: Dùng Grid
-  Widget _buildGridContent({required int crossAxisCount, required double aspectRatio}) {
+  Widget _buildGridContent(List<HouseholdRecipe> favorites, {required int crossAxisCount, required double aspectRatio}) {
     return CustomScrollView(
       slivers: [
-        _buildHeader(), // Header có nút Back
+        // [FIXED] Bọc Header lại
+        SliverToBoxAdapter(child: _buildHeader()),
         _buildFilterChips(),
         const SliverToBoxAdapter(child: SizedBox(height: 20)),
         SliverPadding(
@@ -148,41 +191,38 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
     );
   }
 
-  // --- WIDGET HEADER ĐÃ SỬA ĐỔI (Thêm nút Back) ---
+  // --- [FIXED] Đã xóa SliverToBoxAdapter bao quanh, trả về Padding thuần ---
   Widget _buildHeader() {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 20, 20, 10), // Giảm padding trái một chút cho icon
-        child: Row(
-          children: [
-            // Nút Back
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 20, 20, 10),
+      child: Row(
+        children: [
           CircleAvatar(
-          backgroundColor: Colors.white.withOpacity(0.8),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        const SizedBox(width: 16),
-            // Tiêu đề
-            Expanded(
-              child: Text(
-                "My Favorite Recipes",
-                style: GoogleFonts.merriweather(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.black,
-                ),
-                textAlign: TextAlign.left, // Căn lề trái cho văn bản
-              ),
+            backgroundColor: Colors.white.withOpacity(0.8),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              onPressed: () => Navigator.pop(context),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              "Món Yêu Thích",
+              style: GoogleFonts.merriweather(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                color: Colors.black,
+              ),
+              textAlign: TextAlign.left,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildFilterChips() {
+    // Widget này vẫn giữ SliverToBoxAdapter vì chỉ dùng trong CustomScrollView
     return SliverToBoxAdapter(
       child: SizedBox(
         height: 50,
@@ -220,7 +260,7 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
     );
   }
 
-  void _showScheduleCalendar(BuildContext context, Map<String, dynamic> recipeData) {
+  void _showScheduleCalendar(BuildContext context, HouseholdRecipe recipeData) {
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -229,194 +269,156 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
   }
 }
 
-// --- WIDGET: CARD MÓN ĂN YÊU THÍCH (Giữ nguyên logic Card đã tối ưu) ---
 class FavoriteRecipeCard extends StatelessWidget {
-  final Map<String, dynamic> data;
-  final VoidCallback? onSchedule;
+  final HouseholdRecipe data;
+  final VoidCallback onSchedule;
 
-  const FavoriteRecipeCard({super.key, required this.data, this.onSchedule});
+  const FavoriteRecipeCard({super.key, required this.data, required this.onSchedule});
 
   @override
   Widget build(BuildContext context) {
     final Color mainColor = const Color(0xFF1B3B36);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          )
-        ],
-      ),
-      child: Column(
-        children: [
-          // 1. ẢNH: Cố định chiều cao
-          SizedBox(
-            height: 150,
-            width: double.infinity,
-            child: Stack(
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                    color: data['type'] == 'color' ? data['color'] : Colors.grey[200],
-                  ),
-                  child: data['type'] == 'image'
-                      ? ClipRRect(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                          child: Image.network(data['image'], fit: BoxFit.cover),
-                        )
-                      : Icon(data['icon'], size: 48, color: data['iconColor']),
-                ),
-                Positioned(
-                  top: 10,
-                  right: 10,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.favorite, size: 16, color: Color(0xFFE57373)),
-                  ),
-                )
-              ],
-            ),
-          ),
-
-          // 2. NỘI DUNG: Chiếm phần còn lại
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(14.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return GestureDetector(
+      onTap: () {
+        context.go('/recipes/detail', extra: data);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            )
+          ],
+        ),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 150,
+              width: double.infinity,
+              child: Stack(
                 children: [
-                  // Metadata
-                  Text(
-                    "${data['category']}  •  ${data['kcal']}",
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.grey[500],
-                      letterSpacing: 0.5,
+                  Container(
+                    width: double.infinity,
+                    height: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                      color: Colors.grey[200],
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  
-                  // Title
-                  Text(
-                    data['title'],
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.merriweather(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  
-                  // Description
-                  Text(
-                    data['desc'],
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                      height: 1.3,
-                    ),
-                  ),
-                  
-                  const Spacer(), // Đẩy nút xuống đáy
-                  
-                  // Buttons Row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 38,
-                          child: ElevatedButton.icon(
-                            onPressed: onSchedule,
-                            icon: const Icon(Icons.calendar_today, size: 14, color: Colors.black54),
-                            label: const Text("Schedule", style: TextStyle(color: Colors.black54, fontSize: 11, fontWeight: FontWeight.bold)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFF5F5F5),
-                              elevation: 0,
-                              padding: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                          ),
-                        ),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                      child: Image.network(
+                        data.imageUrl ?? "",
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => 
+                            const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: SizedBox(
-                          height: 38,
-                          child: ElevatedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.add, size: 14, color: Colors.white),
-                            label: const Text("Today", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: mainColor,
-                              elevation: 0,
-                              padding: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                          ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: GestureDetector(
+                      onTap: () {
+                         Provider.of<RecipeProvider>(context, listen: false).toggleFavorite(data, context);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
                         ),
+                        child: const Icon(Icons.favorite, size: 16, color: Color(0xFFE57373)),
                       ),
-                    ],
+                    ),
                   )
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// --- WIDGET: DISCOVER MORE CARD ---
-class DiscoverMoreCard extends StatelessWidget {
-  const DiscoverMoreCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: DashedRectPainter(color: Colors.grey.shade300, strokeWidth: 1.5, gap: 5.0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFF9F9F7),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 48, height: 48,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                shape: BoxShape.circle,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(14.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "${data.readyInMinutes} min  •  ${data.calories?.toInt() ?? '?'} kcal",
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.grey[500],
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      data.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.merriweather(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "Difficulty: ${data.difficulty ?? 'Medium'}", 
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                        height: 1.3,
+                      ),
+                    ),
+                    const Spacer(), 
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 38,
+                            child: ElevatedButton.icon(
+                              onPressed: onSchedule, 
+                              icon: const Icon(Icons.calendar_today, size: 14, color: Colors.black54),
+                              label: const Text("Schedule", style: TextStyle(color: Colors.black54, fontSize: 11, fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFF5F5F5),
+                                elevation: 0,
+                                padding: EdgeInsets.zero,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: SizedBox(
+                            height: 38,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                context.go('/recipes/detail', extra: data);
+                              },
+                              icon: const Icon(Icons.restaurant_menu, size: 14, color: Colors.white),
+                              label: const Text("Cook Now", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: mainColor,
+                                elevation: 0,
+                                padding: EdgeInsets.zero,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
               ),
-              child: const Icon(Icons.add, color: Colors.black54),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              "Discover More",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              "Browse AI suggestions",
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
             ),
           ],
         ),
@@ -425,7 +427,49 @@ class DiscoverMoreCard extends StatelessWidget {
   }
 }
 
-// Helper vẽ viền đứt nét (Simplified)
+class DiscoverMoreCard extends StatelessWidget {
+  const DiscoverMoreCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.go('/recipes'),
+      child: CustomPaint(
+        painter: DashedRectPainter(color: Colors.grey.shade300, strokeWidth: 1.5, gap: 5.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9F9F7),
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 48, height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.add, color: Colors.black54),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                "Discover More",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                "Browse AI suggestions",
+                style: TextStyle(color: Colors.grey[500], fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class DashedRectPainter extends CustomPainter {
   final double strokeWidth;
   final Color color;
@@ -458,7 +502,7 @@ class DashedRectPainter extends CustomPainter {
 
 // ============== CALENDAR SCHEDULE DIALOG ==============
 class ScheduleCalendarDialog extends StatefulWidget {
-  final Map<String, dynamic> recipeData;
+  final HouseholdRecipe recipeData;
 
   const ScheduleCalendarDialog({super.key, required this.recipeData});
 
@@ -502,9 +546,9 @@ class _ScheduleCalendarDialogState extends State<ScheduleCalendarDialog> {
           .add({
         'date': Timestamp.fromDate(_selectedDate),
         'meal_type': _selectedMealType,
-        'local_recipe_id': widget.recipeData['title'], // Using title as ID for now
-        'display_title': widget.recipeData['title'],
-        'display_image': widget.recipeData['image'] ?? '',
+        'local_recipe_id': widget.recipeData.localRecipeId ?? widget.recipeData.apiRecipeId.toString(),
+        'display_title': widget.recipeData.title,
+        'display_image': widget.recipeData.imageUrl ?? '',
         'servings': 4,
         'is_cooked': false,
         'planned_by_uid': 'user_seed_01',
@@ -516,7 +560,7 @@ class _ScheduleCalendarDialogState extends State<ScheduleCalendarDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '✅ ${widget.recipeData['title']} scheduled for ${_selectedDate.day}/${_selectedDate.month}',
+            '✅ ${widget.recipeData.title} scheduled for ${_selectedDate.day}/${_selectedDate.month}',
           ),
           backgroundColor: const Color(0xFF214130),
         ),
@@ -572,40 +616,39 @@ class _ScheduleCalendarDialogState extends State<ScheduleCalendarDialog> {
                 ),
                 child: Row(
                   children: [
-                    if (widget.recipeData['type'] == 'image')
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          widget.recipeData['image'],
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    else
-                      Container(
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        widget.recipeData.imageUrl ?? '',
                         width: 60,
                         height: 60,
-                        decoration: BoxDecoration(
-                          color: widget.recipeData['color'],
-                          borderRadius: BorderRadius.circular(8),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.restaurant, size: 32, color: Colors.grey),
                         ),
-                        child: Icon(widget.recipeData['icon'], size: 32),
                       ),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            widget.recipeData['title'],
+                            widget.recipeData.title,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                             ),
                           ),
                           Text(
-                            widget.recipeData['kcal'],
+                            '${widget.recipeData.calories?.toInt() ?? '?'} kcal',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],

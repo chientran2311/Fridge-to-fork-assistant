@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../utils/database_seeder.dart';
 import 'barcode_generator.dart';
 
@@ -15,18 +17,55 @@ class _DebugToolsScreenState extends State<DebugToolsScreen> {
   void _runSeeder() async {
     setState(() => _isSeeding = true);
     
-    final seeder = DatabaseSeederV2();
-    await seeder.seedDatabase();
-    
-    setState(() => _isSeeding = false);
-    
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Database seeding completed!'),
-          backgroundColor: Color(0xFF28A745),
-        ),
+    try {
+      // Lấy user hiện tại
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        throw Exception('No user logged in');
+      }
+      
+      final userId = currentUser.uid;
+      
+      // Lấy household_id từ user document
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+      
+      if (!userDoc.exists || userDoc.data()?['household_id'] == null) {
+        throw Exception('User document not found or no household_id');
+      }
+      
+      final householdId = userDoc.data()!['household_id'] as String;
+      
+      // Chạy seeder với userId và householdId
+      final seeder = DatabaseSeeder();
+      await seeder.seedDatabase(
+        userId: userId,
+        householdId: householdId,
       );
+      
+      setState(() => _isSeeding = false);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Database seeding completed!'),
+            backgroundColor: Color(0xFF28A745),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isSeeding = false);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

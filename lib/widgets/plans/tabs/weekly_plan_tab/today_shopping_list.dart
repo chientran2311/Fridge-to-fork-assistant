@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 //
 // ---------------- SHOPPING LIST ----------------
@@ -16,7 +17,8 @@ class ShoppingList extends StatefulWidget {
 
 class _ShoppingListState extends State<ShoppingList> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  late String _householdId;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  String? _householdId;
   List<Map<String, dynamic>> _shoppingItems = [];
   bool _isLoading = true;
 
@@ -28,14 +30,36 @@ class _ShoppingListState extends State<ShoppingList> {
 
   Future<void> _loadShoppingList() async {
     try {
-      // ✅ Hardcode household ID từ seeder
-      const householdId = 'house_01';
-      _householdId = householdId;
+      // ✅ Lấy user hiện tại
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        debugPrint('❌ No user logged in');
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+        return;
+      }
+      
+      final userId = currentUser.uid;
+      
+      // ✅ Lấy household_id từ user document
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (!userDoc.exists || userDoc.data()?['current_household_id'] == null) {
+        debugPrint('❌ User document not found or no current_household_id');
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+        return;
+      }
+      
+      _householdId = userDoc.data()!['current_household_id'] as String;
+
+      debugPrint('📦 Loading shopping list for household: $_householdId');
 
       // Fetch shopping list items
       final snapshot = await _firestore
           .collection('households')
-          .doc(_householdId)
+          .doc(_householdId!)
           .collection('shopping_list')
           .get();
 
@@ -44,26 +68,29 @@ class _ShoppingListState extends State<ShoppingList> {
       // Map dữ liệu từ Firestore
       final items = <Map<String, dynamic>>[];
       for (var doc in snapshot.docs) {
-        final data = doc.data();
-        debugPrint('📝 Item: ${data['ingredient_id']} | Qty: ${data['quantity']} ${data['unit']}');
+        try {
+          final data = doc.data();
+          final itemName = data['name'];
+          
+          if (itemName == null || itemName.toString().isEmpty) {
+            debugPrint('⚠️ Skipping item ${doc.id}: name is null or empty');
+            continue;
+          }
+          
+          debugPrint('📝 Item: $itemName | Qty: ${data['quantity']} ${data['unit']}');
 
-        // Fetch ingredient name từ ingredients collection
-        final ingredientDoc = await _firestore
-            .collection('ingredients')
-            .doc(data['ingredient_id'])
-            .get();
-
-        final ingredientName = ingredientDoc.data()?['name'] ?? 'Unknown';
-        final category = ingredientDoc.data()?['category'] ?? 'Other';
-
-        items.add({
-          'item_id': doc.id,
-          'ingredient_name': ingredientName,
-          'quantity': data['quantity'],
-          'unit': data['unit'],
-          'category': category,
-          'is_checked': data['is_checked'] ?? false,
-        });
+          items.add({
+            'item_id': doc.id,
+            'ingredient_name': itemName,
+            'quantity': data['quantity'] ?? 0,
+            'unit': data['unit'] ?? '',
+            'category': 'Shopping', // ✅ Default category vì shopping_list không có category
+            'is_checked': data['is_checked'] ?? false,
+            'note': data['note'] ?? '',
+          });
+        } catch (e) {
+          debugPrint('⚠️ Error parsing shopping item ${doc.id}: $e');
+        }
       }
 
       // ✅ Check if widget is still mounted before setState
@@ -84,9 +111,14 @@ class _ShoppingListState extends State<ShoppingList> {
 
   Future<void> _toggleItem(String itemId, bool newValue) async {
     try {
+      if (_householdId == null) {
+        debugPrint('❌ Cannot toggle item: householdId is null');
+        return;
+      }
+      
       await _firestore
           .collection('households')
-          .doc(_householdId)
+          .doc(_householdId!)
           .collection('shopping_list')
           .doc(itemId)
           .update({'is_checked': newValue});

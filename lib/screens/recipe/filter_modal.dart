@@ -1,37 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../l10n/app_localizations.dart'; // Import localization
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
+import '../../widgets/common/primary_button.dart';
+import '../../models/RecipeFilter.dart';
+// Import class model vừa tạo ở Bước 2
+// import 'package:fridge_to_fork_assistant/models/recipe_filter.dart'; 
 
-import 'package:fridge_to_fork_assistant/widgets/common/primary_button.dart';
+// --- ĐỊNH NGHĨA MODEL TẠI CHỖ (Nếu bạn chưa tạo file riêng) --
 
 class FilterModal extends StatefulWidget {
-  const FilterModal({super.key});
+  final RecipeFilter currentFilter;
 
-  // --- HÀM STATIC ĐỂ GỌI MODAL RESPONSIVE ---
-  // Gọi hàm này từ màn hình cha, nó sẽ tự quyết định hiện Dialog hay BottomSheet
-  static void show(BuildContext context) {
-    if (ResponsiveLayout.isDesktop(context)) {
-      // WEB: Hiện Dialog giữa màn hình
-      showDialog(
-        context: context,
-        barrierColor: Colors.black.withOpacity(0.3),
-        builder: (context) => const Dialog(
-          backgroundColor: Colors.transparent,
-          child: SizedBox(
-            width: 450, // Chiều rộng cố định cho Web
-            child: FilterModal(),
-          ),
-        ),
-      );
-    } else {
-      // MOBILE: Hiện BottomSheet từ dưới lên
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true, // Cho phép modal cao theo nội dung
-        backgroundColor: Colors.transparent,
-        builder: (context) => const FilterModal(),
-      );
-    }
+  const FilterModal({super.key, required this.currentFilter});
+
+  static Future<RecipeFilter?> show(BuildContext context, RecipeFilter currentFilter) async {
+    // Logic check Desktop/Mobile giữ nguyên
+    return showModalBottomSheet<RecipeFilter>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => FilterModal(currentFilter: currentFilter),
+    );
   }
 
   @override
@@ -40,140 +30,138 @@ class FilterModal extends StatefulWidget {
 
 class _FilterModalState extends State<FilterModal> {
   final Color mainColor = const Color(0xFF1B3B36);
-  
-  // State quản lý lựa chọn
-  String _difficulty = 'Easy';
-  String _mealType = 'Lunch';
-  String _cuisine = 'Italian';
-  double _maxPrepTime = 45.0; // Slider value
+
+  // State cục bộ trong Modal
+  String? _difficulty;
+  String? _mealType;
+  String? _cuisine;
+  double _maxPrepTime = 120; // Mặc định max
+
+  @override
+  void initState() {
+    super.initState();
+    // Load dữ liệu từ Filter hiện tại vào Modal
+    _difficulty = widget.currentFilter.difficulty;
+    _mealType = widget.currentFilter.mealType;
+    _cuisine = widget.currentFilter.cuisine;
+    _maxPrepTime = (widget.currentFilter.maxPrepTime).toDouble();
+  }
+
+  // Hàm Reset về trạng thái trắng
+  void _resetFilters() {
+    setState(() {
+      _difficulty = null;
+      _mealType = null;
+      _cuisine = null;
+      _maxPrepTime = 120;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Xác định bo góc tùy theo Web hay Mobile
-    final bool isDesktop = ResponsiveLayout.isDesktop(context);
-    final BorderRadius borderRadius = isDesktop
-        ? BorderRadius.circular(24) // Web: Bo tròn 4 góc
-        : const BorderRadius.vertical(top: Radius.circular(24)); // Mobile: Chỉ bo góc trên
-
+    // final l10n = AppLocalizations.of(context)!; // Tạm tắt để demo text cứng, bạn mở lại sau
+    
     return Container(
-      // Giới hạn chiều cao max trên mobile để không che hết màn hình
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: borderRadius,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // --- 1. HANDLE BAR (Chỉ Mobile mới cần) ---
-          if (!isDesktop)
-            Center(
-              child: Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+          // --- HANDLE BAR ---
+          Center(
+            child: Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
             ),
+          ),
 
-          // --- 2. HEADER ---
+          // --- HEADER ---
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 20, 24, 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Filter Recipes",
-                  style: GoogleFonts.merriweather(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: mainColor,
-                  ),
+                  "Filter Recipes", // l10n.filterTitle
+                  style: GoogleFonts.merriweather(fontSize: 20, fontWeight: FontWeight.w900, color: mainColor),
                 ),
                 TextButton(
-                  onPressed: () {
-                    setState(() {
-                      // Reset logic
-                      _difficulty = 'Easy';
-                      _maxPrepTime = 15;
-                    });
-                  },
+                  onPressed: _resetFilters,
                   child: Text(
-                    "Reset",
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.bold,
-                    ),
+                    "Reset", // l10n.reset
+                    style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.bold),
                   ),
                 )
               ],
             ),
           ),
-
           const Divider(height: 1),
 
-          // --- 3. SCROLLABLE CONTENT ---
+          // --- CONTENT ---
           Flexible(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- DIFFICULTY ---
+                  // 1. Difficulty
                   _buildSectionTitle("Difficulty Level"),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 12,
                     children: [
-                      _buildChip("Easy", Icons.check),
-                      _buildChip("Medium", null),
-                      _buildChip("Hard", null),
+                      _buildChip("Easy", "Easy", Icons.check),
+                      _buildChip("Medium", "Medium", null),
+                      _buildChip("Hard", "Hard", null),
                     ],
                   ),
                   const SizedBox(height: 24),
 
-                  // --- MEAL TYPE ---
+                  // 2. Meal Type
                   _buildSectionTitle("Meal Type"),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 12,
                     runSpacing: 12,
                     children: [
-                      _buildChip("Breakfast", Icons.bedroom_parent_outlined, groupValue: _mealType, onChanged: (v) => setState(() => _mealType = v)),
-                      _buildChip("Lunch", Icons.soup_kitchen_outlined, groupValue: _mealType, onChanged: (v) => setState(() => _mealType = v)),
-                      _buildChip("Dinner", Icons.dinner_dining_outlined, groupValue: _mealType, onChanged: (v) => setState(() => _mealType = v)),
-                      _buildChip("Snack", Icons.cookie_outlined, groupValue: _mealType, onChanged: (v) => setState(() => _mealType = v)),
+                      _buildChip("Breakfast", "breakfast", Icons.bedroom_parent_outlined, groupValue: _mealType, onChanged: (v) => setState(() => _mealType = v)),
+                      _buildChip("Lunch", "lunch", Icons.soup_kitchen_outlined, groupValue: _mealType, onChanged: (v) => setState(() => _mealType = v)),
+                      _buildChip("Dinner", "dinner", Icons.dinner_dining_outlined, groupValue: _mealType, onChanged: (v) => setState(() => _mealType = v)),
+                      _buildChip("Snack", "snack", Icons.cookie_outlined, groupValue: _mealType, onChanged: (v) => setState(() => _mealType = v)),
                     ],
                   ),
                   const SizedBox(height: 24),
 
-                  // --- CUISINE ---
+                  // 3. Cuisine (Thêm Mediterranean như ảnh)
                   _buildSectionTitle("Cuisine"),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 12,
                     runSpacing: 12,
                     children: [
-                      _buildChip("Italian", null, groupValue: _cuisine, onChanged: (v) => setState(() => _cuisine = v)),
-                      _buildChip("Mexican", null, groupValue: _cuisine, onChanged: (v) => setState(() => _cuisine = v)),
-                      _buildChip("Asian", null, groupValue: _cuisine, onChanged: (v) => setState(() => _cuisine = v)),
-                      _buildChip("Vegan", Icons.eco, groupValue: _cuisine, onChanged: (v) => setState(() => _cuisine = v)),
+                       _buildChip("Italian", "Italian", null, groupValue: _cuisine, onChanged: (v) => setState(() => _cuisine = v)),
+                       _buildChip("Mexican", "Mexican", null, groupValue: _cuisine, onChanged: (v) => setState(() => _cuisine = v)),
+                       _buildChip("Asian", "Asian", null, groupValue: _cuisine, onChanged: (v) => setState(() => _cuisine = v)),
+                       _buildChip("Vegan", "Vegan", Icons.eco, groupValue: _cuisine, onChanged: (v) => setState(() => _cuisine = v)),
+                       _buildChip("Mediterranean", "Mediterranean", null, groupValue: _cuisine, onChanged: (v) => setState(() => _cuisine = v)),
                     ],
                   ),
                   const SizedBox(height: 24),
 
-                  // --- MAX PREP TIME ---
+                  // 4. Max Prep Time
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _buildSectionTitle("Max Prep Time"),
                       Text(
-                        "${_maxPrepTime.toInt()} min",
+                        _maxPrepTime >= 120 ? "All" : "${_maxPrepTime.toInt()} min",
                         style: TextStyle(fontWeight: FontWeight.bold, color: mainColor),
                       ),
                     ],
@@ -184,14 +172,13 @@ class _FilterModalState extends State<FilterModal> {
                       inactiveTrackColor: Colors.grey[200],
                       thumbColor: mainColor,
                       overlayColor: mainColor.withOpacity(0.2),
-                      trackHeight: 4,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
                     ),
                     child: Slider(
                       value: _maxPrepTime,
-                      min: 5,
+                      min: 15,
                       max: 120,
-                      divisions: 23,
+                      divisions: 7, // 15, 30, 45, 60, 75, 90, 105, 120
+                      label: _maxPrepTime >= 120 ? "2+ hours" : "${_maxPrepTime.toInt()} min",
                       onChanged: (val) {
                         setState(() {
                           _maxPrepTime = val;
@@ -211,17 +198,22 @@ class _FilterModalState extends State<FilterModal> {
             ),
           ),
 
-          // --- 4. BOTTOM BUTTON ---
+          // --- BOTTOM BUTTON ---
           Padding(
             padding: const EdgeInsets.all(24),
             child: SizedBox(
               width: double.infinity,
               height: 56,
               child: PrimaryButton(
-                text: "Apply Filters (3)",
+                text: "Apply Filters", // (${_countFilters()}) logic đếm filter
                 onPressed: () {
-                  // Apply logic here
-                  Navigator.pop(context);
+                  final result = RecipeFilter(
+                    difficulty: _difficulty,
+                    mealType: _mealType,
+                    cuisine: _cuisine,
+                    maxPrepTime: _maxPrepTime.toInt(),
+                  );
+                  Navigator.pop(context, result);
                 },
                 backgroundColor: mainColor,
               ),
@@ -232,69 +224,61 @@ class _FilterModalState extends State<FilterModal> {
     );
   }
 
-  // --- Helpers ---
-
   Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: GoogleFonts.merriweather(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-        color: const Color(0xFF1B3B36),
-      ),
+    return Text(title, style: GoogleFonts.merriweather(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1B3B36)));
+  }
+
+  // Hàm tạo Chip tổng quát
+  Widget _buildChip(
+    String label, 
+    String value, 
+    IconData? icon, 
+    {String? groupValue, Function(String?)? onChanged}
+  ) {
+    // Xử lý riêng cho Difficulty vì biến state khác nhau
+    if (onChanged == null) {
+      // Logic cũ cho difficulty (tạm dùng local state _difficulty)
+      final isSelected = _difficulty == value;
+      return GestureDetector(
+        onTap: () {
+            // Cho phép toggle tắt
+             setState(() => _difficulty = isSelected ? null : value);
+        },
+        child: _chipDesign(label, icon, isSelected),
+      );
+    } 
+    
+    // Logic chung cho mealType và cuisine
+    final isSelected = groupValue == value;
+    return GestureDetector(
+      onTap: () {
+        // Nếu đang chọn thì click lại sẽ bỏ chọn (về null)
+        onChanged(isSelected ? null : value);
+      },
+      child: _chipDesign(label, icon, isSelected),
     );
   }
 
-  // Widget tạo Chip (Nút chọn)
-  Widget _buildChip(
-    String label, 
-    IconData? icon, 
-    {String? groupValue, Function(String)? onChanged}
-  ) {
-    // Nếu không truyền groupValue thì mặc định dùng cho Difficulty
-    final bool isSelected = (groupValue == null) 
-        ? _difficulty == label 
-        : groupValue == label;
-
-    return GestureDetector(
-      onTap: () {
-        if (groupValue == null) {
-          setState(() => _difficulty = label);
-        } else {
-          onChanged?.call(label);
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? mainColor : Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isSelected ? mainColor : Colors.grey.shade300,
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(
-                icon,
-                size: 16,
-                color: isSelected ? Colors.white : Colors.grey[600],
-              ),
-              const SizedBox(width: 8),
-            ],
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: isSelected ? Colors.white : Colors.grey[800],
-              ),
-            ),
+  Widget _chipDesign(String label, IconData? icon, bool isSelected) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: isSelected ? mainColor : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: isSelected ? mainColor : Colors.grey.shade300, width: 1.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 16, color: isSelected ? Colors.white : Colors.grey[600]),
+            const SizedBox(width: 8),
           ],
-        ),
+          Text(
+            label,
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isSelected ? Colors.white : Colors.grey[800]),
+          ),
+        ],
       ),
     );
   }

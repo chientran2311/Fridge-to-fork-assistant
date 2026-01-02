@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
-import 'package:fridge_to_fork_assistant/screens/main_screen.dart';
+import '../../utils/database_seeder.dart';
+import 'package:go_router/go_router.dart';
+// Import Localization
+import '../../l10n/app_localizations.dart';
 
 // Import các Widgets UI
-import 'package:fridge_to_fork_assistant/widgets/auth/common_auth_widgets.dart'; // Chứa CustomAuthField, PrimaryButton
+import 'package:fridge_to_fork_assistant/widgets/auth/common_auth_widgets.dart';
 import 'package:fridge_to_fork_assistant/widgets/auth/login_header.dart';
 import 'package:fridge_to_fork_assistant/widgets/auth/login_footer.dart';
 import 'package:fridge_to_fork_assistant/widgets/auth/social_buttons.dart';
-
-// Import Service và Notification Widget
-import '../../services/auth_service.dart'; // Đảm bảo đúng đường dẫn file AuthService
-import '../../widgets/notification.dart';  // Đảm bảo đúng đường dẫn file CustomToast
+import '../../data/services/auth_service.dart';
+import '../../widgets/notification.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,14 +26,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final Color secondaryColor = const Color(0xFFF0F1F1);
 
   // --- LOGIC AUTH ---
-  final AuthService _authService = AuthService(); // Khởi tạo Service
+  final AuthService _authService = AuthService();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  bool _isObscure = true; // Ẩn hiện pass
-  bool _isLoading = false; // Trạng thái loading
+  bool _isObscure = true;
+  bool _isLoading = false;
 
-  // Giải phóng bộ nhớ
   @override
   void dispose() {
     _emailController.dispose();
@@ -40,45 +40,35 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // --- HÀM XỬ LÝ ĐĂNG NHẬP ---
   Future<void> _handleLogin() async {
-    // 1. Lấy dữ liệu
+    // Lấy instance ngôn ngữ để dùng trong hàm async
+    final s = AppLocalizations.of(context)!;
+
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
-    // 2. Kiểm tra rỗng
     if (email.isEmpty || password.isEmpty) {
-      CustomToast.show(context, "Vui lòng nhập đầy đủ Email và Mật khẩu", isError: true);
+      CustomToast.show(context, s.loginErrorMissing, isError: true); // ✅ Updated
       return;
     }
 
-    // 3. Bắt đầu Loading
     setState(() => _isLoading = true);
 
-    // 4. Gọi Firebase qua Service
     String? errorMessage = await _authService.loginWithEmail(
       email: email, 
       password: password
     );
 
-    // Kiểm tra widget còn tồn tại không (tránh lỗi async gap)
     if (!mounted) return;
 
-    // 5. Kết thúc Loading
     setState(() => _isLoading = false);
 
-    // 6. Xử lý kết quả
     if (errorMessage == null) {
-      // --- THÀNH CÔNG ---
-      CustomToast.show(context, "Đăng nhập thành công!");
-      
-      // Chuyển trang và xóa lịch sử để không back lại login được
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-      );
+      CustomToast.show(context, s.loginSuccess); // ✅ Updated
+      if (mounted) {
+        context.go('/fridge'); 
+      }
     } else {
-      // --- THẤT BẠI ---
       CustomToast.show(context, errorMessage, isError: true);
     }
   }
@@ -88,7 +78,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: ResponsiveLayout(
-        // 1. Mobile
         mobileBody: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -97,8 +86,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-
-        // 2. Desktop/Web
         desktopBody: Container(
           color: secondaryColor,
           child: Center(
@@ -124,8 +111,9 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // --- FORM UI ---
   Widget _buildLoginForm(BuildContext context) {
+    final s = AppLocalizations.of(context)!; // ✅ Lấy ngôn ngữ
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -133,19 +121,19 @@ class _LoginScreenState extends State<LoginScreen> {
         LoginHeader(mainColor: mainColor),
         const SizedBox(height: 32),
 
-        // 3. Email Field (Gắn Controller)
+        // Email Field
         CustomAuthField(
-          label: "Email Address",
-          hintText: "hello@example.com",
+          label: s.emailLabel, // ✅ Updated
+          hintText: s.emailHint, // ✅ Updated
           mainColor: mainColor,
-          controller: _emailController, // <--- Quan trọng
+          controller: _emailController,
         ),
         const SizedBox(height: 20),
 
-        // 4. Password Field (Gắn Controller)
+        // Password Field
         CustomAuthField(
-          label: "Password",
-          hintText: "........",
+          label: s.passwordLabel, // ✅ Updated
+          hintText: s.passwordHint, // ✅ Updated
           isPassword: true,
           isObscure: _isObscure,
           onIconTap: () {
@@ -154,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
             });
           },
           mainColor: mainColor,
-          controller: _passwordController, // <--- Quan trọng
+          controller: _passwordController,
         ),
 
         // Forgot Password
@@ -162,10 +150,10 @@ class _LoginScreenState extends State<LoginScreen> {
           alignment: Alignment.centerRight,
           child: TextButton(
             onPressed: () {
-              // TODO: Thêm logic quên mật khẩu
+              // TODO: Logic quên mật khẩu
             },
             child: Text(
-              "Forgot Password?",
+              s.forgotPassword, // ✅ Updated
               style: TextStyle(
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w600,
@@ -175,27 +163,26 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 24),
 
-        // 5. Login Button (Có Loading State)
+        // Login Button
         SizedBox(
           width: double.infinity,
-          height: 56, // Giữ chiều cao cố định để không bị giật khi hiện loading
+          height: 56,
           child: _isLoading 
-            ? Center(child: CircularProgressIndicator(color: mainColor)) // Hiện vòng xoay
-            : PrimaryButton( // Hiện nút bấm
-                text: "Log In",
-                onPressed: _handleLogin, // Gọi hàm logic
-                // color: mainColor, // Nếu PrimaryButton có hỗ trợ đổi màu
+            ? Center(child: CircularProgressIndicator(color: mainColor))
+            : PrimaryButton(
+                text: s.loginButton, // ✅ Updated
+                onPressed: _handleLogin,
               ),
         ),
         
         const SizedBox(height: 32),
-
-        // 6. Social Buttons
         const SocialButtons(),
         const SizedBox(height: 40),
-
-        // 8. Footer
         const SignupFooter(),
+        const SizedBox(height: 50),
+
+        // --- DEV AREA ---
+        // --- REMOVED: Seeder moved to Settings/Debug Tools screen ---
       ],
     );
   }

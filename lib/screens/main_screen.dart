@@ -1,54 +1,60 @@
 import 'package:flutter/material.dart';
-// Import các widget và màn hình con
+import 'package:go_router/go_router.dart';
 import '../widgets/recipe/bottom_nav.dart';
-import 'package:fridge_to_fork_assistant/screens/fridge/fridge_home.dart';
-import 'package:fridge_to_fork_assistant/screens/recipe/ai_recipe.dart';
-import 'package:fridge_to_fork_assistant/screens/meal&plan/planner/planner_screen.dart';
+// import 'package:fridge_to_fork_assistant/screens/fridge/fridge_home.dart';
+// import 'package:fridge_to_fork_assistant/screens/recipe/ai_recipe.dart';
+// import 'package:fridge_to_fork_assistant/screens/meal&plan/planner/planner_screen.dart';
 
-// Màn hình Plan tạm thời (nếu chưa có)
-class PlanScreen extends StatelessWidget {
-  const PlanScreen({super.key});
-  @override
-  Widget build(BuildContext context) => const Scaffold(body: Center(child: Text("Plan Screen")));
-}
+class MainScreen extends StatelessWidget {
+  final StatefulNavigationShell navigationShell;
 
-class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
-
-  @override
-  State<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen> {
-  // Mặc định index = 0 là Fridge Home sẽ hiện ra đầu tiên sau khi Login
-  int _currentIndex = 2;
-
-  // Danh sách các màn hình con
-  final List<Widget> _pages = [
-    const FridgeHomeScreen(), // Index 0: Tủ lạnh
-    const AIRecipeScreen(),   // Index 1: Công thức AI
-    const PlannerScreen(),       // Index 2: Plan
-  ];
+  const MainScreen({
+    super.key,
+    required this.navigationShell,
+  });
 
   void _onItemTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+    navigationShell.goBranch(
+      index,
+      initialLocation: index == navigationShell.currentIndex,
+    );
+  }
+
+  // --- LOGIC MỚI: Kiểm tra xem có nên hiện BottomBar không ---
+  bool _shouldShowBottomNav(BuildContext context) {
+    // Lấy đường dẫn hiện tại từ GoRouter
+    final String location = GoRouterState.of(context).uri.path;
+
+    // Danh sách các đường dẫn "Gốc" (Root paths) mà bạn muốn hiện Menu
+    // Bạn hãy thay thế bằng các path thực tế bạn đã config trong GoRouter
+    const List<String> mainPaths = [
+  '/fridge', 
+  '/recipes', 
+  '/planner', // Router bạn đặt là /planner nên ở đây cũng phải là /planner
+  '/',     
+];
+
+    // Chỉ trả về true nếu đường dẫn hiện tại nằm trong danh sách mainPaths
+    // Lưu ý: Nếu bạn vào chi tiết (ví dụ /recipes/detail), logic này trả về false -> Ẩn Nav
+    return mainPaths.contains(location);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Tính toán việc hiển thị trước
+    final bool showBottomNav = _shouldShowBottomNav(context);
+
     return Scaffold(
-      // IndexedStack giữ trạng thái của các màn hình con (không bị load lại khi chuyển tab)
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
-      // BottomNav nằm cố định ở MainScreen
-      bottomNavigationBar: BottomNav(
-        selectedIndex: _currentIndex,
-        onItemTapped: _onItemTapped,
-      ),
+      // Body vẫn giữ nguyên
+      body: navigationShell,
+      
+      // Nếu showBottomNav là true thì vẽ BottomNav, ngược lại thì null (ẩn đi)
+      bottomNavigationBar: showBottomNav 
+          ? BottomNav(
+              selectedIndex: navigationShell.currentIndex,
+              onItemTapped: _onItemTapped,
+            )
+          : null, // Khi null, Scaffold sẽ tự động kéo body tràn xuống dưới
     );
   }
 }

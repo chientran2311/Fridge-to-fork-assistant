@@ -1,202 +1,199 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
-class DatabaseSeederV2 {
+class DatabaseSeeder {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // =============================
-  // FIXED IDS
-  // =============================
-  final String userId = 'user_01';
-  final String householdId = 'house_01';
-
-  final String beefId = 'ing_0001';
-  final String eggId = 'ing_0002';
-  final String onionId = 'ing_0003';
-
-  final String recipeId = 'recipe_01';
-
-  Future<void> seedDatabase() async {
+  // Nhận userId và householdId từ user đang đăng nhập
+  Future<void> seedDatabase({
+    required String userId,
+    required String householdId,
+  }) async {
     try {
-      debugPrint('🚀 START SEEDING DATABASE V2');
+      debugPrint("🚀 Bắt đầu tạo dữ liệu mẫu cho user: $userId...");
 
-      // =====================================================
-      // 1️⃣ INGREDIENTS (MASTER DATA – BARCODE)
-      // =====================================================
-      await _firestore.collection('ingredients').doc(beefId).set({
-        'ingredient_id': beefId,
-        'name': 'Beef',
-        'barcode': '8938505974194',
-        'category': 'meat',
-        'default_unit': 'g',
-        'image_url': '',
-        'nutrition': {
-          'calories': 250,
-          'protein': 26,
-          'fat': 15,
-        },
-        'created_at': FieldValue.serverTimestamp(),
-      });
+      // ==========================================
+      // BƯỚC 1: LẤY HOUSEHOLD REFERENCE
+      // ==========================================
+      final houseRef = _firestore.collection('households').doc(householdId);
 
-      await _firestore.collection('ingredients').doc(eggId).set({
-        'ingredient_id': eggId,
-        'name': 'Chicken egg',
-        'barcode': '8938505974200',
-        'category': 'dairy',
-        'default_unit': 'pcs',
-        'image_url': '',
-        'nutrition': {
-          'calories': 70,
-          'protein': 6,
-          'fat': 5,
-        },
-        'created_at': FieldValue.serverTimestamp(),
-      });
+      // ==========================================
+      // BƯỚC 2: TẠO TỦ LẠNH (Sub-collection: inventory) - 10 items
+      // ==========================================
+      final inventoryItems = [
+        {'name': 'Thịt bò', 'quantity': 500.0, 'unit': 'g', 'tag': 'meat', 'days': 5},
+        {'name': 'Trứng gà', 'quantity': 10.0, 'unit': 'quả', 'tag': 'dairy', 'days': 2},
+        {'name': 'Cà rốt', 'quantity': 3.0, 'unit': 'củ', 'tag': 'vegetable', 'days': 7},
+        {'name': 'Sữa tươi', 'quantity': 1.0, 'unit': 'lít', 'tag': 'dairy', 'days': 3},
+        {'name': 'Thịt gà', 'quantity': 800.0, 'unit': 'g', 'tag': 'meat', 'days': 4},
+        {'name': 'Cải thảo', 'quantity': 1.0, 'unit': 'kg', 'tag': 'vegetable', 'days': 6},
+        {'name': 'Cá hồi', 'quantity': 400.0, 'unit': 'g', 'tag': 'seafood', 'days': 2},
+        {'name': 'Khoai tây', 'quantity': 5.0, 'unit': 'củ', 'tag': 'vegetable', 'days': 10},
+        {'name': 'Phô mai', 'quantity': 200.0, 'unit': 'g', 'tag': 'dairy', 'days': 15},
+        {'name': 'Tôm tươi', 'quantity': 300.0, 'unit': 'g', 'tag': 'seafood', 'days': 1},
+      ];
+      
+      for (int i = 0; i < inventoryItems.length; i++) {
+        final item = inventoryItems[i];
+        await houseRef.collection('inventory').doc('inv_${(i + 1).toString().padLeft(2, '0')}').set({
+          'name': item['name'],
+          'quantity': item['quantity'],
+          'unit': item['unit'],
+          'image_url': '',
+          'expiry_date': Timestamp.fromDate(
+            DateTime.now().add(Duration(days: item['days'] as int))
+          ),
+          'quick_tag': item['tag'],
+          'created_at': FieldValue.serverTimestamp(),
+        });
+      }
+      
+      debugPrint("✅ Đã tạo 10 Inventory items");
 
-      await _firestore.collection('ingredients').doc(onionId).set({
-        'ingredient_id': onionId,
-        'name': 'Purple onion',
-        'barcode': '8938505974217',
-        'category': 'vegetable',
-        'default_unit': 'pcs',
-        'image_url': '',
-        'nutrition': {
-          'calories': 40,
-          'protein': 1.2,
-          'fat': 0.1,
-        },
-        'created_at': FieldValue.serverTimestamp(),
-      });
+      // ==========================================
+      // BƯỚC 3: TẠO CÔNG THỨC (Sub-collection: household_recipes) - 10 recipes
+      // ==========================================
+      final recipes = [
+        {'title': 'Bò Kho Tiêu', 'time': 45, 'cal': 350.5, 'diff': 'Medium', 'apiId': 12345},
+        {'title': 'Gà Rán Giòn', 'time': 30, 'cal': 420.0, 'diff': 'Easy', 'apiId': 12346},
+        {'title': 'Cá Hồi Nướng', 'time': 25, 'cal': 280.0, 'diff': 'Easy', 'apiId': 12347},
+        {'title': 'Canh Cải Thảo', 'time': 20, 'cal': 120.0, 'diff': 'Easy', 'apiId': 12348},
+        {'title': 'Mì Ý Sốt Kem', 'time': 35, 'cal': 480.0, 'diff': 'Medium', 'apiId': 12349},
+        {'title': 'Phở Bò', 'time': 60, 'cal': 400.0, 'diff': 'Hard', 'apiId': 12350},
+        {'title': 'Tôm Chiên Xù', 'time': 25, 'cal': 320.0, 'diff': 'Medium', 'apiId': 12351},
+        {'title': 'Salad Rau Củ', 'time': 15, 'cal': 150.0, 'diff': 'Easy', 'apiId': 12352},
+        {'title': 'Súp Khoai Tây', 'time': 40, 'cal': 220.0, 'diff': 'Easy', 'apiId': 12353},
+        {'title': 'Bánh Pizza Phô Mai', 'time': 50, 'cal': 520.0, 'diff': 'Medium', 'apiId': 12354},
+      ];
+      
+      for (int i = 0; i < recipes.length; i++) {
+        final recipe = recipes[i];
+        final recipeId = 'recipe_${householdId}_${(i + 1).toString().padLeft(2, '0')}';
+        
+        await houseRef.collection('household_recipes').doc(recipeId).set({
+          'local_recipe_id': recipeId,
+          'household_id': householdId,
+          'api_recipe_id': recipe['apiId'],
+          'title': recipe['title'],
+          'image_url': 'https://spoonacular.com/recipeImages/${recipe["apiId"]}.jpg',
+          'ready_in_minutes': recipe['time'],
+          'calories': recipe['cal'],
+          'difficulty': recipe['diff'],
+          'added_by_uid': userId,
+          'added_at': FieldValue.serverTimestamp(),
+          'ingredients': [
+            {'name': 'Nguyên liệu 1', 'amount': 100, 'unit': 'g'},
+            {'name': 'Nguyên liệu 2', 'amount': 2, 'unit': 'thìa'},
+          ],
+          'instructions': 'Bước 1: Chuẩn bị...\nBước 2: Chế biến...\nBước 3: Hoàn thành.',
+        });
+      }
+      debugPrint("✅ Đã tạo 10 Recipes");
 
-      debugPrint('✅ Ingredients created');
+      // ==========================================
+      // BƯỚC 4: TẠO LỊCH SỬ NẤU ĂN (Sub-collection: cooking_history) - 10 items
+      // ==========================================
+      for (int i = 0; i < 10; i++) {
+        final recipe = recipes[i];
+        await houseRef.collection('cooking_history').add({
+          'recipe_id': 'recipe_${householdId}_${(i + 1).toString().padLeft(2, '0')}',
+          'api_recipe_id': recipe['apiId'],
+          'title': recipe['title'],
+          'cooked_at': Timestamp.fromDate(
+            DateTime.now().subtract(Duration(days: 10 - i))
+          ),
+          'is_favorite': i < 3,
+          'servings': 2 + (i % 4),
+          'tags': ['Tag ${i + 1}'],
+        });
+      }
+      debugPrint("✅ Đã tạo 10 Cooking History items");
 
-      // =====================================================
-      // 2️⃣ USERS
-      // =====================================================
-      await _firestore.collection('users').doc(userId).set({
-        'uid': userId,
-        'email': 'admin@beptroly.com',
-        'display_name': 'Admin Bếp',
-        'photo_url': 'https://i.pravatar.cc/300',
-        'language': 'vi',
-        'current_household_id': householdId,
-        'created_at': FieldValue.serverTimestamp(),
-      });
+      // ==========================================
+      // BƯỚC 5: TẠO FAVORITE RECIPES - 10 items
+      // ==========================================
+      for (int i = 0; i < 10; i++) {
+        final recipe = recipes[i];
+        await houseRef.collection('favorite_recipes').doc('fav_${(i + 1).toString().padLeft(2, '0')}').set({
+          'local_recipe_id': 'fav_${(i + 1).toString().padLeft(2, '0')}',
+          'household_id': householdId,
+          'api_recipe_id': recipe['apiId'],
+          'title': recipe['title'],
+          'image_url': 'https://spoonacular.com/recipeImages/${recipe["apiId"]}.jpg',
+          'ready_in_minutes': recipe['time'],
+          'calories': recipe['cal'],
+          'difficulty': recipe['diff'],
+          'servings': 2 + (i % 4),
+          'added_by_uid': userId,
+          'added_at': FieldValue.serverTimestamp(),
+          'is_favorite': true,
+        });
+      }
+      debugPrint("✅ Đã tạo 10 Favorite Recipes");
+      
+      // ==========================================
+      // BƯỚC 6: TẠO LỊCH ĂN (Sub-collection: meal_plans) - 10 items
+      // ==========================================
+      final mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+      for (int i = 0; i < 10; i++) {
+        final recipe = recipes[i];
+        await houseRef.collection('meal_plans').doc('plan_${(i + 1).toString().padLeft(2, '0')}').set({
+          'plan_id': 'plan_${(i + 1).toString().padLeft(2, '0')}',
+          'household_id': householdId,
+          'date': Timestamp.fromDate(
+            DateTime.now().add(Duration(days: i ~/ 3))
+          ),
+          'meal_type': mealTypes[i % mealTypes.length],
+          'local_recipe_id': 'recipe_${householdId}_${(i + 1).toString().padLeft(2, '0')}',
+          'display_title': recipe['title'],
+          'display_image': 'https://spoonacular.com/recipeImages/${recipe["apiId"]}.jpg',
+          'servings': 2 + (i % 4),
+          'is_cooked': i < 2,
+          'planned_by_uid': userId,
+          'created_at': FieldValue.serverTimestamp(),
+        });
+      }
+      debugPrint("✅ Đã tạo 10 Meal Plans");
 
-      debugPrint('✅ User created');
+      // ==========================================
+      // BƯỚC 7: TẠO SHOPPING LIST (Sub-collection: shopping_list) - 10 items
+      // ==========================================
+      final shoppingItems = [
+        {'name': 'Hành tím', 'qty': 2, 'unit': 'củ', 'note': 'Mua loại củ to'},
+        {'name': 'Gừng', 'qty': 100, 'unit': 'g', 'note': 'Tươi'},
+        {'name': 'Nước mắm', 'qty': 1, 'unit': 'chai', 'note': 'Loại ngon'},
+        {'name': 'Dầu ăn', 'qty': 1, 'unit': 'lít', 'note': ''},
+        {'name': 'Rau mùi', 'qty': 1, 'unit': 'bó', 'note': ''},
+        {'name': 'Tỏi', 'qty': 3, 'unit': 'củ', 'note': ''},
+        {'name': 'Ớt', 'qty': 5, 'unit': 'quả', 'note': 'Ớt hiểm'},
+        {'name': 'Mì gói', 'qty': 10, 'unit': 'gói', 'note': ''},
+        {'name': 'Rau xà lách', 'qty': 1, 'unit': 'kg', 'note': 'Rửa sạch'},
+        {'name': 'Nước lọc', 'qty': 2, 'unit': 'chai', 'note': ''},
+      ];
+      
+      for (int i = 0; i < shoppingItems.length; i++) {
+        final item = shoppingItems[i];
+        await houseRef.collection('shopping_list').doc('shop_${(i + 1).toString().padLeft(2, '0')}').set({
+          'item_id': 'shop_${(i + 1).toString().padLeft(2, '0')}',
+          'household_id': householdId,
+          'name': item['name'],
+          'quantity': item['qty'],
+          'unit': item['unit'],
+          'is_checked': i < 2,
+          'is_auto_generated': i % 2 == 0,
+          'for_recipe_id': 'recipe_${householdId}_${((i % 10) + 1).toString().padLeft(2, '0')}',
+          'target_date': Timestamp.fromDate(
+            DateTime.now().add(Duration(days: i % 5))
+          ),
+          'created_at': FieldValue.serverTimestamp(),
+          'note': item['note'],
+        });
+      }
+      debugPrint("✅ Đã tạo 10 Shopping List items");
 
-      // =====================================================
-      // 3️⃣ HOUSEHOLDS
-      // =====================================================
-      final houseRef =
-          _firestore.collection('households').doc(householdId);
-
-      await houseRef.set({
-        'household_id': householdId,
-        'name': 'Gia Đình Demo',
-        'owner_id': userId,
-        'invite_code': 'ABC-123',
-        'members': [userId],
-        'created_at': FieldValue.serverTimestamp(),
-      });
-
-      debugPrint('✅ Household created');
-
-      // =====================================================
-      // 4️⃣ INVENTORY (STOCK – LINK INGREDIENT)
-      // =====================================================
-      await houseRef.collection('inventory').doc('inv_01').set({
-        'inventory_id': 'inv_01',
-        'ingredient_id': beefId,
-        'household_id': householdId,
-        'quantity': 500,
-        'unit': 'g',
-        'expiry_date':
-            Timestamp.fromDate(DateTime.now().add(const Duration(days: 5))),
-        'added_by_uid': userId,
-        'created_at': FieldValue.serverTimestamp(),
-      });
-
-      await houseRef.collection('inventory').doc('inv_02').set({
-        'inventory_id': 'inv_02',
-        'ingredient_id': eggId,
-        'household_id': householdId,
-        'quantity': 10,
-        'unit': 'quả',
-        'expiry_date':
-            Timestamp.fromDate(DateTime.now().add(const Duration(days: 2))),
-        'added_by_uid': userId,
-        'created_at': FieldValue.serverTimestamp(),
-      });
-
-      debugPrint('✅ Inventory created');
-
-      // =====================================================
-      // 5️⃣ HOUSEHOLD RECIPES (LINK INGREDIENT)
-      // =====================================================
-      await houseRef.collection('household_recipes').doc(recipeId).set({
-        'local_recipe_id': recipeId,
-        'household_id': householdId,
-        'title': 'Bò Kho Tiêu',
-        'image_url': '',
-        'ready_in_minutes': 45,
-        'difficulty': 'Medium',
-        'added_by_uid': userId,
-        'added_at': FieldValue.serverTimestamp(),
-        'ingredients': [
-          {
-            'ingredient_id': beefId,
-            'amount': 300,
-            'unit': 'g',
-          },
-          {
-            'ingredient_id': onionId,
-            'amount': 2,
-            'unit': 'củ',
-          },
-        ],
-        'instructions':
-            'Bước 1: Sơ chế thịt bò\nBước 2: Ướp gia vị\nBước 3: Kho nhỏ lửa',
-      });
-
-      debugPrint('✅ Recipe created');
-
-      // =====================================================
-      // 6️⃣ MEAL PLANS
-      // =====================================================
-      await houseRef.collection('meal_plans').doc('plan_01').set({
-        'plan_id': 'plan_01',
-        'household_id': householdId,
-        'date': Timestamp.fromDate(DateTime.now()),
-        'meal_type': 'Dinner',
-        'local_recipe_id': recipeId,
-        'servings': 4,
-        'is_cooked': false,
-        'planned_by_uid': userId,
-        'created_at': FieldValue.serverTimestamp(),
-      });
-
-      debugPrint('✅ Meal plan created');
-
-      // =====================================================
-      // 7️⃣ SHOPPING LIST
-      // =====================================================
-      await houseRef.collection('shopping_list').doc('shop_01').set({
-        'item_id': 'shop_01',
-        'household_id': householdId,
-        'ingredient_id': onionId,
-        'quantity': 2,
-        'unit': 'củ',
-        'is_checked': false,
-        'is_auto_generated': true,
-        'for_recipe_id': recipeId,
-        'created_at': FieldValue.serverTimestamp(),
-      });
-
-      debugPrint('🎉 SEED DATABASE V2 COMPLETED');
-
+      debugPrint("🎉 HOÀN TẤT! Dữ liệu mẫu đã sẵn sàng.");
     } catch (e) {
-      debugPrint('❌ SEED ERROR: $e');
+      debugPrint("❌ Lỗi khi tạo dữ liệu: $e");
     }
   }
 }

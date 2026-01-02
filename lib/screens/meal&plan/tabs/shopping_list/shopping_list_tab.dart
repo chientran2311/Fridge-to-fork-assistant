@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../../../widgets/plans/tabs/shopping_list_tab/section_header.dart';
@@ -17,7 +18,8 @@ class ShoppingListTab extends StatefulWidget {
 class _ShoppingListTabState extends State<ShoppingListTab>
     with AutomaticKeepAliveClientMixin {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  late String _householdId;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  String? _householdId;
   Map<String, List<Map<String, dynamic>>> _itemsByDate = {}; // ✅ Changed: group by date
   bool _isLoading = true;
   String _selectedCategory = 'all';
@@ -30,11 +32,10 @@ class _ShoppingListTabState extends State<ShoppingListTab>
   void initState() {
     super.initState();
     debugPrint('📱 ShoppingListTab: initState() called');
-    _householdId = 'house_01';
     _loadShoppingListByDate();
   }
 
-  // ✅ Mới: Load shopping list dựa trên meal_plans + inventory
+  // ✅ Mới: Load shopping list dựa trên meal_plans + inventory (từ hôm nay trở đi)
   Future<void> _loadShoppingListByDate() async {
     // ✅ Guard: Nếu data đã load, bỏ qua (trừ khi là pull-to-refresh)
     if (_hasLoadedData && _isLoading == false) {
@@ -43,24 +44,61 @@ class _ShoppingListTabState extends State<ShoppingListTab>
     }
 
     try {
-      const householdId = 'house_01';
-      _householdId = householdId;
-      final houseRef = _firestore.collection('households').doc(_householdId);
-
-      debugPrint('🔄 Loading meal plans + ingredients...');
-
-      // 1. Fetch tất cả meal_plans
-      final mealPlansSnapshot = await houseRef.collection('meal_plans').get();
-      debugPrint('📋 Found ${mealPlansSnapshot.docs.length} meal plans');
-
-      // 2. Fetch inventory (để check stock)
-      final inventorySnapshot = await houseRef.collection('inventory').get();
-      final inventoryMap = <String, int>{}; // ingredient_id -> quantity
-      for (var doc in inventorySnapshot.docs) {
-        final data = doc.data();
-        inventoryMap[data['ingredient_id']] = data['quantity'] ?? 0;
+      // ✅ Lấy user hiện tại
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        debugPrint('❌ No user logged in');
+        setState(() {
+          _isLoading = false;
+          _hasLoadedData = true;
+        });
+        return;
       }
-      debugPrint('📦 Inventory: ${inventoryMap.length} items');
+      
+      final userId = currentUser.uid;
+      
+      // ✅ Lấy household_id từ user document
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (!userDoc.exists || userDoc.data()?['current_household_id'] == null) {
+        debugPrint('❌ User document not found or no current_household_id');
+        setState(() {
+          _isLoading = false;
+          _hasLoadedData = true;
+        });
+        return;
+      }
+      
+      _householdId = userDoc.data()!['current_household_id'] as String;
+      final houseRef = _firestore.collection('households').doc(_householdId!);
+
+      debugPrint('🔄 Loading meal plans + ingredients for household: $_householdId');
+
+      // ✅ Lấy ngày hôm nay (00:00:00) để filter meal plans
+      final today = DateTime.now();
+      final todayStart = DateTime(today.year, today.month, today.day);
+      
+      debugPrint('📅 Today start: $todayStart');
+
+      // 1. Fetch meal_plans từ hôm nay trở đi
+      final mealPlansSnapshot = await houseRef
+          .collection('meal_plans')
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart))
+          .get();
+      
+      debugPrint('📋 Found ${mealPlansSnapshot.docs.length} meal plans from today onwards');
+
+      // 2. Fetch inventory (để check ingredient nào đã có)
+      final inventorySnapshot = await houseRef.collection('inventory').get();
+      
+      // ✅ Create Set of inventory names (lowercase for comparison)
+      final inventoryNames = <String>{};
+      for (var doc in inventorySnapshot.docs) {
+        final name = (doc.data()['name'] ?? '').toString().toLowerCase().trim();
+        if (name.isNotEmpty) {
+          inventoryNames.add(name);
+        }
+      }
+      debugPrint('📦 Inventory has: ${inventoryNames.length} items');
 
       // 3. Build shopping list từ meal_plans
       final itemsByDate = <String, List<Map<String, dynamic>>>{};
@@ -69,7 +107,12 @@ class _ShoppingListTabState extends State<ShoppingListTab>
         final mealPlanData = mealPlanDoc.data();
         final date = (mealPlanData['date'] as Timestamp).toDate();
         final dateKey = _formatDateKey(date);
-        final recipeId = mealPlanData['local_recipe_id'];
+        final recipeId = mealPlanData['local_recipe_id'] ?? '';
+        
+        if (recipeId.isEmpty) {
+          debugPrint('⚠️ Meal plan ${mealPlanDoc.id} has no recipe ID');
+          continue;
+        }
         
         debugPrint('🍽️ Meal plan on $dateKey: Recipe $recipeId');
 
@@ -87,60 +130,72 @@ class _ShoppingListTabState extends State<ShoppingListTab>
         final recipeData = recipeDoc.data() as Map<String, dynamic>;
         final ingredients = recipeData['ingredients'] as List<dynamic>?;
 
-        if (ingredients == null) continue;
+        if (ingredients == null || ingredients.isEmpty) {
+          debugPrint('⚠️ Recipe $recipeId has no ingredients');
+          continue;
+        }
 
-        // Untuk mỗi ingredient trong recipe
+        debugPrint('📝 Recipe has ${ingredients.length} ingredients');
+
+        // Với mỗi ingredient trong recipe
         for (var ingData in ingredients) {
-          final ingredientId = ingData['ingredient_id'];
-          final requiredQty = (ingData['amount'] as num).toInt();
+          final ingredientName = (ingData['name'] ?? 'Unknown').toString();
+          final amount = ingData['amount'] ?? 0;
+          final unit = ingData['unit'] ?? '';
 
-          // Check inventory
-          final availableQty = inventoryMap[ingredientId] ?? 0;
-          final neededQty = requiredQty - availableQty;
+          // ✅ Check if ingredient exists in inventory (case-insensitive partial match)
+          final nameLower = ingredientName.toLowerCase().trim();
+          final inFridge = inventoryNames.any((invName) => 
+            invName.contains(nameLower) || nameLower.contains(invName)
+          );
 
-          if (neededQty > 0) {
-            // Fetch ingredient details
-            final ingredientDoc = await _firestore
-                .collection('ingredients')
-                .doc(ingredientId)
-                .get();
-
-            final ingredientData = ingredientDoc.data();
-            final ingredientName = ingredientData?['name'] ?? 'Unknown';
-            final category = ingredientData?['category'] ?? 'other';
-
-            // 🐛 Debug: Log if ingredient not found
-            if (!ingredientDoc.exists) {
-              debugPrint('❌ Ingredient $ingredientId NOT FOUND in ingredients collection');
-            } else if (ingredientName == 'Unknown') {
-              debugPrint('⚠️ Ingredient $ingredientId found but missing name field');
-            } else {
-              debugPrint('✅ Ingredient: $ingredientName (ID: $ingredientId)');
-            }
-
+          // ✅ Only add to shopping list if NOT in fridge
+          if (!inFridge) {
+            debugPrint('🛒 Need to buy: $ingredientName ($amount $unit)');
+            
             final item = {
-              'item_id': '$dateKey-$ingredientId',
+              'item_id': '$dateKey-${ingredientName.hashCode}', // ✅ Use hash for unique ID
               'ingredient_name': ingredientName,
-              'ingredient_id': ingredientId,
-              'quantity': neededQty,
-              'unit': ingData['unit'] ?? 'pcs',
-              'category': category,
+              'quantity': amount,
+              'unit': unit,
+              'category': 'other', // ✅ Default category
               'is_checked': false,
+              'date': dateKey,
+              'recipe_title': recipeData['title'] ?? 'Unknown Recipe',
             };
 
             if (!itemsByDate.containsKey(dateKey)) {
               itemsByDate[dateKey] = [];
             }
             
-            // Avoid duplicates
-            if (!itemsByDate[dateKey]!.any((it) => it['ingredient_id'] == ingredientId)) {
+            // ✅ Avoid duplicates by name
+            final existingIndex = itemsByDate[dateKey]!.indexWhere(
+              (it) => it['ingredient_name'].toString().toLowerCase() == nameLower
+            );
+            
+            if (existingIndex == -1) {
               itemsByDate[dateKey]!.add(item);
+            } else {
+              // ✅ If already exists, sum quantities
+              final existing = itemsByDate[dateKey]![existingIndex];
+              existing['quantity'] = (existing['quantity'] ?? 0) + amount;
+              debugPrint('   ➕ Updated quantity for $ingredientName to ${existing['quantity']}');
             }
+          } else {
+            debugPrint('✅ Already in fridge: $ingredientName');
           }
         }
       }
 
-      debugPrint('✅ Shopping list by date: ${itemsByDate.keys.toList()}');
+      debugPrint('');
+      debugPrint('🎯 ========== SHOPPING LIST SUMMARY ==========');
+      debugPrint('   Total dates with missing ingredients: ${itemsByDate.length}');
+      for (var entry in itemsByDate.entries) {
+        debugPrint('   📅 ${entry.key}: ${entry.value.length} items');
+      }
+      debugPrint('=============================================');
+      debugPrint('');
+      
       setState(() {
         _itemsByDate = itemsByDate;
         _isLoading = false;
@@ -160,6 +215,23 @@ class _ShoppingListTabState extends State<ShoppingListTab>
   }
 
   String _formatDisplayDate(String dateKey) {
+    // ✅ Check if dateKey is today
+    final today = DateTime.now();
+    final todayKey = _formatDateKey(today);
+    
+    if (dateKey == todayKey) {
+      return 'Today';
+    }
+    
+    // ✅ Check if dateKey is tomorrow
+    final tomorrow = today.add(const Duration(days: 1));
+    final tomorrowKey = _formatDateKey(tomorrow);
+    
+    if (dateKey == tomorrowKey) {
+      return 'Tomorrow';
+    }
+    
+    // ✅ Otherwise, show formatted date
     final parts = dateKey.split('-');
     if (parts.length == 3) {
       return 'Day ${parts[2]}/${parts[1]}/${parts[0]}';
@@ -274,7 +346,7 @@ class _ShoppingListTabState extends State<ShoppingListTab>
                           item['quantity'] = newQty;
                         });
                       },
-                      householdId: _householdId,
+                      householdId: _householdId!,
                     )).toList(),
                     
                     const SizedBox(height: 24),

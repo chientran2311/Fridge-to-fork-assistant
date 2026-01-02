@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
+// import 'package:mobile_scanner/mobile_scanner.dart'; // DISABLED - not needed for now
 
 class FridgeBarcodeScanScreen extends StatefulWidget {
   const FridgeBarcodeScanScreen({super.key});
@@ -10,13 +10,13 @@ class FridgeBarcodeScanScreen extends StatefulWidget {
 }
 
 class _FridgeBarcodeScanScreenState extends State<FridgeBarcodeScanScreen> {
-  bool flashOn = false;
-  bool isScanned = false;
+  // bool flashOn = false;
+  // bool isScanned = false;
 
-  final MobileScannerController cameraController = MobileScannerController(
-    facing: CameraFacing.back,
-    torchEnabled: false,
-  );
+  // final MobileScannerController cameraController = MobileScannerController(
+  //   facing: CameraFacing.back,
+  //   torchEnabled: false,
+  // );
 
   @override
   Widget build(BuildContext context) {
@@ -27,22 +27,20 @@ class _FridgeBarcodeScanScreenState extends State<FridgeBarcodeScanScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            /// CAMERA PREVIEW + BARCODE DETECTION
-            MobileScanner(
-              controller: cameraController,
-              onDetect: (capture) {
-                if (isScanned) return;
-                isScanned = true;
-
-                final barcode = capture.barcodes.first.rawValue;
-
-                if (barcode != null) {
-                  debugPrint("BARCODE FOUND = $barcode");
-
-                  /// Sau khi scan OK → chuyển sang màn hình khác
-                  Navigator.pop(context, barcode);
-                }
-              },
+            /// TEMPORARY DISABLED - Camera Preview + Barcode Detection
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.qr_code_scanner, size: 80, color: Colors.white54),
+                  SizedBox(height: 20),
+                  Text(
+                    'Barcode Scanner\nTemporarily Disabled',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                ],
+              ),
             ),
 
             /// TOP LEFT BACK BUTTON
@@ -63,7 +61,7 @@ class _FridgeBarcodeScanScreenState extends State<FridgeBarcodeScanScreen> {
               ),
             ),
 
-            /// FLASH BUTTON
+            /* DISABLED - Flash button
             Positioned(
               bottom: 40,
               left: 0,
@@ -103,8 +101,9 @@ class _FridgeBarcodeScanScreenState extends State<FridgeBarcodeScanScreen> {
                 ),
               ),
             ),
+            */
 
-            /// SCAN FRAME UI
+            /* DISABLED - Scan frame UI
             Center(
               child: Container(
                 height: 260,
@@ -118,6 +117,7 @@ class _FridgeBarcodeScanScreenState extends State<FridgeBarcodeScanScreen> {
                 ),
               ),
             ),
+            */
           ],
         ),
       ),

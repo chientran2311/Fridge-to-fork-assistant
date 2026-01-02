@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import 'debug_tools.dart';
+
+// Import Providers & Localization
+// ❌ Đã xóa import AuthService
+import '../../providers/auth_provider.dart'; // ✅ Chỉ dùng Provider
+import '../../providers/locale_provider.dart';
+import '../../l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -11,44 +19,115 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // Màu sắc chủ đạo
+  // --- MÀU SẮC UI ---
   final Color bgCream = const Color(0xFFF9F9F7);
   final Color mainColor = const Color(0xFF1B3B36);
   final Color redColor = const Color(0xFFE53935);
 
-  // State giả lập
   bool _notificationsEnabled = true;
+
+  // --- UI LOGIC: MỜI THÀNH VIÊN ---
+  void _showInviteDialog(BuildContext context, AppLocalizations s) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(s.inviteMember),
+        content: const Text("QR Code & Email invitation feature coming soon."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("OK"),
+          )
+        ],
+      ),
+    );
+  }
+
+  // --- UI LOGIC: ĐĂNG XUẤT ---
+  Future<void> _handleLogout(BuildContext context) async {
+    // Gọi hàm logout từ Provider (Logic nằm bên Provider)
+    final authProvider = context.read<AuthProvider>();
+    await authProvider.logout();
+    
+    // Điều hướng UI
+    if (context.mounted) {
+      context.go('/login'); 
+    }
+  }
+
+  // --- UI LOGIC: XÓA TÀI KHOẢN ---
+  void _confirmDeleteAccount(BuildContext context, AppLocalizations s) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(s.deleteAccount, style: TextStyle(color: redColor)),
+        content: Text(s.deleteAccountWarning),
+        actions: [
+          // Nút Hủy
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(s.cancel, style: const TextStyle(color: Colors.grey)),
+          ),
+          // Nút Xác Nhận
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx); // Đóng Dialog trước
+
+              // Gọi Provider để xử lý logic xóa
+              final authProvider = context.read<AuthProvider>();
+              final String? error = await authProvider.deleteAccount();
+
+              if (!context.mounted) return;
+
+              // Xử lý kết quả trả về từ Provider để update UI
+              if (error == null) {
+                // Thành công
+                context.go('/login');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Account deleted successfully")),
+                );
+              } else {
+                // Thất bại (VD: cần đăng nhập lại)
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(error),
+                    backgroundColor: redColor,
+                    duration: const Duration(seconds: 5),
+                  ),
+                );
+              }
+            },
+            child: Text(s.confirm, style: TextStyle(color: redColor, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context);
+    // Fallback an toàn
+    if (s == null) return const SizedBox();
+
     return Scaffold(
       backgroundColor: bgCream,
       body: ResponsiveLayout(
-        // --- MOBILE LAYOUT ---
-        mobileBody: SafeArea(
-          child: _buildContent(context, isMobile: true),
-        ),
-
-        // --- WEB/DESKTOP LAYOUT ---
+        mobileBody: SafeArea(child: _buildContent(context, s, isMobile: true)),
         desktopBody: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 600), // Giới hạn chiều rộng
+            constraints: const BoxConstraints(maxWidth: 600),
             margin: const EdgeInsets.symmetric(vertical: 24),
             decoration: BoxDecoration(
               color: bgCream,
               borderRadius: BorderRadius.circular(24),
-              // Thêm bóng đổ nhẹ cho web để nổi bật
               boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
-                )
+                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 4))
               ],
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
-              child: _buildContent(context, isMobile: false),
+              child: _buildContent(context, s, isMobile: false),
             ),
           ),
         ),
@@ -56,10 +135,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildContent(BuildContext context, {required bool isMobile}) {
+  Widget _buildContent(BuildContext context, AppLocalizations s, {required bool isMobile}) {
+    // Lấy ngôn ngữ hiển thị từ Provider
+    final currentLocale = context.watch<LocaleProvider>().locale;
+    final String languageName = currentLocale.languageCode == 'vi' ? 'Tiếng Việt' : 'English';
+
     return Column(
       children: [
-        // 1. Header (Back Button & Title)
+        // --- HEADER ---
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Row(
@@ -71,22 +154,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               Expanded(
                 child: Text(
-                  "Settings",
+                  s.settingsTitle,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.merriweather(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: mainColor,
+                    fontSize: 20, fontWeight: FontWeight.w900, color: mainColor,
                   ),
                 ),
               ),
-              // Placeholder để cân đối tiêu đề vào giữa
               const SizedBox(width: 40), 
             ],
           ),
         ),
 
-        // 2. Scrollable Settings List
+        // --- SCROLLABLE BODY ---
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -94,26 +174,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 
-                // --- SECTION: GENERAL ---
-                _buildSectionHeader("GENERAL"),
+                // SECTION 1: CÀI ĐẶT CHUNG
+                _buildSectionHeader(s.general), 
                 _buildSectionCard([
                   _buildListTile(
                     icon: Icons.language,
-                    title: "Language",
+                    title: s.language,
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text("English", style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+                        Text(languageName, style: TextStyle(color: Colors.grey[500], fontSize: 14)),
                         const SizedBox(width: 8),
                         Icon(Icons.chevron_right, color: Colors.grey[400]),
                       ],
                     ),
-                    onTap: () {},
+                    onTap: () => _showLanguageBottomSheet(context),
                   ),
                   _buildDivider(),
                   _buildListTile(
                     icon: Icons.notifications_none,
-                    title: "Notifications",
+                    title: s.notifications,
                     trailing: Switch.adaptive(
                       value: _notificationsEnabled,
                       activeColor: mainColor,
@@ -121,92 +201,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                 ]),
-
                 const SizedBox(height: 24),
 
-                // --- SECTION: ACCOUNT ---
-                _buildSectionHeader("ACCOUNT"),
+                // SECTION 2: GIA ĐÌNH
+                _buildSectionHeader(s.household),
                 _buildSectionCard([
                   _buildListTile(
-                    icon: Icons.person_add_alt_1_outlined,
-                    title: "Invite to Family",
+                    icon: Icons.person_add_alt_1,
+                    title: s.inviteMember,
                     trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-                    onTap: () {},
-                  ),
-                  _buildDivider(),
-                  _buildListTile(
-                    icon: Icons.bug_report,
-                    title: "Debug Tools",
-                    trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const DebugToolsScreen(),
-                        ),
-                      );
-                    },
+                    onTap: () => _showInviteDialog(context, s),
                   ),
                 ]),
+                const SizedBox(height: 24),
 
-                const SizedBox(height: 40),
-
-                // --- LOG OUT BUTTON ---
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: OutlinedButton(
-                    onPressed: () {
-                      // Logic logout
-                    },
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      backgroundColor: Colors.white,
-                    ),
-                    child: Text(
-                      "Log Out",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: mainColor,
-                      ),
-                    ),
+                // SECTION 3: TÀI KHOẢN
+                _buildSectionHeader(s.account),
+                _buildSectionCard([
+                  // Nút Đăng Xuất
+                  _buildListTile(
+                    icon: Icons.logout,
+                    title: s.logOut,
+                    trailing: const SizedBox(),
+                    onTap: () => _handleLogout(context), // ✅ Gọi logic Auth qua hàm wrapper
                   ),
-                ),
-
-                const SizedBox(height: 16),
-                  Center(
-                  child: TextButton.icon(
-                    onPressed: () {
-                      // Show confirmation dialog
-                    },
-                    icon: Icon(Icons.delete_outline, color: redColor, size: 20),
-                    label: Text(
-                      "Delete account",
-                      style: TextStyle(
-                        color: redColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
+                  _buildDivider(),
+                  // Nút Xóa Tài Khoản
+                  _buildListTile(
+                    icon: Icons.delete_outline,
+                    title: s.deleteAccount,
+                    textColor: redColor, 
+                    iconColor: redColor.withOpacity(0.1), 
+                    iconColorTint: redColor, 
+                    trailing: const SizedBox(),
+                    onTap: () => _confirmDeleteAccount(context, s), // ✅ Gọi logic Auth qua hàm wrapper
                   ),
-                ),
+                ]),
+                
                 const SizedBox(height: 40),
                 
-                
-
                 // Version Info
                 Center(
                   child: Text(
-                    "Version 1.0.2",
+                    "Version 1.0.0",
                     style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                 ),
-                
-            
+                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -215,12 +256,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // --- Widget Helper: Tiêu đề Section (GENERAL, ACCOUNT) ---
+  // --- WIDGET HELPER METHODS (Giữ nguyên UI) ---
+
+  void _showLanguageBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("Select Language", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const SizedBox(height: 20),
+              ListTile(
+                leading: const Text("🇻🇳", style: TextStyle(fontSize: 24)),
+                title: const Text("Tiếng Việt"),
+                onTap: () {
+                  context.read<LocaleProvider>().setLocale(const Locale('vi'));
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: const Text("🇺🇸", style: TextStyle(fontSize: 24)),
+                title: const Text("English"),
+                onTap: () {
+                  context.read<LocaleProvider>().setLocale(const Locale('en'));
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, left: 8),
       child: Text(
-        title,
+        title.toUpperCase(),
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
@@ -231,13 +310,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // --- Widget Helper: Card chứa các setting ---
   Widget _buildSectionCard(List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        // Shadow nhẹ giúp tách biệt khỏi nền
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -250,22 +327,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // --- Widget Helper: Dòng kẻ phân cách ---
   Widget _buildDivider() {
     return Divider(
       height: 1,
       thickness: 1,
       color: Colors.grey[100],
-      indent: 56, // Thụt vào khớp với text, bỏ qua icon
+      indent: 56,
     );
   }
 
-  // --- Widget Helper: Từng dòng Setting ---
   Widget _buildListTile({
     required IconData icon,
     required String title,
     required Widget trailing,
     VoidCallback? onTap,
+    Color? textColor,
+    Color? iconColor,
+    Color? iconColorTint,
   }) {
     return Material(
       color: Colors.transparent,
@@ -276,30 +354,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Row(
             children: [
-              // Icon nền tròn xanh nhạt
               Container(
                 width: 36, height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE8F0EE), // Xanh rất nhạt
+                  color: iconColor ?? const Color(0xFFE8F0EE),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, color: mainColor, size: 18),
+                child: Icon(
+                  icon, 
+                  color: iconColorTint ?? const Color(0xFF1B3B36), 
+                  size: 18
+                ),
               ),
               const SizedBox(width: 16),
-              
-              // Title
               Expanded(
                 child: Text(
                   title,
                   style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    fontSize: 15, 
+                    fontWeight: FontWeight.w600, 
+                    color: textColor ?? Colors.black87,
                   ),
                 ),
               ),
-              
-              // Trailing (Mũi tên, Switch, Text...)
               trailing,
             ],
           ),
@@ -307,4 +384,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
-} 
+}

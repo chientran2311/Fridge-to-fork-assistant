@@ -6,12 +6,14 @@ class PlannerDetailScreen extends StatefulWidget {
   final String recipeId; // ✅ Recipe ID từ meal_card
   final String householdId; // ✅ Household ID
   final String mealPlanDate; // ✅ Ngày meal plan
+  final String mealType; // ✅ Meal type để tính thứ tự
 
   const PlannerDetailScreen({
     super.key,
     required this.recipeId,
     required this.householdId,
     required this.mealPlanDate,
+    required this.mealType,
   });
 
   @override
@@ -35,53 +37,216 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     _fetchRecipeData();
   }
 
+  // ✅ Calculate remaining inventory after subtracting ingredients from previous meal plans
+  Future<Map<String, double>> _calculateRemainingInventory() async {
+    try {
+      // 1. Fetch current inventory
+      final inventorySnapshot = await FirebaseFirestore.instance
+          .collection('households')
+          .doc(widget.householdId)
+          .collection('inventory')
+          .get();
+      
+      // Build inventory map: ingredient_name (lowercase) -> quantity
+      final inventoryMap = <String, double>{};
+      for (var doc in inventorySnapshot.docs) {
+        final name = (doc.data()['name'] ?? '').toString().toLowerCase().trim();
+        final quantity = (doc.data()['quantity'] ?? 0).toDouble();
+        if (name.isNotEmpty) {
+          inventoryMap[name] = (inventoryMap[name] ?? 0) + quantity;
+        }
+      }
+      
+      debugPrint('📦 Initial inventory: $inventoryMap');
+      
+      // 2. Fetch all meal plans for the same date
+      final dateTimestamp = Timestamp.fromDate(
+        DateTime.parse(widget.mealPlanDate)
+      );
+      
+      final mealPlansSnapshot = await FirebaseFirestore.instance
+          .collection('households')
+          .doc(widget.householdId)
+          .collection('meal_plans')
+          .where('date', isEqualTo: dateTimestamp)
+          .get();
+      
+      debugPrint('🍽️ Found ${mealPlansSnapshot.docs.length} meal plans for ${widget.mealPlanDate}');
+      
+      // 3. Define meal type order
+      const mealTypeOrder = {
+        'Breakfast': 0,
+        'breakfast': 0,
+        'Lunch': 1,
+        'lunch': 1,
+        'Dinner': 2,
+        'dinner': 2,
+        'Snack': 3,
+        'snack': 3,
+      };
+      
+      final currentMealOrder = mealTypeOrder[widget.mealType] ?? 99;
+      debugPrint('🔢 Current meal type: ${widget.mealType} (order: $currentMealOrder)');
+      
+      // 4. Subtract ingredients from previous meal plans (earlier meal types)
+      for (var mealPlanDoc in mealPlansSnapshot.docs) {
+        final mealPlanData = mealPlanDoc.data();
+        final mealType = mealPlanData['meal_type'] ?? '';
+        final recipeId = mealPlanData['local_recipe_id'] ?? '';
+        
+        final mealOrder = mealTypeOrder[mealType] ?? 99;
+        
+        // Skip this meal and later meals
+        if (mealOrder >= currentMealOrder) {
+          debugPrint('⏭️ Skipping $mealType (order: $mealOrder >= $currentMealOrder)');
+          continue;
+        }
+        
+        debugPrint('⏮️ Processing previous meal: $mealType (order: $mealOrder)');
+        
+        // Fetch recipe to get ingredients
+        final recipeDoc = await FirebaseFirestore.instance
+            .collection('households')
+            .doc(widget.householdId)
+            .collection('household_recipes')
+            .doc(recipeId)
+            .get();
+        
+        if (!recipeDoc.exists) {
+          debugPrint('⚠️ Recipe $recipeId not found');
+          continue;
+        }
+        
+        final recipeData = recipeDoc.data() as Map<String, dynamic>;
+        final ingredients = recipeData['ingredients'] as List<dynamic>? ?? [];
+        
+        // Subtract ingredients from inventory
+        for (var ing in ingredients) {
+          final name = (ing['name'] ?? '').toString().toLowerCase().trim();
+          final amount = (ing['amount'] ?? 0).toDouble();
+          
+          if (name.isEmpty) continue;
+          
+          // Find matching inventory item (partial match)
+          for (var invKey in inventoryMap.keys.toList()) {
+            if (invKey.contains(name) || name.contains(invKey)) {
+              final remaining = inventoryMap[invKey]! - amount;
+              inventoryMap[invKey] = remaining > 0 ? remaining : 0;
+              debugPrint('   ➖ $name: ${inventoryMap[invKey]! + amount} - $amount = ${inventoryMap[invKey]}');
+              break;
+            }
+          }
+        }
+      }
+      
+      debugPrint('');
+      debugPrint('📊 Remaining inventory after previous meals:');
+      inventoryMap.forEach((key, value) {
+        debugPrint('   $key: $value');
+      });
+      debugPrint('');
+      
+      return inventoryMap;
+    } catch (e) {
+      debugPrint('❌ Error calculating remaining inventory: $e');
+      return {};
+    }
+  }
+
   // ✅ Fetch recipe từ Firebase và load ingredient names từ master collection
   Future<void> _fetchRecipeData() async {
     try {
-      // 👉 TEMP: Hardcode household ID for testing
-      const String householdId = 'house_01';
+      debugPrint('');
+      debugPrint('🔍 ========== DETAIL SCREEN: FETCHING RECIPE ==========');
+      debugPrint('   Recipe ID: ${widget.recipeId}');
+      debugPrint('   Household ID: ${widget.householdId}');
+      debugPrint('   Path: households/${widget.householdId}/household_recipes/${widget.recipeId}');
+      debugPrint('======================================================');
+      debugPrint('');
 
       final recipeDoc = await FirebaseFirestore.instance
           .collection('households')
-          .doc(householdId)
+          .doc(widget.householdId) // ✅ Use widget.householdId instead of hardcoded
           .collection('household_recipes')
           .doc(widget.recipeId)
           .get();
 
-      if (!recipeDoc.exists) throw Exception('Recipe not found');
+      if (!recipeDoc.exists) {
+        debugPrint('❌ Recipe document does not exist in Firestore');
+        throw Exception('Recipe not found');
+      }
 
       final data = recipeDoc.data() as Map<String, dynamic>;
       
-      // ✅ Parse ingredients - fetch ingredient names từ master ingredients collection
+      // ✅ Calculate remaining inventory after previous meal plans
+      debugPrint('🔍 Calculating remaining inventory after previous meal plans...');
+      final remainingInventory = await _calculateRemainingInventory();
+      debugPrint('🧊 Remaining inventory: ${remainingInventory.length} items');
+      
+      // ✅ Parse ingredients - check if name exists directly, otherwise fetch from master collection
       final ingredientsList = <Map<String, dynamic>>[];
       final rawIngredients = data['ingredients'] as List<dynamic>? ?? [];
       
       for (var ing in rawIngredients) {
-        final ingredientId = ing['ingredient_id'] ?? '';
-        final amount = ing['amount'] ?? 0;
+        final amount = (ing['amount'] ?? 0).toDouble();
         final unit = ing['unit'] ?? '';
         
-        // Fetch ingredient từ master ingredients collection để lấy tên
-        String ingredientName = 'Unknown';
-        try {
-          final ingDoc = await FirebaseFirestore.instance
-              .collection('ingredients')
-              .doc(ingredientId)
-              .get();
-          
-          if (ingDoc.exists) {
-            ingredientName = ingDoc.data()?['name'] ?? 'Unknown';
+        // ✅ Check if ingredient has 'name' field directly (from seeder)
+        String ingredientName = ing['name'] ?? '';
+        
+        // ✅ If no direct name, try to fetch from master ingredients collection using ingredient_id
+        if (ingredientName.isEmpty) {
+          final ingredientId = ing['ingredient_id'] ?? '';
+          if (ingredientId.isNotEmpty) {
+            try {
+              final ingDoc = await FirebaseFirestore.instance
+                  .collection('ingredients')
+                  .doc(ingredientId)
+                  .get();
+              
+              if (ingDoc.exists) {
+                ingredientName = ingDoc.data()?['name'] ?? 'Unknown';
+              } else {
+                ingredientName = 'Unknown (ID: $ingredientId)';
+              }
+            } catch (e) {
+              debugPrint('⚠️ Error fetching ingredient $ingredientId: $e');
+              ingredientName = 'Unknown';
+            }
+          } else {
+            ingredientName = 'Unknown';
           }
-        } catch (e) {
-          debugPrint('⚠️ Error fetching ingredient $ingredientId: $e');
+        }
+        
+        // ✅ Check remaining quantity in inventory (case-insensitive partial match)
+        final nameLower = ingredientName.toLowerCase().trim();
+        double availableQty = 0;
+        
+        for (var entry in remainingInventory.entries) {
+          if (entry.key.contains(nameLower) || nameLower.contains(entry.key)) {
+            availableQty += entry.value;
+          }
+        }
+        
+        final bool hasEnough = availableQty >= amount;
+        final bool inFridge = availableQty > 0;
+        
+        if (hasEnough) {
+          debugPrint('✅ "$ingredientName" OK (need: $amount, have: $availableQty)');
+        } else if (inFridge) {
+          debugPrint('⚠️ "$ingredientName" NOT ENOUGH (need: $amount, have: $availableQty, missing: ${amount - availableQty})');
+        } else {
+          debugPrint('❌ "$ingredientName" NOT IN FRIDGE (need: $amount)');
         }
         
         ingredientsList.add({
           'name': ingredientName,
           'amount': amount,
           'unit': unit,
-          'checked': false,
-          'inFridge': false, // TODO: Check against inventory
+          'checked': hasEnough, // ✅ Check only if have enough
+          'inFridge': inFridge, // ✅ Mark as in fridge if any amount available
+          'availableQty': availableQty, // ✅ Store available quantity
+          'hasEnough': hasEnough, // ✅ Mark if sufficient quantity
         });
       }
 

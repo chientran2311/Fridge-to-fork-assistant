@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fridge_to_fork_assistant/widgets/fridge/models/fridge_item.dart';
 import 'package:fridge_to_fork_assistant/screens/fridge/fridge_barcode_scan.dart';
 import 'package:dotted_border/dotted_border.dart';
 import '../../models/ingredient.dart';
@@ -7,11 +6,8 @@ import '../../services/firebase_service.dart';
 
 
 class AddItemBottomSheet extends StatefulWidget {
-  final Function(FridgeItem) onAdd;
-
   const AddItemBottomSheet({
     super.key,
-    required this.onAdd,
   });
 
   @override
@@ -76,18 +72,51 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
       return;
     }
 
-    // If we have scanned ingredient, use its ID directly
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    bool success;
+
+    // If we have scanned ingredient, add with ingredient reference
     if (_scannedIngredient != null) {
-      final success = await _firebaseService.addInventoryItem(
+      success = await _firebaseService.addInventoryWithIngredient(
         ingredientId: _scannedIngredient!.ingredientId,
         quantity: double.tryParse(_quantityController.text) ?? 1,
         unit: _selectedUnit,
         expiryDate: _selectedExpiryDate,
       );
-      
-      if (success) {
+    } else {
+      // Manual entry - add directly to inventory without touching ingredients table
+      success = await _firebaseService.addInventoryManual(
+        name: _nameController.text.trim(),
+        category: _mapCategoryToDatabase(_selectedCategory),
+        quantity: double.tryParse(_quantityController.text) ?? 1,
+        unit: _selectedUnit,
+        expiryDate: _selectedExpiryDate,
+      );
+    }
+
+    // Hide loading
+    if (mounted) Navigator.pop(context);
+    
+    if (success) {
+      if (mounted) {
         Navigator.pop(context);
-      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${_nameController.text} added successfully!'),
+            backgroundColor: const Color(0xFF28A745),
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Failed to add item'),
@@ -95,23 +124,6 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
           ),
         );
       }
-    } else {
-      // Legacy behavior - create FridgeItem (for manual entry)
-      final newItem = FridgeItem(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: _nameController.text.trim(),
-        quantity: int.tryParse(_quantityController.text) ?? 1,
-        unit: _selectedUnit,
-        category: _selectedCategory,
-        imageUrl: _getCategoryEmoji(_selectedCategory),
-        expiryDate: _selectedExpiryDate,
-        expiryDays: _selectedExpiryDate != null 
-            ? _selectedExpiryDate!.difference(DateTime.now()).inDays 
-            : null,
-      );
-      
-      widget.onAdd(newItem);
-      Navigator.pop(context);
     }
   }
 
@@ -167,18 +179,18 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
     }
   }
 
-  String _getCategoryEmoji(String category) {
-    switch (category.toLowerCase()) {
+  String _mapCategoryToDatabase(String uiCategory) {
+    switch (uiCategory.toLowerCase()) {
       case 'vegetables':
-        return '🥗';
+        return 'vegetable';
       case 'dairy':
-        return '🥛';
+        return 'dairy';
       case 'meat':
-        return '🥩';
+        return 'meat';
       case 'fruit':
-        return '🍎';
+        return 'fruit';
       default:
-        return '🍽️';
+        return 'other';
     }
   }
 

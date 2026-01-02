@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class InventoryItem {
   final String inventoryId;
-  final String ingredientId;
+  final String ingredientId; // Empty for manual entry
   final String householdId;
   final double quantity;
   final String unit;
@@ -10,7 +10,11 @@ class InventoryItem {
   final String addedByUid;
   final DateTime? createdAt;
 
-  // Optional: Populated data from ingredient
+  // Direct fields for manual entry (stored in Firestore)
+  final String? name; // Direct name for manual entry
+  final String? category; // Direct category for manual entry
+
+  // Optional: Populated data from ingredient (for barcode scan)
   String? ingredientName;
   String? ingredientBarcode;
   String? ingredientCategory;
@@ -25,6 +29,8 @@ class InventoryItem {
     this.expiryDate,
     required this.addedByUid,
     this.createdAt,
+    this.name,
+    this.category,
     this.ingredientName,
     this.ingredientBarcode,
     this.ingredientCategory,
@@ -42,6 +48,8 @@ class InventoryItem {
       expiryDate: (data['expiry_date'] as Timestamp?)?.toDate(),
       addedByUid: data['added_by_uid'] ?? '',
       createdAt: (data['created_at'] as Timestamp?)?.toDate(),
+      name: data['name'], // Direct name for manual entry
+      category: data['category'], // Direct category for manual entry
     );
   }
 
@@ -55,6 +63,8 @@ class InventoryItem {
       'expiry_date': expiryDate != null ? Timestamp.fromDate(expiryDate!) : null,
       'added_by_uid': addedByUid,
       'created_at': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      if (name != null) 'name': name, // For manual entry
+      if (category != null) 'category': category, // For manual entry
     };
   }
 
@@ -69,8 +79,9 @@ class InventoryItem {
   }
 
   String getCategoryEmoji() {
-    if (ingredientCategory == null) return '🍽️';
-    switch (ingredientCategory!.toLowerCase()) {
+    final cat = category ?? ingredientCategory; // Ưu tiên category trực tiếp
+    if (cat == null) return '🍽️';
+    switch (cat.toLowerCase()) {
       case 'meat':
         return '🥩';
       case 'dairy':

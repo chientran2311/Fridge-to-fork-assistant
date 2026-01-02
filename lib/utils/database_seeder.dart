@@ -72,40 +72,9 @@ class DatabaseSeeder {
       debugPrint("✅ Đã tạo Households");
 
       // ==================== ======================
-      // BƯỚC 3: TẠO TỦ LẠNH (Sub-collection: inventory)
+      // BƯỚC 3: TỦ LẠNH (Để trống - người dùng tự thêm)
       // ==========================================
-      // Món 1: Thịt bò
-
-      await houseRef.collection('inventory').doc('inv_01').set({
-        'ingredient_id': 'inv_01',
-        'household_id': _householdId,
-        'name': 'Thịt bò',
-        'quantity': 500,
-        'unit': 'g',
-        'image_url': '',
-        // Hết hạn sau 5 ngày
-        'expiry_date':
-            Timestamp.fromDate(DateTime.now().add(const Duration(days: 1))),
-        'quick_tag': 'meat',
-        'added_by_uid': _userId,
-        'created_at': FieldValue.serverTimestamp(),
-      });
-
-      // Món 2: Trứng gà (Sắp hết hạn để test thông báo)
-      await houseRef.collection('inventory').doc('inv_02').set({
-        'ingredient_id': 'inv_02',
-        'household_id': _householdId,
-        'name': 'Trứng gà',
-        'quantity': 10,
-        'unit': 'quả',
-        'image_url': '',
-        'expiry_date':
-            Timestamp.fromDate(DateTime.now().add(const Duration(days: 2))),
-        'quick_tag': 'dairy',
-        'added_by_uid': _userId,
-        'created_at': FieldValue.serverTimestamp(),
-      });
-      debugPrint("✅ Đã tạo Inventory");
+      debugPrint("✅ Inventory sẵn sàng");
 
       // ==========================================
       // BƯỚC 4: TẠO CÔNG THỨC (Sub-collection: household_recipes)

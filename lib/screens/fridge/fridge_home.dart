@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 // Import các widget con
@@ -31,6 +32,8 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
   List<FridgeItem> _eatMeFirstItems = [];
   List<FridgeItem> _inStockItems = [];
   bool _isLoading = true;
+  StreamSubscription<List<InventoryItem>>? _inventorySubscription;
+  bool _hasShownError = false; // Để chỉ hiện error 1 lần
 
   @override
   void initState() {
@@ -38,8 +41,20 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     _loadInventoryData();
   }
 
+  @override
+  void dispose() {
+    _inventorySubscription?.cancel();
+    super.dispose();
+  }
+
   void _loadInventoryData() {
-    _firebaseService.getInventoryStream().listen((inventoryItems) {
+    // Cancel old subscription if exists
+    _inventorySubscription?.cancel();
+    _hasShownError = false; // Reset error flag
+    
+    setState(() => _isLoading = true);
+    
+    _inventorySubscription = _firebaseService.getInventoryStream().listen((inventoryItems) {
       if (!mounted) return;
       
       setState(() {
@@ -59,8 +74,9 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
       });
     }, onError: (error) {
       debugPrint('❌ Error loading inventory: $error');
-      if (!mounted) return;
+      if (!mounted || _hasShownError) return;
       
+      _hasShownError = true; // Chỉ hiện 1 lần
       setState(() => _isLoading = false);
       
       // Show user-friendly error message
@@ -79,14 +95,11 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
             ],
           ),
           backgroundColor: const Color(0xFFDC3545),
-          duration: const Duration(seconds: 5),
+          duration: const Duration(seconds: 3),
           action: SnackBarAction(
             label: 'Retry',
             textColor: Colors.white,
-            onPressed: () {
-              setState(() => _isLoading = true);
-              _loadInventoryData();
-            },
+            onPressed: _loadInventoryData,
           ),
         ),
       );
@@ -103,6 +116,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
       imageUrl: inventoryItem.getCategoryEmoji(),
       expiryDays: inventoryItem.expiryDays,
       expiryDate: inventoryItem.expiryDate,
+      ingredientId: inventoryItem.ingredientId,
     );
   }
 
@@ -132,33 +146,19 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
   }
 
   // ==================== ITEM CRUD METHODS ====================
-  void _addItem(FridgeItem newItem) async {
-    setState(() => _isLoading = true);
-    
-    final success = await _firebaseService.addInventoryItem(
-      ingredientId: newItem.id,
-      quantity: newItem.quantity.toDouble(),
-      unit: newItem.unit,
-      expiryDate: newItem.expiryDate,
-    );
-    
-    setState(() => _isLoading = false);
-    
-    if (success) {
-      _showSuccessSnackbar('${newItem.name} added to fridge');
-    } else {
-      _showErrorSnackbar('Could not add item. Check your internet connection.');
-    }
-  }
-
   void _updateItem(FridgeItem updatedItem) async {
     setState(() => _isLoading = true);
+    
+    // For manual entries (empty ingredientId), also update name and category
+    final isManualEntry = updatedItem.ingredientId == null || updatedItem.ingredientId!.isEmpty;
     
     final success = await _firebaseService.updateInventoryItem(
       inventoryId: updatedItem.id,
       quantity: updatedItem.quantity.toDouble(),
       unit: updatedItem.unit,
       expiryDate: updatedItem.expiryDate,
+      name: isManualEntry ? updatedItem.name : null,
+      category: isManualEntry ? updatedItem.category : null,
     );
     
     setState(() => _isLoading = false);
@@ -194,7 +194,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => AddItemBottomSheet(onAdd: _addItem),
+      builder: (context) => const AddItemBottomSheet(),
     );
   }
 
@@ -297,11 +297,14 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
               isMultiSelectMode: _isMultiSelectMode,
               onCancel: _exitMultiSelectMode,
               onSave: _exitMultiSelectMode,
-              onSettings: () {
-                Navigator.push(
+              onSettings: () async {
+                // Navigate to Settings and reload when coming back
+                await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const SettingsScreen()),
                 );
+                // Reload data after returning (user might have switched household)
+                _loadInventoryData();
               },
             ),
             

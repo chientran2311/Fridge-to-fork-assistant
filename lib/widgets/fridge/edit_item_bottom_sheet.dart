@@ -339,8 +339,8 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
 
                   const SizedBox(height: 20),
 
-                  // Quick Tags
-                  const Text(
+                  // Quick Tags (only for manual entries)
+                  if (widget.item.ingredientId == null || widget.item.ingredientId!.isEmpty) ...[                  const Text(
                     'Quick Tags',
                     style: TextStyle(
                       fontSize: 14,
@@ -390,8 +390,8 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                       );
                     }).toList(),
                   ),
-
                   const SizedBox(height: 20),
+                  ],
 
                   // Scan Barcode Button
                   DottedBorder(
@@ -465,7 +465,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                         Icon(Icons.check),
                         SizedBox(width: 8),
                         Text(
-                          'Add to Fridge',
+                          'Save changes',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -211,6 +213,56 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
     }
   }
 
+  // ✅ Ensure a recipe exists in household_recipes (for API recipes that haven't been saved yet)
+  Future<void> _ensureHouseholdRecipeExists(String recipeId) async {
+    if (_householdId == null) return;
+
+    final recipeDocRef = _firestore
+        .collection('households')
+        .doc(_householdId)
+        .collection('household_recipes')
+        .doc(recipeId);
+
+    final existing = await recipeDocRef.get();
+    if (existing.exists) {
+      return;
+    }
+
+    // Try to find recipe data from the in-memory list
+    final recipe = _availableRecipes.firstWhere(
+      (r) => r['id'] == recipeId,
+      orElse: () => {},
+    );
+
+    if (recipe.isEmpty) {
+      debugPrint('⚠️ Cannot upsert recipe $recipeId because data not found locally');
+      return;
+    }
+
+    // Build a minimal document so MealCard/Detail screen can load it
+    final calories = recipe['calories'];
+    final readyInMinutes = recipe['ready_in_minutes'] ?? recipe['readyInMinutes'] ?? 0;
+
+    final docData = {
+      'local_recipe_id': recipeId,
+      'household_id': _householdId,
+      'api_recipe_id': recipe['api_recipe_id'],
+      'title': recipe['title'] ?? 'Untitled',
+      'image_url': recipe['image'] ?? '',
+      'calories': calories is num ? calories.toInt() : 0,
+      'ready_in_minutes': readyInMinutes is num ? readyInMinutes.toInt() : 0,
+      'difficulty': recipe['difficulty'],
+      'instructions': recipe['instructions'] ?? '',
+      'ingredients': recipe['ingredients'] ?? <Map<String, dynamic>>[],
+      'servings': recipe['servings'] ?? 1,
+      'added_by_uid': _userId,
+      'added_at': Timestamp.now(),
+    };
+
+    await recipeDocRef.set(docData);
+    debugPrint('✅ Upserted API recipe into household_recipes: $recipeId');
+  }
+
   bool _hasMealPlan(DateTime date) {
     final dateKey = _formatDateKey(date);
     return _mealPlansByDate.containsKey(dateKey) && _mealPlansByDate[dateKey]!.isNotEmpty;
@@ -233,6 +285,9 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         }
         return;
       }
+
+      // ✅ If recipe is from API and not yet saved, upsert it into household_recipes
+      await _ensureHouseholdRecipeExists(recipeId);
       
       final newDocRef = _firestore
           .collection('households')
@@ -453,9 +508,11 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
         debugPrint('❌ No user logged in');
-        setState(() {
-          _availableRecipes = [];
-        });
+        if (mounted) {
+          setState(() {
+            _availableRecipes = [];
+          });
+        }
         return;
       }
       
@@ -464,12 +521,19 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
       // ✅ Lấy household_id từ user document nếu chưa có
       String? householdId = _householdId;
       if (householdId == null) {
-        final userDoc = await _firestore.collection('users').doc(userId).get();
+        final userDoc = await _firestore.collection('users').doc(userId).get().timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            throw TimeoutException('Timeout loading user document');
+          },
+        );
         if (!userDoc.exists || userDoc.data()?['current_household_id'] == null) {
           debugPrint('❌ User document not found or no current_household_id');
-          setState(() {
-            _availableRecipes = [];
-          });
+          if (mounted) {
+            setState(() {
+              _availableRecipes = [];
+            });
+          }
           return;
         }
         householdId = userDoc.data()!['current_household_id'] as String;
@@ -490,7 +554,13 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
             .collection('households')
             .doc(householdId)
             .collection('favorite_recipes')
-            .get();
+            .get()
+            .timeout(
+              const Duration(seconds: 10),
+              onTimeout: () {
+                throw TimeoutException('Timeout loading favorite recipes');
+              },
+            );
 
         debugPrint('   Favorite recipes found: ${favoriteSnapshot.docs.length}');
         
@@ -530,7 +600,13 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
             .collection('households')
             .doc(householdId)
             .collection('household_recipes')
-            .get();
+            .get()
+            .timeout(
+              const Duration(seconds: 10),
+              onTimeout: () {
+                throw TimeoutException('Timeout loading household recipes');
+              },
+            );
 
         debugPrint('   Household recipes found: ${householdSnapshot.docs.length}');
         
@@ -568,7 +644,8 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
       // 3️⃣ Load recipes from API via RecipeProvider (from Recipe screen)
       List<Map<String, dynamic>> apiRecipes = [];
       try {
-        if (mounted) {
+        // Check if widget is still mounted and context is valid
+        if (mounted && context.mounted) {
           final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
           
           final recipes = recipeProvider.recipes;
@@ -578,13 +655,20 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
           for (var recipe in recipes) {
             final apiId = recipe.apiRecipeId;
             final isFav = apiId != null && favoriteApiIds.contains(apiId);
-            
+
+            final generatedId = recipe.localRecipeId ?? (apiId != null ? 'api_$apiId' : UniqueKey().toString());
+
             apiRecipes.add({
-              'id': recipe.localRecipeId ?? recipe.apiRecipeId.toString(),
+              'id': generatedId,
               'api_recipe_id': apiId,
               'title': recipe.title,
               'image': recipe.imageUrl ?? '',
-              'calories': recipe.calories,
+              'calories': recipe.calories ?? 0,
+              'ready_in_minutes': recipe.readyInMinutes,
+              'difficulty': recipe.difficulty,
+              'instructions': recipe.instructions,
+              'ingredients': const <Map<String, dynamic>>[],
+              'servings': recipe.servings ?? 1,
               'isFavorite': isFav,
             });
           }
@@ -633,11 +717,14 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
       if (allRecipes.isEmpty) {
         debugPrint('⚠️ WARNING: No recipes found! Search for recipes in Recipe screen first.');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('❌ Error loading recipes: $e');
-      setState(() {
-        _availableRecipes = [];
-      });
+      debugPrint('Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _availableRecipes = [];
+        });
+      }
     }
   }
 
@@ -1408,10 +1495,92 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
           right: 24,
           child: FloatingActionButton(
             onPressed: () async {
-              final selectedDate = weekDays[selectedDayIndex];
-              await _loadAvailableRecipes();
               if (!mounted) return;
-              _showRecipeBottomSheet(selectedDate, _availableRecipes);
+              
+              final selectedDate = weekDays[selectedDayIndex];
+              final navigator = Navigator.of(context, rootNavigator: true);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              bool dialogShown = false;
+              
+              try {
+                // Show loading indicator
+                showDialog(
+                  context: context,
+                  useRootNavigator: true,
+                  barrierDismissible: false,
+                  builder: (dialogContext) => WillPopScope(
+                    onWillPop: () async => false,
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF214130)),
+                      ),
+                    ),
+                  ),
+                );
+                dialogShown = true;
+                
+                // Load recipes with timeout
+                await _loadAvailableRecipes().timeout(
+                  const Duration(seconds: 15),
+                  onTimeout: () {
+                    throw TimeoutException('Không thể tải công thức. Vui lòng thử lại.');
+                  },
+                );
+                
+                // Close loading dialog safely
+                if (dialogShown && mounted) {
+                  try {
+                    navigator.pop();
+                    dialogShown = false;
+                  } catch (e) {
+                    debugPrint('⚠️ Could not pop dialog: $e');
+                  }
+                  // Small delay to ensure dialog is fully closed
+                  await Future.delayed(const Duration(milliseconds: 200));
+                }
+                
+                if (!mounted) return;
+                
+                // Check if recipes are loaded
+                if (_availableRecipes.isEmpty) {
+                  scaffoldMessenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('Không có công thức nào. Hãy tìm kiếm công thức ở tab Recipes.'),
+                      backgroundColor: Colors.orange,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                  return;
+                }
+                
+                if (!mounted) return;
+                
+                // Navigate to add recipe screen
+                _showRecipeBottomSheet(selectedDate, _availableRecipes);
+              } catch (e) {
+                debugPrint('❌ Error opening add recipe screen: $e');
+                
+                // Close loading dialog if still showing
+                if (dialogShown && mounted) {
+                  try {
+                    navigator.pop();
+                    dialogShown = false;
+                  } catch (popError) {
+                    debugPrint('⚠️ Could not pop dialog in error handler: $popError');
+                  }
+                }
+                
+                if (mounted) {
+                  await Future.delayed(const Duration(milliseconds: 100));
+                  scaffoldMessenger.showSnackBar(
+                    SnackBar(
+                      content: Text('Lỗi: ${e.toString()}'),
+                      backgroundColor: Colors.red,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                }
+              }
             },
             backgroundColor: const Color(0xFF214130),
             child: const Icon(Icons.add, color: Colors.white),

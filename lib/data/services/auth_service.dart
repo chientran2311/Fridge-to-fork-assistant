@@ -34,15 +34,11 @@ class AuthService {
   }
 
   // --- 1. Đăng nhập bằng Email & Password ---
-  Future<String?> loginWithEmail({
-    required String email, 
-    required String password
-  }) async {
+  Future<String?> loginWithEmail(
+      {required String email, required String password}) async {
     try {
       UserCredential cred = await _auth.signInWithEmailAndPassword(
-        email: email, 
-        password: password
-      );
+          email: email, password: password);
 
       if (cred.user != null) {
         await _syncUserToFirestore(cred.user!);
@@ -71,21 +67,26 @@ class AuthService {
 
   // --- 2. Đăng ký bằng Email & Password ---
   Future<String?> registerWithEmail({
-    required String email, 
-    required String password
+    required String email,
+    required String password,
+    String? displayName,
   }) async {
     try {
       // B1: Tạo Auth
       UserCredential cred = await _auth.createUserWithEmailAndPassword(
-        email: email, 
-        password: password
-      );
+          email: email, password: password);
 
       final user = cred.user;
       if (user != null) {
+        // B1.5: Cập nhật displayName vào FirebaseAuth profile
+        if (displayName != null && displayName.isNotEmpty) {
+          await user.updateDisplayName(displayName);
+        }
+
         // B2: Tạo Nhà Mới ngay lập tức
-        final String newHouseholdId = 'house_${user.uid}'; // ID nhà gắn với ID User
-        
+        final String newHouseholdId =
+            'house_${user.uid}'; // ID nhà gắn với ID User
+
         await _firestore.collection('households').doc(newHouseholdId).set({
           'household_id': newHouseholdId,
           'name': 'Gia đình của bạn',
@@ -98,9 +99,11 @@ class AuthService {
         await _firestore.collection('users').doc(user.uid).set({
           'uid': user.uid,
           'email': user.email,
-          'display_name': user.displayName ?? 'Người dùng mới',
+          'display_name':
+              displayName ?? 'Người dùng mới', // [SỬA] Lấy từ parameter
           'photo_url': user.photoURL ?? '',
-          'current_household_id': newHouseholdId, // [QUAN TRỌNG] Không để null nữa
+          'current_household_id':
+              newHouseholdId, // [QUAN TRỌNG] Không để null nữa
           'fcm_token': '', // Sẽ được update ở màn hình Login/Register
           'created_at': FieldValue.serverTimestamp(),
           'last_login': FieldValue.serverTimestamp(),
@@ -110,10 +113,14 @@ class AuthService {
       return null; // Thành công
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
-        case 'email-already-in-use': return 'Email này đã được sử dụng.';
-        case 'weak-password': return 'Mật khẩu quá yếu.';
-        case 'invalid-email': return 'Email không hợp lệ.';
-        default: return 'Lỗi đăng ký: ${e.message}';
+        case 'email-already-in-use':
+          return 'Email này đã được sử dụng.';
+        case 'weak-password':
+          return 'Mật khẩu quá yếu.';
+        case 'invalid-email':
+          return 'Email không hợp lệ.';
+        default:
+          return 'Lỗi đăng ký: ${e.message}';
       }
     } catch (e) {
       return 'Đã xảy ra lỗi không xác định.';

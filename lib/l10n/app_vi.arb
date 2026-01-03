@@ -1,7 +1,5 @@
 {
   "appTitle": "Bếp Trợ Lý",
-  "fridgeTab": "Tủ Lạnh",
-  "recipeTab": "Công Thức",
   "planTab": "Kế Hoạch",
   "settingsTitle": "Cài Đặt",
   "language": "Ngôn ngữ",
@@ -26,7 +24,7 @@
   
   "registerTitle": "Tạo Tài Khoản",
   "registerSubtitle": "Bắt đầu tiết kiệm thực phẩm ngay hôm nay",
-  "fullNameLabel": "Họ và Tên",
+  "fullNameLabel": "Tên hiển thị",
   "fullNameHint": "Nguyễn Văn A",
   "confirmPasswordLabel": "Xác nhận mật khẩu",
   "signupButton": "Đăng Ký",
@@ -52,11 +50,11 @@
   "itemsDeleted": "Đã xóa các mục đã chọn",
   "weeklyPlan": "Kế Hoạch Tuần",
   "shoppingList": "Danh Sách Mua Sắm",
-   "general" :"Cài đặt chung",
-   "inviteMember": "Mời thành viên mới",
-   "logOut": "Đăng xuất",
-   "deleteAccount": "Xóa tài khoản",
-   "deleteAccountWarning": "Hành động này sẽ xóa vĩnh viễn dữ liệu của bạn. Bạn có chắc không?",
+  "general": "CÀI ĐẶT CHUNG",
+  "inviteMember": "Mời thành viên mới",
+  "logOut": "Đăng xuất",
+  "deleteAccount": "Xóa tài khoản",
+  "deleteAccountWarning": "Hành động này sẽ xóa vĩnh viễn dữ liệu của bạn. Bạn có chắc không?",
   "confirm": "Xác nhận",
   "household": "Gia đình & Chia sẻ",
   "account": "Tài khoản",
@@ -84,6 +82,95 @@
   "schedule": "Lên lịch",
   "cooknow": "Nấu ngay",
   "discovermore": "Khám phá thêm",
-  "browseai" : "Các gợi ý từ AI",
-  "favoriterecipe" : "Món ăn yêu thích"
+  "browseai": "Các gợi ý từ AI",
+  "favoriterecipe": "Món ăn yêu thích",
+
+  "fridgeManagement": "QUẢN LÝ TỦ LẠNH",
+  "createNewFridge": "Tạo Tủ Lạnh Mới",
+  "joinFridge": "Tham Gia Tủ Lạnh",
+  "fridgeList": "Danh Sách Tủ Lạnh",
+  "currentFridge": "Tủ Lạnh Hiện Tại",
+  "inviteCode": "Mã mời",
+  "youAreOwner": "Bạn là chủ nhà",
+  "youAreMember": "Bạn là thành viên",
+  "selectLanguage": "Chọn Ngôn Ngữ",
+  "vietnamese": "Tiếng Việt",
+  "english": "English",
+  "creatingData": "Đang tạo dữ liệu mẫu... Vui lòng đợi!",
+  "dataCreatedSuccess": "✅ Đã tạo dữ liệu thành công! Hãy kiểm tra Home.",
+  "codeCopied": "Đã sao chép mã!",
+  "inviteCodeCopied": "Đã sao chép mã mời!",
+  "accountDeleted": "Đã xóa tài khoản thành công",
+  "notificationsEnabled": "Đã bật thông báo",
+  "notificationsDisabled": "Đã tắt thông báo",
+  "fridgeName": "Tên tủ lạnh",
+  "fridgeNameHint": "Ví dụ: Nhà ở Hà Nội",
+  "create": "Tạo",
+  "join": "Tham gia",
+  "fridgeCreated": "Đã tạo tủ lạnh mới!",
+  "cannotCreate": "Không thể tạo",
+  "joinedSuccess": "Đã tham gia thành công!",
+  "invalidCode": "Mã mời không hợp lệ",
+  "alreadyMember": "Bạn đã là thành viên",
+  "cannotJoin": "Không thể tham gia",
+  "noFridgesYet": "Chưa có tủ lạnh nào",
+  "switchFridge": "Chuyển",
+  "enterInviteCode": "Nhập mã 6 ký tự",
+  "close": "Đóng",
+  "shareCodeToInvite": "Chia sẻ mã này để mời thành viên:",
+  "developerTools": "DEVELOPER TOOLS",
+  "seedDatabase": "Seed Database (Tạo dữ liệu mẫu)",
+
+  "members": "Thành viên",
+  "viewMembers": "Xem thành viên",
+  "removeMember": "Xóa",
+  "memberRemoved": "Đã xóa thành viên",
+  "cannotRemoveMember": "Không thể xóa thành viên",
+  "leaveFridge": "Rời Tủ Lạnh",
+  "leaveConfirm": "Bạn có chắc muốn rời khỏi tủ lạnh này?",
+  "leftFridge": "Đã rời khỏi tủ lạnh",
+  "ownerCannotLeave": "Chủ nhà không thể rời đi. Hãy chuyển quyền trước.",
+  "alreadyOwnFridge": "Bạn đã sở hữu một tủ lạnh. Mỗi người chỉ được sở hữu một.",
+  "owner": "Chủ nhà",
+  "member": "Thành viên",
+
+  "changeProfilePhoto": "Đổi ảnh đại diện",
+  "chooseFromGallery": "Chọn từ thư viện",
+  "takePhoto": "Chụp ảnh mới",
+  "removePhoto": "Xóa ảnh",
+
+  "helloGreeting": "Xin chào, {name}",
+  "@helloGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "foundRecipes": "Tìm thấy {count} công thức",
+  "@foundRecipes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchingRecipes": "Đang tìm kiếm công thức...",
+  "noRecipesFound": "Chưa tìm thấy công thức nào.",
+  "rescueIngredients": " để cứu nguyên liệu của bạn.",
+  "readyToCook": "Sẵn sàng nấu với {count} nguyên liệu từ tủ lạnh!",
+  "@readyToCook": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addItemsToStart": "Thêm nguyên liệu vào tủ lạnh để bắt đầu!",
+
+  "editDisplayName": "Chỉnh sửa tên",
+  "enterNewName": "Nhập tên mới",
+  "nameUpdated": "Cập nhật tên thành công!",
+  "nameEmpty": "Tên không được để trống"
 }

@@ -1,8 +1,5 @@
-import 'dart:ui';
-import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import '../../models/inventory_item.dart';
-import 'package:fridge_to_fork_assistant/screens/fridge/fridge_barcode_scan.dart';
 
 class EditItemBottomSheet extends StatefulWidget {
   final InventoryItem item;
@@ -21,9 +18,9 @@ class EditItemBottomSheet extends StatefulWidget {
 class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
   late TextEditingController _nameController;
   late TextEditingController _quantityController;
-  String _selectedUnit = 'pcs';
+  String _selectedUnit = 'cái';
   DateTime? _selectedExpiryDate;
-  String _selectedCategory = 'Vegetables';
+  String _selectedCategory = 'Rau củ';
 
   final List<String> _units = ['cái', 'g', 'kg', 'ml', 'L', 'hộp', 'gói'];
   final List<String> _categories = [
@@ -31,15 +28,14 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
     'Sữa/Trứng',
     'Thịt',
     'Trái cây',
-    '+ Thẻ khác'
+    'Khác'
   ];
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.item.name);
-    _quantityController =
-        TextEditingController(text: widget.item.quantity.toString());
+    _quantityController = TextEditingController(text: widget.item.quantity.toString());
     _selectedUnit = widget.item.unit;
     _selectedCategory = widget.item.quickTag ?? 'Rau củ';
     _selectedExpiryDate = widget.item.expiryDate;
@@ -52,11 +48,10 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
     super.dispose();
   }
 
- void _selectExpiryDate() async {
+  void _selectExpiryDate() async {
     final date = await showDatePicker(
       context: context,
-      initialDate:
-          _selectedExpiryDate ?? DateTime.now().add(const Duration(days: 7)),
+      initialDate: _selectedExpiryDate ?? DateTime.now().add(const Duration(days: 7)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
@@ -66,7 +61,6 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
               primary: Color(0xFF2D5F4F),
             ),
           ),
-          // 🔥 FIX: Thêm fallback widget nếu child null (dù hiếm khi xảy ra)
           child: child ?? const SizedBox(),
         );
       },
@@ -83,24 +77,28 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
     // Tạo InventoryItem mới với thông tin đã sửa
     final updatedItem = InventoryItem(
       id: widget.item.id,
+      ingredientId: widget.item.ingredientId,
+      householdId: widget.item.householdId,
       name: _nameController.text,
       quantity: double.tryParse(_quantityController.text) ?? widget.item.quantity,
       unit: _selectedUnit,
       quickTag: _selectedCategory,
       expiryDate: _selectedExpiryDate,
       imageUrl: widget.item.imageUrl,
+      addedByUid: widget.item.addedByUid,
+      createdAt: widget.item.createdAt,
     );
 
     widget.onSave(updatedItem);
     Navigator.pop(context);
-    showSuccessSnackbar();
+    _showSuccessSnackbar();
   }
 
-  void showSuccessSnackbar() {
+  void _showSuccessSnackbar() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
-          children: const [
+        content: const Row(
+          children: [
             Icon(Icons.check_circle, color: Colors.white),
             SizedBox(width: 12),
             Text(
@@ -179,7 +177,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Ingredient Name
+                  // Tên thực phẩm
                   const Text(
                     'Tên thực phẩm',
                     style: TextStyle(
@@ -212,10 +210,10 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
 
                   const SizedBox(height: 20),
 
-                  // Quantity and Expiry Date Row
+                  // Số lượng và Ngày hết hạn
                   Row(
                     children: [
-                      // Quantity
+                      // Số lượng
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,8 +241,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                                         borderRadius: BorderRadius.circular(12),
                                         borderSide: BorderSide.none,
                                       ),
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
+                                      contentPadding: const EdgeInsets.symmetric(
                                         horizontal: 16,
                                         vertical: 14,
                                       ),
@@ -253,8 +250,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                                 ),
                                 const SizedBox(width: 8),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFF5F5F5),
                                     borderRadius: BorderRadius.circular(12),
@@ -286,7 +282,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
 
                       const SizedBox(width: 16),
 
-                      // Expiry Date
+                      // Ngày hết hạn
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,8 +308,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       _selectedExpiryDate != null
@@ -326,10 +321,10 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                                             : Colors.grey[400],
                                       ),
                                     ),
-                                    Icon(
+                                    const Icon(
                                       Icons.calendar_today_outlined,
                                       size: 18,
-                                      color: const Color(0xFF0FBD3B),
+                                      color: Color(0xFF0FBD3B),
                                     ),
                                   ],
                                 ),
@@ -343,7 +338,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
 
                   const SizedBox(height: 20),
 
-                  // Quick Tags
+                  // Phân loại nhanh
                   const Text(
                     'Phân loại nhanh',
                     style: TextStyle(
@@ -394,63 +389,11 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                       );
                     }).toList(),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // Scan Barcode Button
-                  // DottedBorder(
-                  //   borderType: BorderType.RRect,
-                  //   radius: const Radius.circular(12), // Bo góc giống code cũ
-                  //   padding: EdgeInsets.zero, // Quan trọng để inkwell tràn viền
-                  //   color: const Color.fromARGB(150, 15, 189,
-                  //       59), // Màu viền (đậm hơn chút cho rõ nét đứt)
-                  //   strokeWidth: 1.5, // Độ dày nét đứt
-                  //   dashPattern: const [6, 4], // [độ dài nét, khoảng cách]
-                  //   child: Material(
-                  //     color: const Color.fromARGB(
-                  //         5, 15, 189, 59), // Màu nền (backgroundColor cũ)
-                  //     borderRadius: BorderRadius.circular(12),
-                  //     child: InkWell(
-                  //       onTap: () {
-                  //         Navigator.pushReplacement(context,
-                  //             MaterialPageRoute(builder: (context) {
-                  //           return const FridgeBarcodeScanScreen();
-                  //         }));
-                  //       },
-                  //       borderRadius: BorderRadius.circular(12),
-                  //       child: Container(
-                  //         width:
-                  //             double.infinity, // minimumSize: width infinity cũ
-                  //         padding: const EdgeInsets.symmetric(
-                  //             vertical: 14), // padding cũ
-                  //         alignment: Alignment.center,
-                  //         child: Row(
-                  //           mainAxisSize: MainAxisSize.min,
-                  //           children: const [
-                  //             Icon(
-                  //               Icons.qr_code_scanner,
-                  //               color: Color(0xFF0A8A2B), // foregroundColor cũ
-                  //             ),
-                  //             SizedBox(
-                  //                 width: 8), // Khoảng cách giữa icon và text
-                  //             Text(
-                  //               'Scan Barcode',
-                  //               style: TextStyle(
-                  //                 color:
-                  //                     Color(0xFF0A8A2B), // foregroundColor cũ
-                  //                 fontWeight: FontWeight.w500,
-                  //               ),
-                  //             ),
-                  //           ],
-                  //         ),
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
 
                   const SizedBox(height: 12),
 
-                  // Add to Fridge Button
+                  // Nút Lưu thay đổi
                   ElevatedButton(
                     onPressed: _save,
                     style: ElevatedButton.styleFrom(
@@ -463,9 +406,9 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                       minimumSize: const Size(double.infinity, 52),
                       elevation: 0,
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
+                      children: [
                         Icon(Icons.check),
                         SizedBox(width: 8),
                         Text(

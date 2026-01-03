@@ -54,41 +54,16 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              actions: [
-                GestureDetector(
-                  onTap: () {
-                    // Đường dẫn con của recipes: /recipes/favorites
-                    context.go('/recipes/favorites');
-                  },
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    margin: const EdgeInsets.only(right: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey.shade300),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        )
-                      ],
-                    ),
-                    child: const Icon(Icons.favorite_border_outlined,
-                        size: 20, color: _primaryColor),
-                  ),
-                ),
-              ],
             ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 900),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 🔹 TABS (Fixed at top)
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 child: _Tabs(
                   currentTab: _currentTab,
                   onChanged: _onTabChanged,
@@ -96,22 +71,16 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   shoppingListText: shoppingListText,
                 ),
               ),
+
+              const SizedBox(height: 24),
+
+              // 🔥 SWITCH CONTENT (Takes remaining space)
               Expanded(
-                child: IndexedStack(
-                  index: _currentTab == PlannerTab.weeklyPlan ? 0 : 1,
-                  children: [
-                    WeeklyPlanContent(
-                      key: const ValueKey('weekly'),
-                      onTabChange: (tabIndex) {
-                        if (tabIndex == 1) {
-                          _onTabChanged(PlannerTab.shoppingList);
-                        } else if (tabIndex == 0) {
-                          _onTabChanged(PlannerTab.weeklyPlan);
-                        }
-                      },
-                    ),
-                    const ShoppingListTab(key: ValueKey('shopping')),
-                  ],
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  child: _currentTab == PlannerTab.weeklyPlan
+                      ? const WeeklyPlanContent()
+                      : ShoppingListTab(key: shoppingListGlobalKey),
                 ),
               ),
             ],

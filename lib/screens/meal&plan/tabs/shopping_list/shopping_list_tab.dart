@@ -3,9 +3,22 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import '../../../../widgets/plans/tabs/shopping_list_tab/section_header.dart';
-import '../../../../widgets/plans/tabs/shopping_list_tab/shopping_filter.dart';
 import '../../../../widgets/plans/tabs/shopping_list_tab/shopping_item.dart';
+import '../../../../models/shopping_item.dart';
+
+// ✅ Global key to access ShoppingListTab state from outside
+final GlobalKey<_ShoppingListTabState> shoppingListGlobalKey = GlobalKey();
+
+// ✅ Public helper function to trigger recalculation (accessible from other files)
+Future<void> triggerShoppingListRecalculation() async {
+  final state = shoppingListGlobalKey.currentState;
+  if (state != null && state.mounted) {
+    debugPrint(
+        '🔄 Triggering shopping list recalculation from meal plan change');
+    state._hasLoadedData = false;
+    await state._recalculateShoppingList();
+  }
+}
 
 class ShoppingListTab extends StatefulWidget {
   const ShoppingListTab({super.key});
@@ -19,11 +32,15 @@ class _ShoppingListTabState extends State<ShoppingListTab>
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   String? _householdId;
-  Map<String, List<Map<String, dynamic>>> _itemsByDate =
-      {}; // ✅ Changed: group by date
+
+  // ✅ NEW: Use ShoppingItem model instead of plain Map
+  Map<String, List<ShoppingItem>> _itemsByDate = {};
+
   bool _isLoading = true;
-  String _selectedCategory = 'all';
-  bool _hasLoadedData = false; // ✅ Track if data already loaded
+  bool _hasLoadedData = false;
+
+  // ✅ NEW: Track deleted items to prevent auto-adding them back
+  Set<String> _deletedItemKeys = {};
 
   @override
   bool get wantKeepAlive => true; // ✅ Keep state when switching tabs
@@ -32,20 +49,105 @@ class _ShoppingListTabState extends State<ShoppingListTab>
   void initState() {
     super.initState();
     debugPrint('📱 ShoppingListTab: initState() called');
-    _loadShoppingListByDate();
+    _initializeShoppingList();
   }
 
-  // ✅ Mới: Load shopping list dựa trên meal_plans + inventory (từ hôm nay trở đi)
-  Future<void> _loadShoppingListByDate() async {
+  // ✅ NEW: Initialize by loading from local storage first, then recalculate
+  Future<void> _initializeShoppingList() async {
+    await _loadDeletedItems();
+    await _recalculateShoppingList();
+  }
+
+  // ✅ NEW: Save shopping list to local storage
+  Future<void> _saveToLocalStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final Map<String, dynamic> data = {};
+
+      _itemsByDate.forEach((dateKey, items) {
+        data[dateKey] = items.map((item) => item.toJson()).toList();
+      });
+
+      await prefs.setString('shopping_list_v2', jsonEncode(data));
+      await prefs.setString(
+          'shopping_list_last_sync', DateTime.now().toIso8601String());
+      debugPrint('💾 Saved shopping list to local storage');
+    } catch (e) {
+      debugPrint('❌ Error saving to local storage: $e');
+    }
+  }
+
+  // ✅ NEW: Load shopping list from local storage
+  Future<Map<String, List<ShoppingItem>>> _loadFromLocalStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final dataStr = prefs.getString('shopping_list_v2');
+
+      if (dataStr == null || dataStr.isEmpty) {
+        debugPrint('📂 No shopping list in local storage');
+        return {};
+      }
+
+      final Map<String, dynamic> data = jsonDecode(dataStr);
+      final Map<String, List<ShoppingItem>> result = {};
+
+      data.forEach((dateKey, itemsList) {
+        result[dateKey] = (itemsList as List)
+            .map((itemJson) => ShoppingItem.fromJson(itemJson))
+            .toList();
+      });
+
+      debugPrint(
+          '📂 Loaded shopping list from local storage: ${result.length} dates');
+      return result;
+    } catch (e) {
+      debugPrint('❌ Error loading from local storage: $e');
+      return {};
+    }
+  }
+
+  // ✅ NEW: Save deleted items
+  Future<void> _saveDeletedItems() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+          'deleted_shopping_items', jsonEncode(_deletedItemKeys.toList()));
+    } catch (e) {
+      debugPrint('❌ Error saving deleted items: $e');
+    }
+  }
+
+  // ✅ NEW: Load deleted items
+  Future<void> _loadDeletedItems() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final dataStr = prefs.getString('deleted_shopping_items');
+      if (dataStr != null && dataStr.isNotEmpty) {
+        final List<dynamic> list = jsonDecode(dataStr);
+        _deletedItemKeys = list.map((e) => e.toString()).toSet();
+        debugPrint('📂 Loaded ${_deletedItemKeys.length} deleted items');
+      }
+    } catch (e) {
+      debugPrint('❌ Error loading deleted items: $e');
+    }
+  }
+
+  // ✅ NEW: Recalculate shopping list từ meal_plans while preserving user adjustments
+  Future<void> _recalculateShoppingList() async {
     // ✅ Guard: Nếu data đã load, bỏ qua (trừ khi là pull-to-refresh)
     if (_hasLoadedData && _isLoading == false) {
       debugPrint(
-          '⏭️  Skipping _loadShoppingListByDate() - data already loaded');
+          '⏭️  Skipping _recalculateShoppingList() - data already loaded');
       return;
     }
 
     try {
-      debugPrint('🔵 ========== SHOPPING LIST DEBUG START ==========');
+      debugPrint('🔵 ========== SHOPPING LIST RECALCULATION START ==========');
+
+      // Load existing shopping list từ local storage
+      final existingItems = await _loadFromLocalStorage();
+      debugPrint('📂 Loaded ${existingItems.length} dates from local storage');
+
       // ✅ Lấy user hiện tại
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
@@ -74,13 +176,11 @@ class _ShoppingListTabState extends State<ShoppingListTab>
       final houseRef = _firestore.collection('households').doc(_householdId!);
 
       debugPrint(
-          '🔄 Loading meal plans + ingredients for household: $_householdId');
+          '🔄 Calculating system quantities for household: $_householdId');
 
       // ✅ Lấy ngày hôm nay (00:00:00) để filter meal plans
       final today = DateTime.now();
       final todayStart = DateTime(today.year, today.month, today.day);
-
-      debugPrint('📅 Today start: $todayStart');
 
       // 1. Fetch meal_plans từ hôm nay trở đi
       final mealPlansSnapshot = await houseRef
@@ -94,7 +194,6 @@ class _ShoppingListTabState extends State<ShoppingListTab>
       // 2. Fetch inventory (để check ingredient nào đã có)
       final inventorySnapshot = await houseRef.collection('inventory').get();
 
-      // ✅ Create Set of inventory names (lowercase for comparison)
       final inventoryNames = <String>{};
       for (var doc in inventorySnapshot.docs) {
         final name = (doc.data()['name'] ?? '').toString().toLowerCase().trim();
@@ -104,8 +203,8 @@ class _ShoppingListTabState extends State<ShoppingListTab>
       }
       debugPrint('📦 Inventory has: ${inventoryNames.length} items');
 
-      // 3. Build shopping list từ meal_plans
-      final itemsByDate = <String, List<Map<String, dynamic>>>{};
+      // 3. Calculate system quantities from meal_plans
+      final Map<String, ShoppingItem> calculatedItems = {};
 
       for (var mealPlanDoc in mealPlansSnapshot.docs) {
         final mealPlanData = mealPlanDoc.data();
@@ -113,139 +212,146 @@ class _ShoppingListTabState extends State<ShoppingListTab>
         final dateKey = _formatDateKey(date);
         final recipeId = mealPlanData['local_recipe_id'] ?? '';
 
-        if (recipeId.isEmpty) {
-          debugPrint('⚠️ Meal plan ${mealPlanDoc.id} has no recipe ID');
-          continue;
-        }
-
-        debugPrint('🍽️ Meal plan on $dateKey: Recipe $recipeId');
+        if (recipeId.isEmpty) continue;
 
         // Fetch recipe để lấy ingredients
         final recipeDoc =
             await houseRef.collection('household_recipes').doc(recipeId).get();
 
-        if (!recipeDoc.exists) {
-          debugPrint('⚠️ Recipe $recipeId not found');
-          continue;
-        }
+        if (!recipeDoc.exists) continue;
 
         final recipeData = recipeDoc.data() as Map<String, dynamic>;
         final ingredients = recipeData['ingredients'] as List<dynamic>?;
 
-        // ✅ Get servings from meal plan (default to 1 if not specified)
         final mealPlanServings =
             (mealPlanData['servings'] as num?)?.toInt() ?? 1;
         final recipeServings = (recipeData['servings'] as num?)?.toInt() ?? 1;
 
-        debugPrint(
-            '📊 Servings - Meal plan: $mealPlanServings, Recipe: $recipeServings');
+        if (ingredients == null || ingredients.isEmpty) continue;
 
-        if (ingredients == null || ingredients.isEmpty) {
-          debugPrint('⚠️ Recipe $recipeId has no ingredients');
-          continue;
-        }
-
-        debugPrint('📝 Recipe has ${ingredients.length} ingredients');
-
-        // Với mỗi ingredient trong recipe
+        // Process each ingredient
         for (var ingData in ingredients) {
           try {
             final ingredientName = (ingData['name'] ?? 'Unknown').toString();
-            final rawAmount = ingData['amount'];
-            debugPrint('📦 Processing ingredient: $ingredientName');
-            debugPrint('   Raw amount type: ${rawAmount.runtimeType}');
-            debugPrint('   Raw amount value: $rawAmount');
-
-            final amount = (rawAmount as num?)?.toDouble() ?? 0.0;
-            debugPrint(
-                '   Converted amount: $amount (type: ${amount.runtimeType})');
-
-            // ✅ Scale amount based on meal plan servings
+            final amount = (ingData['amount'] as num?)?.toDouble() ?? 0.0;
             final scaledAmount = (amount * mealPlanServings / recipeServings);
-            debugPrint(
-                '   Scaled amount: $scaledAmount (meal servings: $mealPlanServings, recipe servings: $recipeServings)');
-
             final unit = ingData['unit'] ?? '';
 
-            // ✅ Check if ingredient exists in inventory (case-insensitive partial match)
+            // Check if in inventory
             final nameLower = ingredientName.toLowerCase().trim();
             final inFridge = inventoryNames.any((invName) =>
                 invName.contains(nameLower) || nameLower.contains(invName));
 
-            // ✅ Only add to shopping list if NOT in fridge
+            // Only add if NOT in fridge
             if (!inFridge) {
-              debugPrint(
-                  '🛒 Need to buy: $ingredientName ($scaledAmount $unit)');
+              final itemKey =
+                  '${dateKey}_${ingredientName.toLowerCase().trim()}';
 
-              final item = {
-                'item_id':
-                    '$dateKey-${ingredientName.hashCode}', // ✅ Use hash for unique ID
-                'ingredient_name': ingredientName,
-                'quantity': scaledAmount, // ✅ Use scaled amount
-                'unit': unit,
-                'category':
-                    _classifyIngredient(ingredientName), // ✅ Auto-classify
-                'is_checked': false,
-                'date': dateKey,
-                'recipe_title': recipeData['title'] ?? 'Unknown Recipe',
-              };
-
-              if (!itemsByDate.containsKey(dateKey)) {
-                itemsByDate[dateKey] = [];
+              // ✅ Skip if user deleted this item
+              if (_deletedItemKeys.contains(itemKey)) {
+                debugPrint('⏭️  Skipping deleted item: $ingredientName');
+                continue;
               }
 
-              // ✅ Avoid duplicates by name
-              final existingIndex = itemsByDate[dateKey]!.indexWhere((it) =>
-                  it['ingredient_name'].toString().toLowerCase() == nameLower);
-
-              if (existingIndex == -1) {
-                itemsByDate[dateKey]!.add(item);
+              if (calculatedItems.containsKey(itemKey)) {
+                // Sum quantities for duplicate ingredients
+                calculatedItems[itemKey]!.systemQuantity += scaledAmount;
               } else {
-                // ✅ If already exists, sum quantities
-                final existing = itemsByDate[dateKey]![existingIndex];
-                final currentQty =
-                    (existing['quantity'] as num?)?.toDouble() ?? 0.0;
-                existing['quantity'] =
-                    currentQty + scaledAmount; // ✅ Add scaled amount
-                debugPrint(
-                    '   ➕ Updated quantity for $ingredientName to ${existing['quantity']}');
+                calculatedItems[itemKey] = ShoppingItem(
+                  itemId: itemKey,
+                  ingredientName: ingredientName,
+                  systemQuantity: scaledAmount,
+                  userAdjustment: 0.0,
+                  finalQuantity: scaledAmount,
+                  unit: unit,
+                  category: _classifyIngredient(ingredientName),
+                  date: dateKey,
+                  isChecked: false,
+                  isUserEdited: false,
+                  recipeTitle: recipeData['title'] ?? 'Unknown Recipe',
+                );
               }
-            } else {
-              debugPrint('✅ Already in fridge: $ingredientName');
             }
-          } catch (ingError, stackTrace) {
+          } catch (ingError) {
             debugPrint('❌ Error processing ingredient: $ingError');
-            debugPrint('   Stack trace: $stackTrace');
-            debugPrint('   Ingredient data: $ingData');
           }
         }
-      } // Close outer for loop (mealPlanDoc)
+      }
+
+      debugPrint('📊 Calculated ${calculatedItems.length} system items');
+
+      // 4. ✅ Merge with existing items (preserve user adjustments)
+      final Map<String, List<ShoppingItem>> finalItemsByDate = {};
+
+      calculatedItems.forEach((itemKey, calculatedItem) {
+        final dateKey = calculatedItem.date;
+
+        // Check if this item exists in local storage
+        bool foundInStorage = false;
+
+        for (var existingDateItems in existingItems.values) {
+          for (var existingItem in existingDateItems) {
+            if (existingItem.itemId == itemKey) {
+              foundInStorage = true;
+
+              if (existingItem.isUserEdited) {
+                // ✅ Preserve user adjustment
+                debugPrint(
+                    '🔧 Preserving adjustment for ${existingItem.ingredientName}');
+                debugPrint(
+                    '   Old system: ${existingItem.systemQuantity}, New system: ${calculatedItem.systemQuantity}');
+                debugPrint(
+                    '   User adjustment: ${existingItem.userAdjustment}');
+
+                existingItem
+                    .updateSystemQuantity(calculatedItem.systemQuantity);
+                calculatedItem.systemQuantity = existingItem.systemQuantity;
+                calculatedItem.userAdjustment = existingItem.userAdjustment;
+                calculatedItem.finalQuantity = existingItem.finalQuantity;
+                calculatedItem.isUserEdited = true;
+                calculatedItem.isChecked = existingItem.isChecked;
+              } else {
+                // No user edit, just update system quantity
+                calculatedItem.isChecked = existingItem.isChecked;
+              }
+              break;
+            }
+          }
+          if (foundInStorage) break;
+        }
+
+        // Add to final list
+        if (!finalItemsByDate.containsKey(dateKey)) {
+          finalItemsByDate[dateKey] = [];
+        }
+        finalItemsByDate[dateKey]!.add(calculatedItem);
+      });
 
       debugPrint('');
       debugPrint('🎯 ========== SHOPPING LIST SUMMARY ==========');
-      debugPrint(
-          '   Total dates with missing ingredients: ${itemsByDate.length}');
-      for (var entry in itemsByDate.entries) {
+      debugPrint('   Total dates: ${finalItemsByDate.length}');
+      for (var entry in finalItemsByDate.entries) {
         debugPrint('   📅 ${entry.key}: ${entry.value.length} items');
       }
       debugPrint('=============================================');
-      debugPrint('');
-      debugPrint('🟢 ========== SHOPPING LIST DEBUG END ==========');
+      debugPrint('🟢 ========== SHOPPING LIST RECALCULATION END ==========');
 
       setState(() {
-        _itemsByDate = itemsByDate;
+        _itemsByDate = finalItemsByDate;
         _isLoading = false;
-        _hasLoadedData = true; // ✅ Mark data as loaded
+        _hasLoadedData = true;
       });
+
+      // Save to local storage
+      await _saveToLocalStorage();
     } catch (e, stackTrace) {
       debugPrint('❌ ========== ERROR IN SHOPPING LIST ==========');
-      debugPrint('Error loading shopping list: $e');
-      debugPrint('Error type: ${e.runtimeType}');
+      debugPrint('Error: $e');
       debugPrint('Stack trace: $stackTrace');
       debugPrint('=============================================');
       setState(() {
         _isLoading = false;
-        _hasLoadedData = true; // ✅ Mark as attempted load
+        _hasLoadedData = true;
       });
     }
   }
@@ -358,29 +464,57 @@ class _ShoppingListTabState extends State<ShoppingListTab>
   }
 
   Future<void> _toggleItem(String itemId, bool newValue) async {
-    // ✅ Update local state only
+    // ✅ Update item in memory and save to local storage
     for (var dateKey in _itemsByDate.keys) {
-      final index = _itemsByDate[dateKey]!
-          .indexWhere((item) => item['item_id'] == itemId);
+      final index =
+          _itemsByDate[dateKey]!.indexWhere((item) => item.itemId == itemId);
       if (index != -1) {
         setState(() {
-          _itemsByDate[dateKey]![index]['is_checked'] = newValue;
+          _itemsByDate[dateKey]![index].isChecked = newValue;
         });
+        await _saveToLocalStorage();
         return;
       }
     }
   }
 
   Future<void> _deleteItem(String itemId) async {
-    // ✅ Delete from local state only
+    // ✅ Add to deleted items set and save
+    _deletedItemKeys.add(itemId);
+    await _saveDeletedItems();
+
+    // ✅ Delete from local state
     for (var dateKey in _itemsByDate.keys.toList()) {
-      _itemsByDate[dateKey]!.removeWhere((item) => item['item_id'] == itemId);
+      _itemsByDate[dateKey]!.removeWhere((item) => item.itemId == itemId);
       if (_itemsByDate[dateKey]!.isEmpty) {
         _itemsByDate.remove(dateKey);
       }
     }
 
     setState(() {});
+    await _saveToLocalStorage();
+  }
+
+  Future<void> _onQuantityChange(String itemId, double newQuantity) async {
+    // ✅ User edited quantity - track adjustment
+    for (var dateKey in _itemsByDate.keys) {
+      final index =
+          _itemsByDate[dateKey]!.indexWhere((item) => item.itemId == itemId);
+      if (index != -1) {
+        setState(() {
+          _itemsByDate[dateKey]![index].updateUserQuantity(newQuantity);
+        });
+        await _saveToLocalStorage();
+        debugPrint(
+            '✏️ User edited ${_itemsByDate[dateKey]![index].ingredientName}:');
+        debugPrint(
+            '   System: ${_itemsByDate[dateKey]![index].systemQuantity}');
+        debugPrint(
+            '   Adjustment: ${_itemsByDate[dateKey]![index].userAdjustment}');
+        debugPrint('   Final: ${_itemsByDate[dateKey]![index].finalQuantity}');
+        return;
+      }
+    }
   }
 
   @override
@@ -395,88 +529,411 @@ class _ShoppingListTabState extends State<ShoppingListTab>
 
     final dates = _itemsByDate.keys.toList()..sort(); // ✅ Sort by date
 
-    return RefreshIndicator(
-      onRefresh: () async {
-        // ✅ Reset flag when user pulls to refresh
-        _hasLoadedData = false;
-        await _loadShoppingListByDate();
-      },
-      child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(
-          horizontal: isDesktop ? 32 : 16,
-          vertical: 16,
+    return Stack(
+      children: [
+        RefreshIndicator(
+          onRefresh: () async {
+            // ✅ Reset flag when user pulls to refresh and recalculate
+            _hasLoadedData = false;
+            await _recalculateShoppingList();
+          },
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(
+              horizontal: isDesktop ? 32 : 16,
+              vertical: 16,
+            ),
+            physics:
+                const AlwaysScrollableScrollPhysics(), // ✅ Allow refresh even when empty
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. Header
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                ),
+
+                // 2. Shopping Items by Date
+                if (_itemsByDate.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32),
+                    child: Center(
+                      child: Text(
+                          'No items needed for upcoming meals\n\nPull to refresh',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey)),
+                    ),
+                  )
+                else
+                  ...dates.map((dateKey) {
+                    final items = _itemsByDate[dateKey]!;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ✅ Date header - left aligned, no box
+                        Padding(
+                          padding:
+                              const EdgeInsets.only(top: 8, bottom: 12, left: 0),
+                          child: Text(
+                            _formatDisplayDate(dateKey),
+                            textAlign: TextAlign.start,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF214130),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // ✅ Items for this date
+                        ...items
+                            .map((item) => EditableShoppingItem(
+                                  itemId: item.itemId,
+                                  title: item.ingredientName,
+                                  category: item.category,
+                                  quantity:
+                                      item.finalQuantity, // ✅ Show final quantity
+                                  unit: item.unit,
+                                  isChecked: item.isChecked,
+                                  onDelete: () => _deleteItem(item.itemId),
+                                  onToggleCheck: (newValue) =>
+                                      _toggleItem(item.itemId, newValue),
+                                  onQuantityChange: (newQty) =>
+                                      _onQuantityChange(item.itemId, newQty),
+                                  householdId: _householdId!,
+                                ))
+                            .toList(),
+
+                        const SizedBox(height: 24),
+                      ],
+                    );
+                  }).toList(),
+
+                // Extra space at bottom
+                const SizedBox(height: 80),
+              ],
+            ),
+          ),
         ),
-        physics:
-            const AlwaysScrollableScrollPhysics(), // ✅ Allow refresh even when empty
+        
+        // ✅ Floating Action Button to add custom item (Fridge-style)
+        Positioned(
+          bottom: 24,
+          right: 24,
+          child: FloatingActionButton(
+            heroTag: 'shopping_list_fab',
+            onPressed: _showAddItemDialog,
+            shape: const CircleBorder(),
+            backgroundColor: const Color.fromARGB(255, 36, 75, 45),
+            child: const Icon(Icons.add, size: 28, color: Colors.white),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ✅ Show bottom sheet to add custom item (Fridge-style UI)
+  void _showAddItemDialog() {
+    showDialog(
+      context: context,
+      useRootNavigator: true,
+      builder: (context) => _AddItemBottomSheet(
+        onAdd: _addCustomItem,
+      ),
+    );
+  }
+
+  // ✅ Add custom item to shopping list
+  Future<void> _addCustomItem(
+      String name, double quantity, String unit, String category) async {
+    final today = DateTime.now();
+    final dateKey = _formatDateKey(today);
+    final itemKey = '${dateKey}_${name.toLowerCase().trim()}_custom';
+
+    final newItem = ShoppingItem(
+      itemId: itemKey,
+      ingredientName: name,
+      systemQuantity: 0.0, // Custom items have no system quantity
+      userAdjustment: quantity, // All quantity is user adjustment
+      finalQuantity: quantity,
+      unit: unit,
+      category: category,
+      date: dateKey,
+      isChecked: false,
+      isUserEdited: true,
+      recipeTitle: 'Manual entry',
+    );
+
+    setState(() {
+      if (!_itemsByDate.containsKey(dateKey)) {
+        _itemsByDate[dateKey] = [];
+      }
+      _itemsByDate[dateKey]!.add(newItem);
+    });
+
+    await _saveToLocalStorage();
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✅ Added $name to shopping list'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+}
+
+// ✅ Fridge-style bottom sheet for adding custom items
+class _AddItemBottomSheet extends StatefulWidget {
+  final Function(String name, double quantity, String unit, String category)
+      onAdd;
+
+  const _AddItemBottomSheet({required this.onAdd});
+
+  @override
+  State<_AddItemBottomSheet> createState() => _AddItemBottomSheetState();
+}
+
+class _AddItemBottomSheetState extends State<_AddItemBottomSheet> {
+  final _nameController = TextEditingController();
+  final _quantityController = TextEditingController();
+  String _selectedUnit = 'g';
+  String _selectedCategory = 'other';
+
+  final List<String> _units = ['g', 'kg', 'ml', 'l', 'cup', 'tbsp', 'tsp', 'piece'];
+  final List<Map<String, String>> _categories = [
+    {'id': 'protein', 'label': 'Protein'},
+    {'id': 'dairy', 'label': 'Dairy'},
+    {'id': 'vegetables', 'label': 'Vegetables'},
+    {'id': 'fruits', 'label': 'Fruits'},
+    {'id': 'grains', 'label': 'Grains'},
+    {'id': 'condiments', 'label': 'Condiments'},
+    {'id': 'other', 'label': 'Other'},
+  ];
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _quantityController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _nameController.text.trim();
+    final quantityStr = _quantityController.text.trim();
+
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter item name')),
+      );
+      return;
+    }
+
+    if (quantityStr.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter quantity')),
+      );
+      return;
+    }
+
+    final quantity = double.tryParse(quantityStr);
+    if (quantity == null || quantity <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid quantity')),
+      );
+      return;
+    }
+
+    widget.onAdd(name, quantity, _selectedUnit, _selectedCategory);
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        constraints: const BoxConstraints(maxWidth: 500),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Header
-            const Row(
+            // ✅ Header with title and close button
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            ),
-
-            // 2. Shopping Items by Date
-            if (_itemsByDate.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 32),
-                child: Center(
-                  child: Text(
-                      'No items needed for upcoming meals\n\nPull to refresh',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey)),
+              children: [
+                const Text(
+                  'Add Item',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF214130),
+                  ),
                 ),
-              )
-            else
-              ...dates.map((dateKey) {
-                final items = _itemsByDate[dateKey]!;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ✅ Date header - left aligned, no box
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(top: 8, bottom: 12, left: 0),
-                      child: Text(
-                        _formatDisplayDate(dateKey),
-                        textAlign: TextAlign.start,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF214130),
-                        ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.grey),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // ✅ Drag handle (visual indicator)
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // ✅ Name field
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: 'Item Name',
+                filled: true,
+                fillColor: const Color(0xFFF6F8F6),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ✅ Quantity and Unit row
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: _quantityController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Quantity',
+                      filled: true,
+                      fillColor: const Color(0xFFF6F8F6),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF6F8F6),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedUnit,
+                        isExpanded: true,
+                        items: _units.map((unit) {
+                          return DropdownMenuItem(
+                            value: unit,
+                            child: Text(unit),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _selectedUnit = value);
+                          }
+                        },
                       ),
                     ),
-                    const SizedBox(height: 12),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
 
-                    // ✅ Items for this date
-                    ...items
-                        .map((item) => EditableShoppingItem(
-                              itemId: item['item_id'],
-                              title: item['ingredient_name'],
-                              category: item['category'],
-                              quantity: item['quantity'],
-                              unit: item['unit'],
-                              isChecked: item['is_checked'] as bool,
-                              onDelete: () => _deleteItem(item['item_id']),
-                              onToggleCheck: (newValue) =>
-                                  _toggleItem(item['item_id'], newValue),
-                              onQuantityChange: (newQty) {
-                                setState(() {
-                                  item['quantity'] = newQty;
-                                });
-                              },
-                              householdId: _householdId!,
-                            ))
-                        .toList(),
-
-                    const SizedBox(height: 24),
-                  ],
+            // ✅ Category selector
+            const Text(
+              'Category',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF214130),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _categories.map((category) {
+                final isSelected = _selectedCategory == category['id'];
+                return GestureDetector(
+                  onTap: () {
+                    setState(() => _selectedCategory = category['id']!);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xFFE6F4EA)
+                          : const Color(0xFFF6F8F6),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFF214130)
+                            : Colors.transparent,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Text(
+                      category['label']!,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        color: isSelected
+                            ? const Color(0xFF214130)
+                            : Colors.grey[700],
+                      ),
+                    ),
+                  ),
                 );
               }).toList(),
+            ),
+            const SizedBox(height: 24),
 
-            // Extra space at bottom
-            const SizedBox(height: 80),
+            // ✅ Submit button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF214130),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+                child: const Text(
+                  'Add Item',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
       ),

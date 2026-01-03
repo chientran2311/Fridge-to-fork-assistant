@@ -3,7 +3,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:fridge_to_fork_assistant/router/app_router.dart';
+import 'dart:convert'; // Để encode/decode JSON payload
+
 // Hàm xử lý khi App đang tắt (Background/Terminated)
 // Bắt buộc phải là Top-level function (nằm ngoài class)
 @pragma('vm:entry-point') 
@@ -38,13 +40,13 @@ class NotificationService {
         // Đăng ký hàm xử lý Background
         FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-        // Xử lý khi App đang mở (Foreground)
+        // Xử lý khi App đang mở (Foreground) - Hiện local notification
         FirebaseMessaging.onMessage.listen((RemoteMessage message) {
           print('☀️ Nhận thông báo Foreground: ${message.notification?.title}');
           _showLocalNotification(message);
         });
 
-        // Xử lý khi bấm vào thông báo (Deep Link)
+        // Xử lý khi bấm vào thông báo FCM (từ background/terminated)
         _setupInteractedMessage(navigatorKey);
         
         // Lấy Token và lưu ngay (nếu đã login)
@@ -54,110 +56,130 @@ class NotificationService {
         _firebaseMessaging.onTokenRefresh.listen((newToken) {
           saveTokenToDatabase(token: newToken);
         });
-        
       } else {
         print('❌ Người dùng từ chối quyền thông báo.');
       }
     } catch (e) {
-      // ✅ Handle Firebase Messaging errors (e.g., on emulator without Google Play Services)
-      print('⚠️ Firebase Messaging không khả dụng (có thể đang chạy trên emulator): $e');
-      print('   App vẫn hoạt động bình thường, chỉ không có thông báo push.');
+      print('⚠️ Lỗi khởi tạo notification service: $e');
     }
   }
 
   // 2. Logic Lưu Token lên Firestore
-  // Backend sẽ quét collection 'users', tìm field 'fcm_token' để gửi tin.
   Future<void> saveTokenToDatabase({String? token}) async {
     try {
       User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) return; // Chưa login thì thôi
+      if (user == null) return;
 
-    String? fcmToken = token ?? await _firebaseMessaging.getToken();
-    print("🔑 FCM Token: $fcmToken");
+      String? fcmToken = token ?? await _firebaseMessaging.getToken();
+      print("🔑 FCM Token: $fcmToken");
 
-    if (fcmToken != null) {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .set({
-        'fcm_token': fcmToken,
-        'updated_at': FieldValue.serverTimestamp(), // Để biết token còn mới không
-        'platform': 'flutter_client',
-      }, SetOptions(merge: true)); // Merge: Chỉ cập nhật field này, giữ nguyên data khác
-      
-      print("💾 Đã lưu Token lên Firestore cho User: ${user.uid}");
-    }
+      if (fcmToken != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .set({
+          'fcm_token': fcmToken,
+          'updated_at': FieldValue.serverTimestamp(),
+          'platform': 'flutter_client',
+        }, SetOptions(merge: true));
+        
+        print("💾 Đã lưu Token lên Firestore cho User: ${user.uid}");
+      }
     } catch (e) {
       // ✅ Handle token retrieval errors gracefully
       print('⚠️ Không thể lấy FCM token (emulator không hỗ trợ): $e');
     }
   }
 
-  // 3. Xử lý Deep Link (Chuyển màn hình)
+  // 3. Xử lý khi bấm notification FCM (background/terminated)
   void _setupInteractedMessage(GlobalKey<NavigatorState> navigatorKey) async {
-    // Trường hợp 1: App đang tắt hoàn toàn -> Bấm thông báo -> App mở
+    // Trường hợp 1: App đang tắt hoàn toàn -> Bấm notification -> App mở
     RemoteMessage? initialMessage = await _firebaseMessaging.getInitialMessage();
     if (initialMessage != null) {
-      _handleRedirect(initialMessage, navigatorKey);
+      print("📱 App mở từ terminated state");
+      _handleNavigate(initialMessage.data);
     }
 
-    // Trường hợp 2: App đang chạy ngầm -> Bấm thông báo -> App hiện lên
+    // Trường hợp 2: App đang chạy ngầm -> Bấm notification -> App hiện lên
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      _handleRedirect(message, navigatorKey);
+      print("📱 App mở từ background state");
+      _handleNavigate(message.data);
     });
   }
 
-  // Logic điều hướng dựa trên Data từ Backend gửi về
- void _handleRedirect(RemoteMessage message, GlobalKey<NavigatorState> navigatorKey) async{
-    final data = message.data;
+  // 4. [QUAN TRỌNG] Logic điều hướng chung - Dùng cho mọi trường hợp
+  void _handleNavigate(Map<String, dynamic> data) async {
+    print("🔍 Checking data: $data");
     
-    // Kiểm tra action_id
     if (data['action_id'] == 'FIND_RECIPE') {
-      // [CẬP NHẬT] Lấy chuỗi danh sách nguyên liệu
-      // Fallback: Nếu server chưa update kịp thì lấy field cũ 'ingredient'
       final String ingredientsStr = data['ingredients_list'] ?? data['ingredient'] ?? '';
       
-      print("🚀 Deep Link: Tìm công thức với list -> $ingredientsStr");
+      print("🚀 Navigate: Tìm công thức với -> $ingredientsStr");
+      
+      // Đợi app sẵn sàng
       await Future.delayed(const Duration(milliseconds: 500));
-      final context = navigatorKey.currentContext;
-      if (context != null) {
-        // Truyền nguyên chuỗi sang Router (Router sẽ hứng ở query param 'search')
-        // URL: /recipes?search=Thịt bò,Trứng gà
-        context.go('/recipes?search=$ingredientsStr');
+      
+      try {
+        final encodedQuery = Uri.encodeComponent(ingredientsStr);
+        final path = '/recipes?search=$encodedQuery';
+        
+        // Dùng appRouter.go() để navigate
+        appRouter.go(path);
+        print("✅ Đã navigate tới: $path");
+      } catch (e) {
+        print("❌ Lỗi navigate: $e");
       }
     }
   }
 
-  // Helper: Setup Local Notification
+  // 5. Setup Local Notification với handler khi bấm
   Future<void> _setupLocalNotifications() async {
-    const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const InitializationSettings settings = InitializationSettings(android: androidSettings);
-    await _localNotificationsPlugin.initialize(settings,
-      onDidReceiveNotificationResponse: (details) {
-         // Xử lý bấm vào thông báo local ở đây nếu cần
-      }
+    const AndroidInitializationSettings androidSettings = 
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const InitializationSettings settings = 
+        InitializationSettings(android: androidSettings);
+    
+    await _localNotificationsPlugin.initialize(
+      settings,
+      // [QUAN TRỌNG] Handler khi bấm vào local notification (foreground case)
+      onDidReceiveNotificationResponse: (NotificationResponse details) {
+        print("🔔 Bấm vào Local Notification, payload: ${details.payload}");
+        
+        if (details.payload != null && details.payload!.isNotEmpty) {
+          try {
+            // Parse payload (đã encode thành JSON string)
+            final Map<String, dynamic> data = jsonDecode(details.payload!);
+            _handleNavigate(data);
+          } catch (e) {
+            print("❌ Lỗi parse payload: $e");
+          }
+        }
+      },
     );
   }
 
-  // Helper: Hiện thông báo Local
+  // 6. Hiện thông báo Local (khi app đang mở)
   void _showLocalNotification(RemoteMessage message) {
     RemoteNotification? notification = message.notification;
     AndroidNotification? android = message.notification?.android;
 
     if (notification != null && android != null) {
+      // [QUAN TRỌNG] Encode data thành JSON string để truyền qua payload
+      final String payloadJson = jsonEncode(message.data);
+      
       _localNotificationsPlugin.show(
         notification.hashCode,
         notification.title,
         notification.body,
         const NotificationDetails(
           android: AndroidNotificationDetails(
-            'high_importance_channel', // Id
-            'Thông báo quan trọng', // Name
+            'high_importance_channel',
+            'Thông báo quan trọng',
             importance: Importance.max,
             priority: Priority.high,
           ),
         ),
-        payload: message.data.toString(),
+        payload: payloadJson, // Truyền data qua payload
       );
     }
   }

@@ -113,7 +113,7 @@ abstract class AppLocalizations {
   /// No description provided for @recipeTab.
   ///
   /// In en, this message translates to:
-  /// **'Recipes'**
+  /// **'Chef AI Suggestion'**
   String get recipeTab;
 
   /// No description provided for @planTab.
@@ -559,6 +559,378 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Favorite Recipe'**
   String get favoriterecipe;
+
+  /// No description provided for @fridgeManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'FRIDGE MANAGEMENT'**
+  String get fridgeManagement;
+
+  /// No description provided for @createNewFridge.
+  ///
+  /// In en, this message translates to:
+  /// **'Create New Fridge'**
+  String get createNewFridge;
+
+  /// No description provided for @joinFridge.
+  ///
+  /// In en, this message translates to:
+  /// **'Join Fridge'**
+  String get joinFridge;
+
+  /// No description provided for @fridgeList.
+  ///
+  /// In en, this message translates to:
+  /// **'Fridge List'**
+  String get fridgeList;
+
+  /// No description provided for @currentFridge.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Fridge'**
+  String get currentFridge;
+
+  /// No description provided for @inviteCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite code'**
+  String get inviteCode;
+
+  /// No description provided for @youAreOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'You are the owner'**
+  String get youAreOwner;
+
+  /// No description provided for @youAreMember.
+  ///
+  /// In en, this message translates to:
+  /// **'You are a member'**
+  String get youAreMember;
+
+  /// No description provided for @selectLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Language'**
+  String get selectLanguage;
+
+  /// No description provided for @vietnamese.
+  ///
+  /// In en, this message translates to:
+  /// **'Vietnamese'**
+  String get vietnamese;
+
+  /// No description provided for @english.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get english;
+
+  /// No description provided for @creatingData.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating sample data... Please wait!'**
+  String get creatingData;
+
+  /// No description provided for @dataCreatedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Data created successfully! Check Home.'**
+  String get dataCreatedSuccess;
+
+  /// No description provided for @codeCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Code copied!'**
+  String get codeCopied;
+
+  /// No description provided for @inviteCodeCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite code copied!'**
+  String get inviteCodeCopied;
+
+  /// No description provided for @accountDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deleted successfully'**
+  String get accountDeleted;
+
+  /// No description provided for @notificationsEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications enabled'**
+  String get notificationsEnabled;
+
+  /// No description provided for @notificationsDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications disabled'**
+  String get notificationsDisabled;
+
+  /// No description provided for @fridgeName.
+  ///
+  /// In en, this message translates to:
+  /// **'Fridge name'**
+  String get fridgeName;
+
+  /// No description provided for @fridgeNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Ex: Home in New York'**
+  String get fridgeNameHint;
+
+  /// No description provided for @create.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get create;
+
+  /// No description provided for @join.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get join;
+
+  /// No description provided for @fridgeCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'New fridge created!'**
+  String get fridgeCreated;
+
+  /// No description provided for @cannotCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot create'**
+  String get cannotCreate;
+
+  /// No description provided for @joinedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined successfully!'**
+  String get joinedSuccess;
+
+  /// No description provided for @invalidCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid invite code'**
+  String get invalidCode;
+
+  /// No description provided for @alreadyMember.
+  ///
+  /// In en, this message translates to:
+  /// **'You are already a member'**
+  String get alreadyMember;
+
+  /// No description provided for @cannotJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot join'**
+  String get cannotJoin;
+
+  /// No description provided for @noFridgesYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No fridges yet'**
+  String get noFridgesYet;
+
+  /// No description provided for @switchFridge.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch'**
+  String get switchFridge;
+
+  /// No description provided for @enterInviteCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 6-character code'**
+  String get enterInviteCode;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
+
+  /// No description provided for @shareCodeToInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Share this code to invite members:'**
+  String get shareCodeToInvite;
+
+  /// No description provided for @developerTools.
+  ///
+  /// In en, this message translates to:
+  /// **'DEVELOPER TOOLS'**
+  String get developerTools;
+
+  /// No description provided for @seedDatabase.
+  ///
+  /// In en, this message translates to:
+  /// **'Seed Database (Create sample data)'**
+  String get seedDatabase;
+
+  /// No description provided for @members.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get members;
+
+  /// No description provided for @viewMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'View Members'**
+  String get viewMembers;
+
+  /// No description provided for @removeMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get removeMember;
+
+  /// No description provided for @memberRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Member removed'**
+  String get memberRemoved;
+
+  /// No description provided for @cannotRemoveMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot remove member'**
+  String get cannotRemoveMember;
+
+  /// No description provided for @leaveFridge.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave Fridge'**
+  String get leaveFridge;
+
+  /// No description provided for @leaveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to leave this fridge?'**
+  String get leaveConfirm;
+
+  /// No description provided for @leftFridge.
+  ///
+  /// In en, this message translates to:
+  /// **'Left fridge successfully'**
+  String get leftFridge;
+
+  /// No description provided for @ownerCannotLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner cannot leave. Transfer ownership first.'**
+  String get ownerCannotLeave;
+
+  /// No description provided for @alreadyOwnFridge.
+  ///
+  /// In en, this message translates to:
+  /// **'You already own a fridge. Each user can only own one.'**
+  String get alreadyOwnFridge;
+
+  /// No description provided for @owner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get owner;
+
+  /// No description provided for @member.
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get member;
+
+  /// No description provided for @changeProfilePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Profile Photo'**
+  String get changeProfilePhoto;
+
+  /// No description provided for @chooseFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from Gallery'**
+  String get chooseFromGallery;
+
+  /// No description provided for @takePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take Photo'**
+  String get takePhoto;
+
+  /// No description provided for @removePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Photo'**
+  String get removePhoto;
+
+  /// No description provided for @helloGreeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Hello, {name}'**
+  String helloGreeting(String name);
+
+  /// No description provided for @foundRecipes.
+  ///
+  /// In en, this message translates to:
+  /// **'Found {count} recipes'**
+  String foundRecipes(int count);
+
+  /// No description provided for @searchingRecipes.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching for recipes...'**
+  String get searchingRecipes;
+
+  /// No description provided for @noRecipesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No recipes found yet.'**
+  String get noRecipesFound;
+
+  /// No description provided for @rescueIngredients.
+  ///
+  /// In en, this message translates to:
+  /// **' to rescue your ingredients.'**
+  String get rescueIngredients;
+
+  /// No description provided for @readyToCook.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to cook with {count} items from your fridge!'**
+  String readyToCook(int count);
+
+  /// No description provided for @addItemsToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Add items to your fridge to start!'**
+  String get addItemsToStart;
+
+  /// No description provided for @editDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Name'**
+  String get editDisplayName;
+
+  /// No description provided for @enterNewName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter new name'**
+  String get enterNewName;
+
+  /// No description provided for @nameUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Name updated successfully!'**
+  String get nameUpdated;
+
+  /// No description provided for @nameEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Name cannot be empty'**
+  String get nameEmpty;
 }
 
 class _AppLocalizationsDelegate

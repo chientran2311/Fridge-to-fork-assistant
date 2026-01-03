@@ -1,35 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart'; 
+import 'package:provider/provider.dart';
 import '../../../screens/recipe/filter_modal.dart';
 import '../../../models/RecipeFilter.dart'; // Đảm bảo đường dẫn đúng
 import '../../../providers/recipe_provider.dart';
 import '../../../providers/inventory_provider.dart';
 import '../../../l10n/app_localizations.dart';
+
 class AIRecipeHeader extends StatelessWidget {
   const AIRecipeHeader({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     final Color mainColor = const Color(0xFF1B3B36);
     final s = AppLocalizations.of(context)!;
-Future<void> _openFilterModal() async {
-    final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-    
-    // 1. Mở Modal và truyền filter hiện tại vào
-    final RecipeFilter? result = await FilterModal.show(
-      context, 
-      recipeProvider.currentFilter
-    );
+    Future<void> _openFilterModal() async {
+      final recipeProvider =
+          Provider.of<RecipeProvider>(context, listen: false);
 
-    // 2. Nếu user nhấn Apply (result != null)
-    if (result != null) {
-      // Cập nhật Provider -> Provider sẽ tự gọi searchRecipes() như logic đã viết
-      recipeProvider.updateFilter(result);
+      // 1. Mở Modal và truyền filter hiện tại vào
+      final RecipeFilter? result =
+          await FilterModal.show(context, recipeProvider.currentFilter);
+
+      // 2. Nếu user nhấn Apply (result != null)
+      if (result != null) {
+        // Cập nhật Provider -> Provider sẽ tự gọi searchRecipes() như logic đã viết
+        recipeProvider.updateFilter(result);
+      }
     }
-  }
+
     // Lấy Filter hiện tại từ Provider để truyền vào Modal
-    final currentFilter = context.select<RecipeProvider, RecipeFilter>((p) => p.currentFilter);
+    final currentFilter =
+        context.select<RecipeProvider, RecipeFilter>((p) => p.currentFilter);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
@@ -80,11 +82,12 @@ Future<void> _openFilterModal() async {
               final int recipeCount = recipeProvider.recipes.length;
               final int ingredientCount = inventoryProvider.items.length;
 
-              String titleText = "Found $recipeCount recipes";
+              // ✅ Sử dụng localization
+              String titleText = s.foundRecipes(recipeCount);
               if (recipeProvider.isLoading) {
-                 titleText = "Searching for recipes...";
+                titleText = s.searchingRecipes;
               } else if (recipeCount == 0 && !recipeProvider.isLoading) {
-                 titleText = "No recipes found yet.";
+                titleText = s.noRecipesFound;
               }
 
               return Container(
@@ -101,20 +104,21 @@ Future<void> _openFilterModal() async {
                     Expanded(
                       child: RichText(
                         text: TextSpan(
-                          style: TextStyle(
+                          style: GoogleFonts.merriweather(
                               color: mainColor, fontSize: 13, height: 1.4),
                           children: [
-                            TextSpan(
-                                text: "$titleText to rescue your ingredients. "),
+                            TextSpan(text: "$titleText${s.rescueIngredients}"),
                             if (ingredientCount > 0)
                               TextSpan(
-                                text: "Ready to cook with $ingredientCount items from your fridge!",
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                                text: s.readyToCook(ingredientCount),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
                               )
                             else
-                              const TextSpan(
-                                text: "Add items to your fridge to start!",
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                              TextSpan(
+                                text: s.addItemsToStart,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
                               ),
                           ],
                         ),

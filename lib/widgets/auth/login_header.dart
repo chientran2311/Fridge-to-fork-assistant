@@ -15,17 +15,21 @@ class LoginHeader extends StatelessWidget {
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: mainColor.withOpacity(0.1), // Màu xanh nhạt nền icon
             shape: BoxShape.circle,
+            border: Border.all(color: mainColor, width: 2),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0), // Căn lề để ảnh nằm gọn đẹp trong vòng tròn
+          child: ClipOval(
             child: Image.asset(
-              'assets/images/dreamy_chef_icon_app.png',
-              fit: BoxFit.contain,
+              'assets/images/app_icon.jpeg',
+              fit: BoxFit.cover,
+              width: 80,
+              height: 80,
               errorBuilder: (context, error, stackTrace) {
-                // Fallback: Nếu chưa có ảnh hoặc lỗi config, hiện lại Icon bếp
-                return Icon(Icons.kitchen, size: 40, color: mainColor);
+                debugPrint('❌ Lỗi load ảnh: $error');
+                return Container(
+                  color: mainColor.withOpacity(0.1),
+                  child: Icon(Icons.kitchen, size: 40, color: mainColor),
+                );
               },
             ),
           ),
@@ -43,7 +47,7 @@ class LoginHeader extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          "Let's get cooking with what you have.",
+          "Hãy nấu ăn với những gì bạn có.",
           textAlign: TextAlign.center,
           style: GoogleFonts.inter(
             fontSize: 16,

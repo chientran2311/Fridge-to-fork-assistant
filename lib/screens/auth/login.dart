@@ -182,23 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 50),
 
         // DEV AREA
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.red.shade50,
-            border: Border.all(color: Colors.red),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            children: [
-              Text(
-                s.devAreaTitle,
-                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
-              ),
-             
-            ],
-          ),
-        ),
+       
       ],
     );
   }

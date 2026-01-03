@@ -121,7 +121,7 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
               ),
               const SizedBox(height: 2),
               Text(
-                "${widget.category} • ${widget.quantity}${widget.unit}",
+                "${widget.category} • ${widget.quantity} ${widget.unit}",
                 style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
             ],

@@ -11,6 +11,7 @@ import '../../../../widgets/plans/tabs/weekly_plan_tab/day_item.dart';
 import '../../../../providers/recipe_provider.dart';
 import '../weekly_plan/add_recipe_screen.dart';
 import '../../../../data/services/spoonacular_service.dart';
+import '../shopping_list/shopping_list_tab.dart';
 
 class WeeklyPlanContent extends StatefulWidget {
   final Function(int)? onTabChange;
@@ -394,6 +395,9 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
 
       // ✅ Reload meal plans to show the new addition
       _loadMealPlans();
+
+      // ✅ Trigger shopping list recalculation
+      triggerShoppingListRecalculation();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -893,8 +897,19 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
 
             // ---------- DAY SELECTOR (FIXED AT TOP) ----------
             Container(
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               child: SizedBox(
                 height: 80,
                 child: ListView.builder(
@@ -908,48 +923,52 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
 
                     return Padding(
                       padding: const EdgeInsets.only(right: 12),
-                      child: DragTarget<Map<String, dynamic>>(
-                        onWillAccept: (data) {
-                          debugPrint(
-                              '🟡 [Day ${date.day}] onWillAccept: Hovering over day');
-                          return true;
-                        },
-                        onAccept: (dragData) async {
-                          // ✅ Recipe dropped on this day
-                          debugPrint(
-                              '✅ [Day ${date.day}] onAccept: Received drag data!');
-                          debugPrint('   Drag Data: $dragData');
+                      child: SizedBox(
+                        width: 60, // ✅ Fixed width for DragTarget
+                        height: 80, // ✅ Fixed height matching parent
+                        child: DragTarget<Map<String, dynamic>>(
+                          onWillAccept: (data) {
+                            debugPrint(
+                                '🟡 [Day ${date.day}] onWillAccept: Hovering over day');
+                            return true;
+                          },
+                          onAccept: (dragData) async {
+                            // ✅ Recipe dropped on this day
+                            debugPrint(
+                                '✅ [Day ${date.day}] onAccept: Received drag data!');
+                            debugPrint('   Drag Data: $dragData');
 
-                          final recipe =
-                              dragData['recipe'] as Map<String, dynamic>;
-                          final droppedDate = dragData['date'] as DateTime;
-                          final mealType = dragData['mealType'] as String;
+                            final recipe =
+                                dragData['recipe'] as Map<String, dynamic>;
+                            final droppedDate = dragData['date'] as DateTime;
+                            final mealType = dragData['mealType'] as String;
 
-                          debugPrint('   Recipe: ${recipe['title']}');
-                          debugPrint('   MealType: $mealType');
-                          debugPrint('   DropDate: $droppedDate');
+                            debugPrint('   Recipe: ${recipe['title']}');
+                            debugPrint('   MealType: $mealType');
+                            debugPrint('   DropDate: $droppedDate');
 
-                          await _addMealPlan(date, recipe['id'], mealType);
-                          debugPrint(
-                              '✅ Successfully added ${recipe['title']} to ${date.day}/${date.month}');
-                        },
-                        onLeave: (data) {
-                          debugPrint(
-                              '🔵 [Day ${date.day}] onLeave: Left the day target');
-                        },
-                        builder: (context, candidateData, rejectedData) {
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() => selectedDayIndex = index);
-                            },
-                            child: DayItem(
-                              day: _weekdayLabel(date),
-                              date: date.day.toString(),
-                              active: isActive,
-                              hasMealPlan: hasMealPlan,
-                            ),
-                          );
-                        },
+                            await _addMealPlan(date, recipe['id'], mealType);
+                            debugPrint(
+                                '✅ Successfully added ${recipe['title']} to ${date.day}/${date.month}');
+                          },
+                          onLeave: (data) {
+                            debugPrint(
+                                '🔵 [Day ${date.day}] onLeave: Left the day target');
+                          },
+                          builder: (context, candidateData, rejectedData) {
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() => selectedDayIndex = index);
+                              },
+                              child: DayItem(
+                                day: _weekdayLabel(date),
+                                date: date.day.toString(),
+                                active: isActive,
+                                hasMealPlan: hasMealPlan,
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     );
                   },
@@ -1181,6 +1200,9 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                         debugPrint('🔄 Reloading meal plans after deletion');
                         _hasLoadedData = false;
                         _loadMealPlans();
+
+                        // ✅ Trigger shopping list recalculation
+                        triggerShoppingListRecalculation();
                       },
                     );
                   },

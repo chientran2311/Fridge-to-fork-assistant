@@ -10,7 +10,7 @@ import '../../widgets/auth/common_auth_widgets.dart';
 import '../../data/services/auth_service.dart';
 import '../../widgets/notification.dart'; 
 import 'package:go_router/go_router.dart';  
-
+import '../../data/services/notification_service.dart';
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -72,11 +72,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = false);
 
     if (errorMessage == null) {
-      CustomToast.show(context, s.registerSuccess); // ✅ Updated
+      // 2. [SỬA] Đăng ký thành công -> Lưu FCM Token ngay lập tức
+      // Vì Firebase tự login sau khi register nên ta lấy được user hiện tại
+      try {
+        await NotificationService().saveTokenToDatabase();
+        print("✅ Đã tạo FCM Token cho tài khoản mới");
+      } catch (e) {
+        print("⚠️ Lỗi lưu token: $e");
+      }
+
+      setState(() => _isLoading = false);
+      CustomToast.show(context, s.registerSuccess);
+
       if (mounted) {
+        // 3. Chuyển thẳng vào App hoặc về Login tùy luồng của bạn
+        // Ở đây giữ logic cũ là pop về Login để người dùng tự đăng nhập lại (hoặc login auto)
         Navigator.pop(context); 
       }
     } else {
+      setState(() => _isLoading = false);
       CustomToast.show(context, errorMessage, isError: true);
     }
   }

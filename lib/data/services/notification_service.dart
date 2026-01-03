@@ -3,10 +3,10 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
+import 'package:go_router/go_router.dart';
 // Hàm xử lý khi App đang tắt (Background/Terminated)
 // Bắt buộc phải là Top-level function (nằm ngoài class)
-@pragma('vm:entry-point')
+@pragma('vm:entry-point') 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print("🌙 Nhận thông báo ngầm: ${message.messageId}");
 }
@@ -97,20 +97,22 @@ class NotificationService {
   }
 
   // Logic điều hướng dựa trên Data từ Backend gửi về
-  void _handleRedirect(RemoteMessage message, GlobalKey<NavigatorState> navigatorKey) {
-    if (message.data.containsKey('screen')) {
-      final String screen = message.data['screen'];
-      final String ingredient = message.data['ingredient'] ?? '';
-
-      print("🚀 Deep Link tới: $screen với món: $ingredient");
-
-      // Điều hướng
-      if (screen == '/recipe_suggestions') {
-        // Giả sử bạn có route này, truyền argument vào
-        navigatorKey.currentState?.pushNamed(
-          '/recipe_suggestions', 
-          arguments: ingredient // Truyền tên nguyên liệu sang màn hình gợi ý
-        );
+ void _handleRedirect(RemoteMessage message, GlobalKey<NavigatorState> navigatorKey) async{
+    final data = message.data;
+    
+    // Kiểm tra action_id
+    if (data['action_id'] == 'FIND_RECIPE') {
+      // [CẬP NHẬT] Lấy chuỗi danh sách nguyên liệu
+      // Fallback: Nếu server chưa update kịp thì lấy field cũ 'ingredient'
+      final String ingredientsStr = data['ingredients_list'] ?? data['ingredient'] ?? '';
+      
+      print("🚀 Deep Link: Tìm công thức với list -> $ingredientsStr");
+      await Future.delayed(const Duration(milliseconds: 500));
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        // Truyền nguyên chuỗi sang Router (Router sẽ hứng ở query param 'search')
+        // URL: /recipes?search=Thịt bò,Trứng gà
+        context.go('/recipes?search=$ingredientsStr');
       }
     }
   }

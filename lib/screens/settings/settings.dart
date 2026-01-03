@@ -5,10 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 
 // Import Providers & Localization
-// ❌ Đã xóa import AuthService
-import '../../providers/auth_provider.dart'; // ✅ Chỉ dùng Provider
+import '../../providers/auth_provider.dart'; 
 import '../../providers/locale_provider.dart';
 import '../../l10n/app_localizations.dart';
+
+// [MỚI] Import Database Seeder để gọi hàm tạo dữ liệu
+import '../../utils/database_seeder.dart'; 
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -44,11 +46,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // --- UI LOGIC: ĐĂNG XUẤT ---
   Future<void> _handleLogout(BuildContext context) async {
-    // Gọi hàm logout từ Provider (Logic nằm bên Provider)
     final authProvider = context.read<AuthProvider>();
     await authProvider.logout();
     
-    // Điều hướng UI
     if (context.mounted) {
       context.go('/login'); 
     }
@@ -62,37 +62,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text(s.deleteAccount, style: TextStyle(color: redColor)),
         content: Text(s.deleteAccountWarning),
         actions: [
-          // Nút Hủy
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(s.cancel, style: const TextStyle(color: Colors.grey)),
           ),
-          // Nút Xác Nhận
           TextButton(
             onPressed: () async {
-              Navigator.pop(ctx); // Đóng Dialog trước
-
-              // Gọi Provider để xử lý logic xóa
+              Navigator.pop(ctx); 
               final authProvider = context.read<AuthProvider>();
               final String? error = await authProvider.deleteAccount();
 
               if (!context.mounted) return;
 
-              // Xử lý kết quả trả về từ Provider để update UI
               if (error == null) {
-                // Thành công
                 context.go('/login');
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Account deleted successfully")),
                 );
               } else {
-                // Thất bại (VD: cần đăng nhập lại)
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(error),
-                    backgroundColor: redColor,
-                    duration: const Duration(seconds: 5),
-                  ),
+                  SnackBar(content: Text(error), backgroundColor: redColor),
                 );
               }
             },
@@ -103,10 +92,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // --- [MỚI] UI LOGIC: SEED DATABASE ---
+  Future<void> _handleSeedDatabase(BuildContext context) async {
+    // Hiện thông báo đang chạy
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Đang tạo dữ liệu mẫu... Vui lòng đợi!"),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    // Gọi hàm Seeder (Sử dụng logic mới lấy User thật)
+    await DatabaseSeeder().seedDatabase();
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("✅ Đã tạo dữ liệu thành công! Hãy kiểm tra Home."),
+          backgroundColor: mainColor,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = AppLocalizations.of(context);
-    // Fallback an toàn
     if (s == null) return const SizedBox();
 
     return Scaffold(
@@ -135,7 +146,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildContent(BuildContext context, AppLocalizations s, {required bool isMobile}) {
-    // Lấy ngôn ngữ hiển thị từ Provider
     final currentLocale = context.watch<LocaleProvider>().locale;
     final String languageName = currentLocale.languageCode == 'vi' ? 'Tiếng Việt' : 'English';
 
@@ -217,15 +227,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // SECTION 3: TÀI KHOẢN
                 _buildSectionHeader(s.account),
                 _buildSectionCard([
-                  // Nút Đăng Xuất
                   _buildListTile(
                     icon: Icons.logout,
                     title: s.logOut,
                     trailing: const SizedBox(),
-                    onTap: () => _handleLogout(context), // ✅ Gọi logic Auth qua hàm wrapper
+                    onTap: () => _handleLogout(context),
                   ),
                   _buildDivider(),
-                  // Nút Xóa Tài Khoản
                   _buildListTile(
                     icon: Icons.delete_outline,
                     title: s.deleteAccount,
@@ -233,10 +241,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     iconColor: redColor.withOpacity(0.1), 
                     iconColorTint: redColor, 
                     trailing: const SizedBox(),
-                    onTap: () => _confirmDeleteAccount(context, s), // ✅ Gọi logic Auth qua hàm wrapper
+                    onTap: () => _confirmDeleteAccount(context, s),
                   ),
                 ]),
                 
+                const SizedBox(height: 24),
+
+                // [MỚI] SECTION 4: DEVELOPER TOOLS (Đúng yêu cầu)
+                _buildSectionHeader("DEVELOPER TOOLS"), // Tiêu đề section
+                _buildSectionCard([
+                  _buildListTile(
+                    icon: Icons.cloud_upload_outlined, // Icon upload giống Login
+                    title: "Seed Database (Tạo dữ liệu mẫu)", // Tên nút
+                    // UI giống hệt nút Invite (Icon mũi tên bên phải)
+                    trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    onTap: () => _handleSeedDatabase(context), // Gọi hàm seed
+                  ),
+                ]),
+
                 const SizedBox(height: 40),
                 
                 // Version Info
@@ -255,7 +277,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // --- WIDGET HELPER METHODS (Giữ nguyên UI) ---
+  // --- WIDGET HELPER METHODS (Giữ nguyên) ---
 
   void _showLanguageBottomSheet(BuildContext context) {
     showModalBottomSheet(

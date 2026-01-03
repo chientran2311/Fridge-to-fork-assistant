@@ -196,17 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 s.devAreaTitle,
                 style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 12),
               ),
-              TextButton.icon(
-                icon: const Icon(Icons.cloud_upload, color: Colors.red),
-                label: Text(s.devSeedDatabase, style: const TextStyle(color: Colors.red)),
-                onPressed: () async {
-                  CustomToast.show(context, s.devSeeding);
-                  await DatabaseSeeder().seedDatabase();
-                  if (context.mounted) {
-                     CustomToast.show(context, s.devSeedSuccess);
-                  }
-                },
-              ),
+             
             ],
           ),
         ),

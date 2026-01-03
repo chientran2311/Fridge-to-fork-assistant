@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 
 // Import Providers & Localization
@@ -30,6 +31,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final Color redColor = const Color(0xFFE53935);
 
   bool _notificationsEnabled = true;
+  bool _isTogglingNotification = false; // Loading state cho switch
 
   @override
   void initState() {
@@ -44,30 +46,81 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadNotificationSetting() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
-    });
+    if (mounted) {
+      setState(() {
+        _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+      });
+    }
   }
 
   Future<void> _toggleNotifications(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('notifications_enabled', value);
-    
-    if (value) {
-      // Enable notifications - request permission again if needed
-      await FirebaseMessaging.instance.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-      // Subscribe to topics (optional)
-      await FirebaseMessaging.instance.subscribeToTopic('general');
-    } else {
-      // Disable notifications
-      await FirebaseMessaging.instance.unsubscribeFromTopic('general');
+    // Bước 1: Cập nhật UI NGAY LẬP TỨC để responsive
+    setState(() {
+      _isTogglingNotification = true;
+      _notificationsEnabled = value;
+    });
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('notifications_enabled', value);
+      
+      if (value) {
+        // BẬT thông báo
+        await FirebaseMessaging.instance.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        // Subscribe topic và lưu lại token
+        await FirebaseMessaging.instance.subscribeToTopic('general');
+        // Lưu lại FCM token vào Firestore
+        final token = await FirebaseMessaging.instance.getToken();
+        if (token != null) {
+          await _saveFcmToken(token);
+        }
+      } else {
+        // TẮT thông báo
+        await FirebaseMessaging.instance.unsubscribeFromTopic('general');
+        // Xóa FCM token khỏi Firestore để backend không gửi nữa
+        await _removeFcmToken();
+      }
+    } catch (e) {
+      // Nếu lỗi, revert lại trạng thái cũ
+      if (mounted) {
+        setState(() {
+          _notificationsEnabled = !value;
+        });
+      }
+      debugPrint('❌ Lỗi toggle notification: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isTogglingNotification = false);
+      }
     }
+  }
+
+  // Helper: Lưu FCM token vào Firestore
+  Future<void> _saveFcmToken(String token) async {
+    final user = context.read<AuthProvider>().user;
+    if (user == null) return;
     
-    setState(() => _notificationsEnabled = value);
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      'fcm_token': token,
+      'notifications_enabled': true,
+      'updated_at': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  // Helper: Xóa FCM token khỏi Firestore
+  Future<void> _removeFcmToken() async {
+    final user = context.read<AuthProvider>().user;
+    if (user == null) return;
+    
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'fcm_token': FieldValue.delete(),
+      'notifications_enabled': false,
+      'updated_at': FieldValue.serverTimestamp(),
+    });
   }
 
   // --- UI LOGIC: MỜI THÀNH VIÊN ---
@@ -575,11 +628,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildListTile(
                     icon: Icons.notifications_none,
                     title: s.notifications,
-                    trailing: Switch.adaptive(
-                      value: _notificationsEnabled,
-                      activeColor: mainColor,
-                      onChanged: _toggleNotifications,
-                    ),
+                    trailing: _isTogglingNotification
+                        ? SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: mainColor,
+                            ),
+                          )
+                        : Switch.adaptive(
+                            value: _notificationsEnabled,
+                            activeColor: mainColor,
+                            onChanged: _toggleNotifications,
+                          ),
                   ),
                 ]),
                 const SizedBox(height: 24),

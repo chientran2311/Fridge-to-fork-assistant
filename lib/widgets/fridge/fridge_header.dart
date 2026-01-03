@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-// ⚠️ Hãy đảm bảo đường dẫn import này đúng với cấu trúc thư mục của bạn
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
+import '../../providers/auth_provider.dart';
+import '../profile_avatar.dart';
 
 class FridgeHeader extends StatelessWidget {
   final bool isMultiSelectMode;
@@ -45,20 +48,44 @@ class FridgeHeader extends StatelessWidget {
                 ),
               ),
             ),
-          
-          // Tiêu đề (Fridge / Tủ lạnh)
-          Text(
-            // Nếu đang chọn nhiều thì hiện "Đã chọn...", nếu không thì hiện tên Tab
-            isMultiSelectMode 
-                ? (s?.language == 'vi' ? 'Đã chọn' : 'Selected') 
-                : (s?.fridgeTab ?? 'My Fridge'), // ✅ Đa ngôn ngữ
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
+
+          // Tiêu đề hoặc Avatar + Greeting
+          if (isMultiSelectMode)
+            // Khi đang chọn nhiều: Hiện text "Đã chọn/Selected"
+            Text(
+              s?.language == 'vi' ? 'Đã chọn' : 'Selected',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1A1A),
+              ),
+            )
+          else
+            // Khi bình thường: Hiện Avatar + Greeting
+            Row(
+              children: [
+                const ProfileAvatar(
+                  size: 48,
+                  showEditIcon: true,
+                ),
+                const SizedBox(width: 12),
+                // Greeting text với display name từ Firestore
+                Consumer<AuthProvider>(
+                  builder: (context, authProvider, child) {
+                    final name = authProvider.displayName;
+                    return Text(
+                      s?.helloGreeting(name) ?? 'Xin chào, $name',
+                      style: GoogleFonts.merriweather(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1A1A1A),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-          ),
-          
+
           // Nút Save (Lưu) hoặc Settings
           if (isMultiSelectMode)
             TextButton(

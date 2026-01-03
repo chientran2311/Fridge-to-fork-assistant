@@ -6,11 +6,13 @@ import 'package:fridge_to_fork_assistant/screens/main_screen.dart';
 // Import Localization
 import '../../l10n/app_localizations.dart';
 
-import '../../widgets/auth/common_auth_widgets.dart'; 
+import '../../widgets/auth/common_auth_widgets.dart';
 import '../../data/services/auth_service.dart';
-import '../../widgets/notification.dart'; 
-import 'package:go_router/go_router.dart';  
+import '../../widgets/notification.dart';
+import 'package:go_router/go_router.dart';
 import '../../data/services/notification_service.dart';
+import '../../widgets/profile_avatar.dart';
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -23,11 +25,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final Color secondaryColor = const Color(0xFFF0F1F1);
 
   final AuthService _authService = AuthService();
-  
+
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   bool _isPasswordObscure = true;
   bool _isConfirmPasswordObscure = true;
@@ -51,21 +54,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final confirmPass = _confirmPasswordController.text.trim();
 
     // Validate
-    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPass.isEmpty) {
-      CustomToast.show(context, s.registerErrorMissing, isError: true); // ✅ Updated
+    if (name.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty ||
+        confirmPass.isEmpty) {
+      CustomToast.show(context, s.registerErrorMissing,
+          isError: true); // ✅ Updated
       return;
     }
 
     if (password != confirmPass) {
-      CustomToast.show(context, s.registerErrorMatch, isError: true); // ✅ Updated
+      CustomToast.show(context, s.registerErrorMatch,
+          isError: true); // ✅ Updated
       return;
     }
-    
+
     setState(() => _isLoading = true);
 
     String? errorMessage = await _authService.registerWithEmail(
-      email: email, 
-      password: password
+      email: email,
+      password: password,
+      displayName: name, // [SỬA] Truyền tên vào để lưu Firestore
     );
 
     if (!mounted) return;
@@ -87,7 +96,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (mounted) {
         // 3. Chuyển thẳng vào App hoặc về Login tùy luồng của bạn
         // Ở đây giữ logic cũ là pop về Login để người dùng tự đăng nhập lại (hoặc login auto)
-        Navigator.pop(context); 
+        Navigator.pop(context);
       }
     } else {
       setState(() => _isLoading = false);
@@ -147,9 +156,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
 
-        const AvatarDisplay(
-          imageUrl: "https://i.pravatar.cc/300",
+        // Profile Avatar - Có thể chọn ảnh từ gallery/camera
+        // isRegisterMode: true để reset về mặc định, không load ảnh user cũ
+        const ProfileAvatar(
           size: 100,
+          showEditIcon: true,
+          isRegisterMode: true,
         ),
         const SizedBox(height: 24),
 
@@ -177,7 +189,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           controller: _nameController,
         ),
         const SizedBox(height: 16),
-        
+
         CustomAuthField(
           label: s.emailLabel, // ✅ Updated (Dùng chung với login)
           hintText: s.emailHint, // ✅ Updated
@@ -185,7 +197,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           controller: _emailController,
         ),
         const SizedBox(height: 16),
-        
+
         CustomAuthField(
           label: s.passwordLabel, // ✅ Updated
           hintText: s.passwordHint, // ✅ Updated
@@ -200,7 +212,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           },
         ),
         const SizedBox(height: 16),
-        
+
         CustomAuthField(
           label: s.confirmPasswordLabel, // ✅ Updated
           hintText: s.passwordHint, // ✅ Updated
@@ -219,7 +231,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         // Button
         SizedBox(
           width: double.infinity,
-          height: 56, 
+          height: 56,
           child: _isLoading
               ? Center(child: CircularProgressIndicator(color: mainColor))
               : PrimaryButton(
@@ -228,7 +240,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   onPressed: _handleRegister,
                 ),
         ),
-        
+
         const SizedBox(height: 24),
 
         // Footer Text

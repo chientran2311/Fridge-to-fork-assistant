@@ -1,7 +1,7 @@
 {
   "appTitle": "Kitchen Assistant",
   "fridgeTab": "Fridge",
-  "recipeTab": "Recipes",
+  "recipeTab": "Chef AI Suggestion",
   "planTab": "Plan",
   "settingsTitle": "Settings",
   "language": "Language",
@@ -134,5 +134,45 @@
   "ownerCannotLeave": "Owner cannot leave. Transfer ownership first.",
   "alreadyOwnFridge": "You already own a fridge. Each user can only own one.",
   "owner": "Owner",
-  "member": "Member"
+  "member": "Member",
+
+  "changeProfilePhoto": "Change Profile Photo",
+  "chooseFromGallery": "Choose from Gallery",
+  "takePhoto": "Take Photo",
+  "removePhoto": "Remove Photo",
+
+  "helloGreeting": "Hello, {name}",
+  "@helloGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "foundRecipes": "Found {count} recipes",
+  "@foundRecipes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchingRecipes": "Searching for recipes...",
+  "noRecipesFound": "No recipes found yet.",
+  "rescueIngredients": " to rescue your ingredients.",
+  "readyToCook": "Ready to cook with {count} items from your fridge!",
+  "@readyToCook": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addItemsToStart": "Add items to your fridge to start!",
+
+  "editDisplayName": "Edit Name",
+  "enterNewName": "Enter new name",
+  "nameUpdated": "Name updated successfully!",
+  "nameEmpty": "Name cannot be empty"
 }

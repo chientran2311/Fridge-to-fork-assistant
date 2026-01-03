@@ -1,7 +1,5 @@
 {
   "appTitle": "Bếp Trợ Lý",
-  "fridgeTab": "Tủ Lạnh",
-  "recipeTab": "Công Thức",
   "planTab": "Kế Hoạch",
   "settingsTitle": "Cài Đặt",
   "language": "Ngôn ngữ",
@@ -26,7 +24,7 @@
   
   "registerTitle": "Tạo Tài Khoản",
   "registerSubtitle": "Bắt đầu tiết kiệm thực phẩm ngay hôm nay",
-  "fullNameLabel": "Họ và Tên",
+  "fullNameLabel": "Tên hiển thị",
   "fullNameHint": "Nguyễn Văn A",
   "confirmPasswordLabel": "Xác nhận mật khẩu",
   "signupButton": "Đăng Ký",
@@ -134,5 +132,45 @@
   "ownerCannotLeave": "Chủ nhà không thể rời đi. Hãy chuyển quyền trước.",
   "alreadyOwnFridge": "Bạn đã sở hữu một tủ lạnh. Mỗi người chỉ được sở hữu một.",
   "owner": "Chủ nhà",
-  "member": "Thành viên"
+  "member": "Thành viên",
+
+  "changeProfilePhoto": "Đổi ảnh đại diện",
+  "chooseFromGallery": "Chọn từ thư viện",
+  "takePhoto": "Chụp ảnh mới",
+  "removePhoto": "Xóa ảnh",
+
+  "helloGreeting": "Xin chào, {name}",
+  "@helloGreeting": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "foundRecipes": "Tìm thấy {count} công thức",
+  "@foundRecipes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchingRecipes": "Đang tìm kiếm công thức...",
+  "noRecipesFound": "Chưa tìm thấy công thức nào.",
+  "rescueIngredients": " để cứu nguyên liệu của bạn.",
+  "readyToCook": "Sẵn sàng nấu với {count} nguyên liệu từ tủ lạnh!",
+  "@readyToCook": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addItemsToStart": "Thêm nguyên liệu vào tủ lạnh để bắt đầu!",
+
+  "editDisplayName": "Chỉnh sửa tên",
+  "enterNewName": "Nhập tên mới",
+  "nameUpdated": "Cập nhật tên thành công!",
+  "nameEmpty": "Tên không được để trống"
 }

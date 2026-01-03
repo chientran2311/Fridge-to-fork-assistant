@@ -12,10 +12,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appTitle => 'Bếp Trợ Lý';
 
   @override
-  String get fridgeTab => 'Tủ Lạnh';
+  String get fridgeTab => 'Fridge';
 
   @override
-  String get recipeTab => 'Công Thức';
+  String get recipeTab => 'Chef AI Suggestion';
 
   @override
   String get planTab => 'Kế Hoạch';
@@ -84,7 +84,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get registerSubtitle => 'Bắt đầu tiết kiệm thực phẩm ngay hôm nay';
 
   @override
-  String get fullNameLabel => 'Họ và Tên';
+  String get fullNameLabel => 'Tên hiển thị';
 
   @override
   String get fullNameHint => 'Nguyễn Văn A';
@@ -385,4 +385,55 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get member => 'Thành viên';
+
+  @override
+  String get changeProfilePhoto => 'Đổi ảnh đại diện';
+
+  @override
+  String get chooseFromGallery => 'Chọn từ thư viện';
+
+  @override
+  String get takePhoto => 'Chụp ảnh mới';
+
+  @override
+  String get removePhoto => 'Xóa ảnh';
+
+  @override
+  String helloGreeting(String name) {
+    return 'Xin chào, $name';
+  }
+
+  @override
+  String foundRecipes(int count) {
+    return 'Tìm thấy $count công thức';
+  }
+
+  @override
+  String get searchingRecipes => 'Đang tìm kiếm công thức...';
+
+  @override
+  String get noRecipesFound => 'Chưa tìm thấy công thức nào.';
+
+  @override
+  String get rescueIngredients => ' để cứu nguyên liệu của bạn.';
+
+  @override
+  String readyToCook(int count) {
+    return 'Sẵn sàng nấu với $count nguyên liệu từ tủ lạnh!';
+  }
+
+  @override
+  String get addItemsToStart => 'Thêm nguyên liệu vào tủ lạnh để bắt đầu!';
+
+  @override
+  String get editDisplayName => 'Chỉnh sửa tên';
+
+  @override
+  String get enterNewName => 'Nhập tên mới';
+
+  @override
+  String get nameUpdated => 'Cập nhật tên thành công!';
+
+  @override
+  String get nameEmpty => 'Tên không được để trống';
 }

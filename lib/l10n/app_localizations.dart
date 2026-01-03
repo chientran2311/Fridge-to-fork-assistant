@@ -113,7 +113,7 @@ abstract class AppLocalizations {
   /// No description provided for @recipeTab.
   ///
   /// In en, this message translates to:
-  /// **'Recipes'**
+  /// **'Chef AI Suggestion'**
   String get recipeTab;
 
   /// No description provided for @planTab.
@@ -841,6 +841,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Member'**
   String get member;
+
+  /// No description provided for @changeProfilePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Change Profile Photo'**
+  String get changeProfilePhoto;
+
+  /// No description provided for @chooseFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from Gallery'**
+  String get chooseFromGallery;
+
+  /// No description provided for @takePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take Photo'**
+  String get takePhoto;
+
+  /// No description provided for @removePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Photo'**
+  String get removePhoto;
+
+  /// No description provided for @helloGreeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Hello, {name}'**
+  String helloGreeting(String name);
+
+  /// No description provided for @foundRecipes.
+  ///
+  /// In en, this message translates to:
+  /// **'Found {count} recipes'**
+  String foundRecipes(int count);
+
+  /// No description provided for @searchingRecipes.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching for recipes...'**
+  String get searchingRecipes;
+
+  /// No description provided for @noRecipesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No recipes found yet.'**
+  String get noRecipesFound;
+
+  /// No description provided for @rescueIngredients.
+  ///
+  /// In en, this message translates to:
+  /// **' to rescue your ingredients.'**
+  String get rescueIngredients;
+
+  /// No description provided for @readyToCook.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to cook with {count} items from your fridge!'**
+  String readyToCook(int count);
+
+  /// No description provided for @addItemsToStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Add items to your fridge to start!'**
+  String get addItemsToStart;
+
+  /// No description provided for @editDisplayName.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Name'**
+  String get editDisplayName;
+
+  /// No description provided for @enterNewName.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter new name'**
+  String get enterNewName;
+
+  /// No description provided for @nameUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Name updated successfully!'**
+  String get nameUpdated;
+
+  /// No description provided for @nameEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Name cannot be empty'**
+  String get nameEmpty;
 }
 
 class _AppLocalizationsDelegate

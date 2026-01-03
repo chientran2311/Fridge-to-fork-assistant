@@ -15,7 +15,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fridgeTab => 'Fridge';
 
   @override
-  String get recipeTab => 'Recipes';
+  String get recipeTab => 'Chef AI Suggestion';
 
   @override
   String get planTab => 'Plan';
@@ -384,4 +384,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get member => 'Member';
+
+  @override
+  String get changeProfilePhoto => 'Change Profile Photo';
+
+  @override
+  String get chooseFromGallery => 'Choose from Gallery';
+
+  @override
+  String get takePhoto => 'Take Photo';
+
+  @override
+  String get removePhoto => 'Remove Photo';
+
+  @override
+  String helloGreeting(String name) {
+    return 'Hello, $name';
+  }
+
+  @override
+  String foundRecipes(int count) {
+    return 'Found $count recipes';
+  }
+
+  @override
+  String get searchingRecipes => 'Searching for recipes...';
+
+  @override
+  String get noRecipesFound => 'No recipes found yet.';
+
+  @override
+  String get rescueIngredients => ' to rescue your ingredients.';
+
+  @override
+  String readyToCook(int count) {
+    return 'Ready to cook with $count items from your fridge!';
+  }
+
+  @override
+  String get addItemsToStart => 'Add items to your fridge to start!';
+
+  @override
+  String get editDisplayName => 'Edit Name';
+
+  @override
+  String get enterNewName => 'Enter new name';
+
+  @override
+  String get nameUpdated => 'Name updated successfully!';
+
+  @override
+  String get nameEmpty => 'Name cannot be empty';
 }

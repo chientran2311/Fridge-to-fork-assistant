@@ -37,11 +37,16 @@ dependencies:
   timezone: ^0.10.1
   firebase_messaging: ^16.1.0
   barcode_widget: ^2.0.4
+  image_picker: ^1.1.2
+  path_provider: ^2.1.4
+  shared_preferences: ^2.3.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.4
 
 flutter:
   uses-material-design: true
@@ -49,3 +54,17 @@ flutter:
   assets:
     - assets/images/
     - .env
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.jpeg"
+  adaptive_icon_background: "#1B3B36"
+  adaptive_icon_foreground: "assets/images/app_icon.jpeg"
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/images/app_icon.jpeg
+  android_12:
+    color: "#FFFFFF"
+    image: assets/images/app_icon.jpeg

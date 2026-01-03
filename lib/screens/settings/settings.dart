@@ -3,13 +3,16 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
-import 'debug_tools.dart';
 
 // Import Providers & Localization
-// ❌ Đã xóa import AuthService
-import '../../providers/auth_provider.dart'; // ✅ Chỉ dùng Provider
+import '../../providers/auth_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../l10n/app_localizations.dart';
+
+// [MỚI] Import Database Seeder để gọi hàm tạo dữ liệu
+import '../../utils/database_seeder.dart';
+// [MỚI] Import Recipe Migration để fix recipes
+import '../../utils/fix_recipes_migration.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -45,13 +48,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // --- UI LOGIC: ĐĂNG XUẤT ---
   Future<void> _handleLogout(BuildContext context) async {
-    // Gọi hàm logout từ Provider (Logic nằm bên Provider)
     final authProvider = context.read<AuthProvider>();
     await authProvider.logout();
-    
-    // Điều hướng UI
+
     if (context.mounted) {
-      context.go('/login'); 
+      context.go('/login');
     }
   }
 
@@ -63,51 +64,89 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text(s.deleteAccount, style: TextStyle(color: redColor)),
         content: Text(s.deleteAccountWarning),
         actions: [
-          // Nút Hủy
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(s.cancel, style: const TextStyle(color: Colors.grey)),
           ),
-          // Nút Xác Nhận
           TextButton(
             onPressed: () async {
-              Navigator.pop(ctx); // Đóng Dialog trước
-
-              // Gọi Provider để xử lý logic xóa
+              Navigator.pop(ctx);
               final authProvider = context.read<AuthProvider>();
               final String? error = await authProvider.deleteAccount();
 
               if (!context.mounted) return;
 
-              // Xử lý kết quả trả về từ Provider để update UI
               if (error == null) {
-                // Thành công
                 context.go('/login');
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Account deleted successfully")),
                 );
               } else {
-                // Thất bại (VD: cần đăng nhập lại)
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(error),
-                    backgroundColor: redColor,
-                    duration: const Duration(seconds: 5),
-                  ),
+                  SnackBar(content: Text(error), backgroundColor: redColor),
                 );
               }
             },
-            child: Text(s.confirm, style: TextStyle(color: redColor, fontWeight: FontWeight.bold)),
+            child: Text(s.confirm,
+                style: TextStyle(color: redColor, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
+  // --- [MỚI] UI LOGIC: SEED DATABASE ---
+  Future<void> _handleSeedDatabase(BuildContext context) async {
+    // Hiện thông báo đang chạy
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Đang tạo dữ liệu mẫu... Vui lòng đợi!"),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    // Gọi hàm Seeder (Sử dụng logic mới lấy User thật)
+    await DatabaseSeeder().seedDatabase();
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              const Text("✅ Đã tạo dữ liệu thành công! Hãy kiểm tra Home."),
+          backgroundColor: mainColor,
+        ),
+      );
+    }
+  }
+
+  // ✅ Handler mới: Fix recipes thiếu ingredients/instructions
+  Future<void> _handleFixRecipes(BuildContext context) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("🔧 Đang sửa recipes... Vui lòng đợi!"),
+        duration: Duration(seconds: 3),
+      ),
+    );
+
+    // Import và gọi migration
+    final migration = FixRecipesMigration();
+    await migration.fixAllRecipes();
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              const Text("✅ Đã sửa xong! Kiểm tra console để xem chi tiết."),
+          backgroundColor: mainColor,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = AppLocalizations.of(context);
-    // Fallback an toàn
     if (s == null) return const SizedBox();
 
     return Scaffold(
@@ -122,7 +161,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               color: bgCream,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 4))
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4))
               ],
             ),
             child: ClipRRect(
@@ -135,10 +177,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildContent(BuildContext context, AppLocalizations s, {required bool isMobile}) {
-    // Lấy ngôn ngữ hiển thị từ Provider
+  Widget _buildContent(BuildContext context, AppLocalizations s,
+      {required bool isMobile}) {
     final currentLocale = context.watch<LocaleProvider>().locale;
-    final String languageName = currentLocale.languageCode == 'vi' ? 'Tiếng Việt' : 'English';
+    final String languageName =
+        currentLocale.languageCode == 'vi' ? 'Tiếng Việt' : 'English';
 
     return Column(
       children: [
@@ -157,11 +200,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   s.settingsTitle,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.merriweather(
-                    fontSize: 20, fontWeight: FontWeight.w900, color: mainColor,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: mainColor,
                   ),
                 ),
               ),
-              const SizedBox(width: 40), 
+              const SizedBox(width: 40),
             ],
           ),
         ),
@@ -173,9 +218,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                
                 // SECTION 1: CÀI ĐẶT CHUNG
-                _buildSectionHeader(s.general), 
+                _buildSectionHeader(s.general),
                 _buildSectionCard([
                   _buildListTile(
                     icon: Icons.language,
@@ -183,7 +227,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(languageName, style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+                        Text(languageName,
+                            style: TextStyle(
+                                color: Colors.grey[500], fontSize: 14)),
                         const SizedBox(width: 8),
                         Icon(Icons.chevron_right, color: Colors.grey[400]),
                       ],
@@ -197,7 +243,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     trailing: Switch.adaptive(
                       value: _notificationsEnabled,
                       activeColor: mainColor,
-                      onChanged: (val) => setState(() => _notificationsEnabled = val),
+                      onChanged: (val) =>
+                          setState(() => _notificationsEnabled = val),
                     ),
                   ),
                 ]),
@@ -209,7 +256,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildListTile(
                     icon: Icons.person_add_alt_1,
                     title: s.inviteMember,
-                    trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    trailing:
+                        Icon(Icons.chevron_right, color: Colors.grey[400]),
                     onTap: () => _showInviteDialog(context, s),
                   ),
                 ]),
@@ -218,28 +266,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // SECTION 3: TÀI KHOẢN
                 _buildSectionHeader(s.account),
                 _buildSectionCard([
-                  // Nút Đăng Xuất
                   _buildListTile(
                     icon: Icons.logout,
                     title: s.logOut,
                     trailing: const SizedBox(),
-                    onTap: () => _handleLogout(context), // ✅ Gọi logic Auth qua hàm wrapper
+                    onTap: () => _handleLogout(context),
                   ),
                   _buildDivider(),
-                  // Nút Xóa Tài Khoản
                   _buildListTile(
                     icon: Icons.delete_outline,
                     title: s.deleteAccount,
-                    textColor: redColor, 
-                    iconColor: redColor.withOpacity(0.1), 
-                    iconColorTint: redColor, 
+                    textColor: redColor,
+                    iconColor: redColor.withOpacity(0.1),
+                    iconColorTint: redColor,
                     trailing: const SizedBox(),
-                    onTap: () => _confirmDeleteAccount(context, s), // ✅ Gọi logic Auth qua hàm wrapper
+                    onTap: () => _confirmDeleteAccount(context, s),
                   ),
                 ]),
-                
+
+                const SizedBox(height: 24),
+
+                // [MỚI] SECTION 4: DEVELOPER TOOLS (Đúng yêu cầu)
+                _buildSectionHeader("DEVELOPER TOOLS"), // Tiêu đề section
+                _buildSectionCard([
+                  _buildListTile(
+                    icon:
+                        Icons.cloud_upload_outlined, // Icon upload giống Login
+                    title: "Seed Database (Tạo dữ liệu mẫu)", // Tên nút
+                    // UI giống hệt nút Invite (Icon mũi tên bên phải)
+                    trailing:
+                        Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    onTap: () => _handleSeedDatabase(context), // Gọi hàm seed
+                  ),
+                  _buildListTile(
+                    icon: Icons.build_circle_outlined, // Icon công cụ
+                    title: "Fix Recipes (Sửa dữ liệu recipes)", // Nút mới
+                    trailing:
+                        Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    onTap: () => _handleFixRecipes(context), // Gọi hàm fix
+                  ),
+                ]),
+
                 const SizedBox(height: 40),
-                
+
                 // Version Info
                 Center(
                   child: Text(
@@ -256,7 +325,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // --- WIDGET HELPER METHODS (Giữ nguyên UI) ---
+  // --- WIDGET HELPER METHODS (Giữ nguyên) ---
 
   void _showLanguageBottomSheet(BuildContext context) {
     showModalBottomSheet(
@@ -270,7 +339,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text("Select Language", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              const Text("Select Language",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
               const SizedBox(height: 20),
               ListTile(
                 leading: const Text("🇻🇳", style: TextStyle(fontSize: 24)),
@@ -355,24 +425,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Row(
             children: [
               Container(
-                width: 36, height: 36,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
                   color: iconColor ?? const Color(0xFFE8F0EE),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  icon, 
-                  color: iconColorTint ?? const Color(0xFF1B3B36), 
-                  size: 18
-                ),
+                child: Icon(icon,
+                    color: iconColorTint ?? const Color(0xFF1B3B36), size: 18),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(
                   title,
                   style: GoogleFonts.inter(
-                    fontSize: 15, 
-                    fontWeight: FontWeight.w600, 
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
                     color: textColor ?? Colors.black87,
                   ),
                 ),

@@ -8,11 +8,14 @@ import '../../../../screens/meal&plan/planner/planner_detail_screen.dart';
 class MealCard extends StatelessWidget {
   final String label;
   final String title;
-  final int kcal;
+  final double kcal;
   final String recipeId; // ✅ Thêm recipe ID
   final String householdId; // ✅ Thêm household ID
   final String mealPlanDate; // ✅ Thêm ngày meal plan
   final String mealType; // ✅ Thêm meal type để biết thứ tự
+  final String? imageUrl; // ✅ Thêm image URL
+  final int mealPlanServings; // ✅ Servings từ meal_plan
+  final VoidCallback? onDeleted; // ✅ Callback when deleted
 
   const MealCard({
     required this.label,
@@ -22,6 +25,9 @@ class MealCard extends StatelessWidget {
     required this.householdId,
     required this.mealPlanDate,
     required this.mealType,
+    this.imageUrl,
+    this.mealPlanServings = 1,
+    this.onDeleted,
   });
 
   @override
@@ -29,17 +35,27 @@ class MealCard extends StatelessWidget {
     return InkWell(
       borderRadius: BorderRadius.circular(16),
       onTap: () {
-        Navigator.push(
-          context,
+        // ✅ Sử dụng ROOT Navigator để ẩn bottom navigation bar
+        Navigator.of(context, rootNavigator: true)
+            .push(
           MaterialPageRoute(
             builder: (_) => PlannerDetailScreen(
               recipeId: recipeId,
               householdId: householdId,
               mealPlanDate: mealPlanDate,
               mealType: mealType,
+              mealPlanServings:
+                  mealPlanServings, // ✅ Pass servings from meal_plan
+              onDeleted: onDeleted, // ✅ Pass callback
             ),
           ),
-        );
+        )
+            .then((_) {
+          // ✅ Refresh when returning from detail screen
+          if (onDeleted != null) {
+            onDeleted!();
+          }
+        });
       },
       child: Card(
         elevation: 0,
@@ -55,10 +71,17 @@ class MealCard extends StatelessWidget {
                   borderRadius:
                       const BorderRadius.vertical(top: Radius.circular(16)),
                   child: Image.network(
-                    "https://images.unsplash.com/photo-1504674900247-0877df9cc836",
+                    imageUrl ??
+                        "https://images.unsplash.com/photo-1504674900247-0877df9cc836",
                     height: 130,
                     width: double.infinity,
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 130,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.restaurant,
+                          size: 40, color: Colors.grey),
+                    ),
                   ),
                 ),
                 Positioned(
@@ -87,7 +110,7 @@ class MealCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          "$kcal kcal / serving",
+                          "${kcal.toInt()} kcal / serving",
                           style: const TextStyle(color: Colors.grey),
                         ),
                       ],

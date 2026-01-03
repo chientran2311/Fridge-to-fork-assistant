@@ -21,6 +21,7 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -54,7 +55,7 @@ android {
 
     buildTypes {
         getByName("release") {
-            // Gọi lại signingConfig đã tạo ở trên
+            // Gọi lại signingConfig đã tạo ở trên (nếu có)
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -68,4 +69,8 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    add("coreLibraryDesugaring", "com.android.tools:desugar_jdk_libs:2.1.4")
 }

@@ -3,24 +3,23 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async'; 
 
-// Import các màn hình chính
+// Import các màn hình
 import '../screens/auth/login.dart';
 import '../screens/auth/register.dart';
 import '../screens/main_screen.dart';
 import '../screens/fridge/fridge_home.dart';
 import '../screens/recipe/ai_recipe.dart';
 import '../screens/meal&plan/planner/planner_screen.dart';
-
-// [MỚI] Import màn hình chi tiết, settings, favorite
-import '../screens/recipe/detail_recipe.dart';
+import '../../screens/recipe/detail_recipe.dart'; 
 import '../models/household_recipe.dart'; 
-import '../screens/settings/settings.dart'; // [Cần tạo file này hoặc import đúng]
-import '../screens/recipe/favorite_recipes.dart'; // [Cần tạo file này hoặc import đúng]
+import '../screens/settings/settings.dart'; 
+import '../screens/recipe/favorite_recipes.dart'; 
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
+// [QUAN TRỌNG] Khai báo biến global public để Main dùng chung
+final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final GoRouter appRouter = GoRouter(
-  navigatorKey: _rootNavigatorKey,
+  navigatorKey: rootNavigatorKey, // Gắn chìa khóa vào đây
   initialLocation: '/fridge',
   
   refreshListenable: GoRouterRefreshStream(FirebaseAuth.instance.authStateChanges()),
@@ -38,38 +37,35 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
 
-    // Shell Route (Chứa Bottom Bar)
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return MainScreen(navigationShell: navigationShell);
       },
       branches: [
-        // --- Branch 0: Fridge & Settings ---
+        // Branch 1: Fridge
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: '/fridge',
               builder: (context, state) => const FridgeHomeScreen(),
               routes: [
-                // Đường dẫn con: /fridge/settings
-                // Vì không nằm trong list MainScreen -> Tự động ẩn BottomBar
-                GoRoute(
-                  path: 'settings', 
-                  builder: (context, state) => const SettingsScreen(),
-                ),
+                GoRoute(path: 'settings', builder: (context, state) => const SettingsScreen()),
               ],
             ),
           ],
         ),
         
-        // --- Branch 1: Recipes, Detail & Favorites ---
+        // Branch 2: Recipes (Có logic Deep Link)
         StatefulShellBranch(
           routes: [
             GoRoute(
               path: '/recipes',
-              builder: (context, state) => const AIRecipeScreen(),
+              builder: (context, state) {
+                // Hứng tham số search từ URL (do Notification Service gọi)
+                final searchQuery = state.uri.queryParameters['search'];
+                return AIRecipeScreen(initialQuery: searchQuery);
+              },
               routes: [
-                // Đường dẫn con: /recipes/detail
                 GoRoute(
                   path: 'detail',
                   builder: (context, state) {
@@ -77,23 +73,16 @@ final GoRouter appRouter = GoRouter(
                     return RecipeDetailScreen(recipe: recipe);
                   },
                 ),
-                // Đường dẫn con: /recipes/favorites
-                GoRoute(
-                  path: 'favorites',
-                  builder: (context, state) => const FavoriteRecipesScreen(),
-                ),
+                GoRoute(path: 'favorites', builder: (context, state) => const FavoriteRecipesScreen()),
               ],
             ),
           ],
         ),
 
-        // --- Branch 2: Planner ---
+        // Branch 3: Planner
         StatefulShellBranch(
           routes: [
-            GoRoute(
-              path: '/planner',
-              builder: (context, state) => const PlannerScreen(),
-            ),
+            GoRoute(path: '/planner', builder: (context, state) => const PlannerScreen()),
           ],
         ),
       ],
@@ -105,9 +94,7 @@ final GoRouter appRouter = GoRouter(
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     notifyListeners();
-    _subscription = stream.asBroadcastStream().listen(
-      (dynamic _) => notifyListeners(),
-    );
+    _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
   }
   late final StreamSubscription<dynamic> _subscription;
   @override

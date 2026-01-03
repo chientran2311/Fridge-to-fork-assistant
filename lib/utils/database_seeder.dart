@@ -170,6 +170,12 @@ class DatabaseSeeder {
         'added_by_uid': userId,
         'added_at': FieldValue.serverTimestamp(),
         'is_favorite': true,
+        'ingredients': [
+          {'name': 'Thịt bò', 'amount': 300, 'unit': 'g'},
+          {'name': 'Tiêu đen', 'amount': 1, 'unit': 'thìa'},
+          {'name': 'Hành tím', 'amount': 2, 'unit': 'củ'},
+        ],
+        'instructions': 'Bước 1: Rửa sạch thịt bò, cắt miếng vừa ăn.\nBước 2: Ướp thịt với tiêu đen, hành băm, nước mắm trong 30 phút.\nBước 3: Cho thịt vào nồi, thêm nước, kho lửa nhỏ khoảng 45 phút cho đến khi thịt mềm.\nBước 4: Nêm nếm lại gia vị, tắt bếp. Dùng nóng với bánh mì.',
       });
 
       // ==========================================

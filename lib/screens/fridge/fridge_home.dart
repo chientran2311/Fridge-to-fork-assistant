@@ -1,14 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-
-// Import Localizations
 import '../../l10n/app_localizations.dart';
-
-// Import Utils
-import '../../utils/database_seeder.dart';
-
+import 'package:go_router/go_router.dart';
 // Import Models & Providers
 import '../../providers/inventory_provider.dart';
 import '../../models/inventory_item.dart';
@@ -16,14 +9,13 @@ import '../../models/inventory_item.dart';
 // Import Widgets
 import '../../widgets/fridge/fridge_item_card.dart'; 
 import '../../widgets/fridge/fridge_header.dart';
-import '../../widgets/fridge/fridge_search_bar.dart';
 import '../../widgets/fridge/fridge_section_header.dart';
 import '../../widgets/fridge/fridge_delete_bar.dart';
 import '../../widgets/fridge/add_item_bottom_sheet.dart';
 import '../../widgets/fridge/delete_confirmation_modal.dart';
-
-// Import Utils
 import '../../utils/responsive_ui.dart';
+
+// Import Màn hình Settings
 
 
 class FridgeHomeScreen extends StatefulWidget {
@@ -36,7 +28,6 @@ class FridgeHomeScreen extends StatefulWidget {
 class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
   bool _isMultiSelectMode = false;
   final Set<String> _selectedItems = {};
-  bool _isSeeding = false;
 
   // ==================== MULTI-SELECT METHODS ====================
   void _toggleItemSelection(String itemId) {
@@ -94,56 +85,19 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     );
   }
 
-  void _navigateToSettings() {
-    context.go('/fridge/settings'); 
-  }
-
-  void _runSeeder() async {
-    if (_isSeeding) return;
-    
-    setState(() => _isSeeding = true);
-    
-    try {
-      // Lấy user hiện tại
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Vui lòng đăng nhập trước!'), backgroundColor: Colors.red),
-          );
-        }
-        return;
-      }
-      
-      // Chạy seeder (tự lấy user + tạo household bên trong)
-      final seeder = DatabaseSeeder();
-      await seeder.seedDatabase();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Đã tạo dữ liệu mẫu thành công!'),
-            backgroundColor: Color(0xFF28A745),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi: $e'), backgroundColor: Colors.red),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isSeeding = false);
-    }
-  }
+void _navigateToSettings() {
+  // Đường dẫn phải khớp với cấu trúc router: /fridge/settings
+  context.go('/fridge/settings'); 
+}
 
   void _deleteSelectedItems() {
+    // Gọi provider để xóa item thật ở đây
     final provider = Provider.of<InventoryProvider>(context, listen: false);
     provider.deleteItems(_selectedItems.toList());
     
     _exitMultiSelectMode();
 
+    // ✅ UPDATE: Dùng localization cho thông báo xóa
     final s = AppLocalizations.of(context);
     final msg = s?.itemsDeleted ?? 'Deleted selected items';
 
@@ -181,38 +135,41 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
   }
 
   Widget _buildLayout() {
+    // 1. Lấy s (ngôn ngữ) ở chế độ nullable (có thể null)
     final s = AppLocalizations.of(context);
 
+    // Chuẩn bị các text an toàn (Nếu s chưa tải kịp thì hiện text mặc định)
     final titleEatMe = s?.eatMeFirst ?? 'Eat Me First';
     final titleInStock = s?.inStock ?? 'In Stock';
-    final msgEmpty = s?.emptyFridge ?? 'Your fridge is empty';
-    final msgAddFirst = s?.addFirstItem ?? 'Add your first item';
+    final msgEmpty = s?.emptyFridge ?? '...';
+    final msgAddFirst = s?.addFirstItem ?? '...';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: Column(
           children: [
+            // 2. Header luôn hiển thị (không bị chặn bởi loading ngôn ngữ)
             FridgeHeader(
               isMultiSelectMode: _isMultiSelectMode,
               onCancel: _exitMultiSelectMode,
               onSave: _exitMultiSelectMode,
               onSettings: _navigateToSettings,
-              onSeed: _runSeeder,
             ),
-            const FridgeSearchBar(),
-            
+            // 3. Nội dung chính (Chứa logic Loading của Provider)
             Expanded(
               child: Consumer<InventoryProvider>(
                 builder: (context, provider, child) {
+                  // A. Loading Data từ Firestore -> Chỉ xoay ở giữa màn hình body
                   if (provider.isLoading) {
                     return const Center(
-                      child: CircularProgressIndicator(color: Color(0xFF0FBD3B)),
+                      child: CircularProgressIndicator(),
                     );
                   }
 
                   final allItems = provider.items;
 
+                  // B. Empty Data
                   if (allItems.isEmpty) {
                     return Center(
                       child: Column(
@@ -227,12 +184,14 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
                     );
                   }
 
+                  // C. Data List
                   final eatMeFirst = allItems.where((item) => item.daysLeft <= 3).toList();
                   final inStock = allItems.where((item) => item.daysLeft > 3).toList();
                   final displayInStock = _isMultiSelectMode ? allItems : inStock;
 
                   return RefreshIndicator(
                     onRefresh: () async {
+                      // Gọi hàm refresh trong provider
                       provider.listenToInventory(); 
                     },
                     child: SingleChildScrollView(
@@ -243,6 +202,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
                         children: [
                           const SizedBox(height: 20),
 
+                          // Section: Eat Me First
                           if (eatMeFirst.isNotEmpty && !_isMultiSelectMode) ...[
                             FridgeSectionHeader(title: titleEatMe),
                             const SizedBox(height: 12),
@@ -250,6 +210,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
                             const SizedBox(height: 28),
                           ],
 
+                          // Section: In Stock
                           if (!_isMultiSelectMode) ...[
                             FridgeSectionHeader(title: titleInStock),
                             const SizedBox(height: 12),
@@ -268,12 +229,13 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
           ],
         ),
       ),
+      // FAB Thêm món
       floatingActionButton: _isMultiSelectMode 
           ? null 
           : FloatingActionButton(
               onPressed: _showAddItemDialog,
               shape: const CircleBorder(),
-              backgroundColor: const Color(0xFF0FBD3B),
+              backgroundColor: const Color.fromARGB(255, 36, 75, 45),
               child: const Icon(Icons.add, size: 28, color: Colors.white),
             ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,

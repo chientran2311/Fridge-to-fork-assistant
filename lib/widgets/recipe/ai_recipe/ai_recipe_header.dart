@@ -5,13 +5,14 @@ import '../../../screens/recipe/filter_modal.dart';
 import '../../../models/RecipeFilter.dart'; // Đảm bảo đường dẫn đúng
 import '../../../providers/recipe_provider.dart';
 import '../../../providers/inventory_provider.dart';
-
+import '../../../l10n/app_localizations.dart';
 class AIRecipeHeader extends StatelessWidget {
   const AIRecipeHeader({super.key});
   
   @override
   Widget build(BuildContext context) {
     final Color mainColor = const Color(0xFF1B3B36);
+    final s = AppLocalizations.of(context)!;
 Future<void> _openFilterModal() async {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
     
@@ -40,7 +41,7 @@ Future<void> _openFilterModal() async {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Trợ lý Công Thức AI",
+                s.recipeTab,
                 style: GoogleFonts.merriweather(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,

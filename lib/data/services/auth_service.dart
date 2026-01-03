@@ -12,33 +12,16 @@ class AuthService {
       final snapshot = await userRef.get();
 
       if (!snapshot.exists) {
-        // A. Nếu chưa có hồ sơ -> Tạo mới household và user
-        
-        // Tạo household ID unique cho user này
-        final householdId = 'house_${user.uid}';
-        
-        // Tạo household document
-        await _firestore.collection('households').doc(householdId).set({
-          'household_id': householdId,
-          'name': 'Gia đình của ${user.displayName ?? user.email}',
-          'owner_id': user.uid,
-          'members': [user.uid],
-          'created_at': FieldValue.serverTimestamp(),
-        });
-        
-        // Tạo user document với household_id
+        // A. Nếu chưa có hồ sơ -> Tạo mới
         await userRef.set({
           'uid': user.uid,
           'email': user.email,
           'display_name': user.displayName ?? 'Người dùng mới',
           'photo_url': user.photoURL ?? '',
-          'current_household_id': householdId,
-          'language': 'vi',
+          'current_household_id': null,
           'created_at': FieldValue.serverTimestamp(),
           'last_login': FieldValue.serverTimestamp(),
         });
-        
-        print("✅ Đã tạo household mới: $householdId cho user: ${user.uid}");
       } else {
         // B. Nếu đã có hồ sơ -> Cập nhật giờ đăng nhập mới nhất
         await userRef.update({
@@ -92,26 +75,45 @@ class AuthService {
     required String password
   }) async {
     try {
+      // B1: Tạo Auth
       UserCredential cred = await _auth.createUserWithEmailAndPassword(
         email: email, 
         password: password
       );
 
-      if (cred.user != null) {
-        await _syncUserToFirestore(cred.user!);
+      final user = cred.user;
+      if (user != null) {
+        // B2: Tạo Nhà Mới ngay lập tức
+        final String newHouseholdId = 'house_${user.uid}'; // ID nhà gắn với ID User
+        
+        await _firestore.collection('households').doc(newHouseholdId).set({
+          'household_id': newHouseholdId,
+          'name': 'Gia đình của bạn',
+          'owner_id': user.uid,
+          'members': [user.uid], // Quan trọng: Có user trong members
+          'created_at': FieldValue.serverTimestamp(),
+        });
+
+        // B3: Tạo User Document (Link tới nhà vừa tạo)
+        await _firestore.collection('users').doc(user.uid).set({
+          'uid': user.uid,
+          'email': user.email,
+          'display_name': user.displayName ?? 'Người dùng mới',
+          'photo_url': user.photoURL ?? '',
+          'current_household_id': newHouseholdId, // [QUAN TRỌNG] Không để null nữa
+          'fcm_token': '', // Sẽ được update ở màn hình Login/Register
+          'created_at': FieldValue.serverTimestamp(),
+          'last_login': FieldValue.serverTimestamp(),
+        });
       }
 
       return null; // Thành công
     } on FirebaseAuthException catch (e) {
       switch (e.code) {
-        case 'email-already-in-use':
-          return 'Email này đã được sử dụng.';
-        case 'weak-password':
-          return 'Mật khẩu quá yếu (cần ít nhất 6 ký tự).';
-        case 'invalid-email':
-          return 'Định dạng email không hợp lệ.';
-        default:
-          return 'Lỗi đăng ký: ${e.message}';
+        case 'email-already-in-use': return 'Email này đã được sử dụng.';
+        case 'weak-password': return 'Mật khẩu quá yếu.';
+        case 'invalid-email': return 'Email không hợp lệ.';
+        default: return 'Lỗi đăng ký: ${e.message}';
       }
     } catch (e) {
       return 'Đã xảy ra lỗi không xác định.';

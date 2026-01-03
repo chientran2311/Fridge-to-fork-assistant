@@ -223,4 +223,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get applyFilters => 'Apply Filters';
+
+  @override
+  String get recipetab => 'AI suggestion';
+
+  @override
+  String get schedule => 'Schedule';
+
+  @override
+  String get cooknow => 'Cook Now';
+
+  @override
+  String get discovermore => 'Discover more';
+
+  @override
+  String get browseai => 'Browse AI suggestions';
+
+  @override
+  String get favoriterecipe => 'Favorite Recipe';
 }

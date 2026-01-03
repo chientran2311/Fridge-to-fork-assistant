@@ -523,6 +523,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Apply Filters'**
   String get applyFilters;
+
+  /// No description provided for @recipetab.
+  ///
+  /// In en, this message translates to:
+  /// **'AI suggestion'**
+  String get recipetab;
+
+  /// No description provided for @schedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get schedule;
+
+  /// No description provided for @cooknow.
+  ///
+  /// In en, this message translates to:
+  /// **'Cook Now'**
+  String get cooknow;
+
+  /// No description provided for @discovermore.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover more'**
+  String get discovermore;
+
+  /// No description provided for @browseai.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse AI suggestions'**
+  String get browseai;
+
+  /// No description provided for @favoriterecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Favorite Recipe'**
+  String get favoriterecipe;
 }
 
 class _AppLocalizationsDelegate

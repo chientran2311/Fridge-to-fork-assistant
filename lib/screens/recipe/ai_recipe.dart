@@ -12,7 +12,8 @@ import '../../widgets/recipe/ai_recipe/ai_recipe_header.dart';
 import '../../widgets/recipe/ai_recipe/recipe_card.dart'; // Đảm bảo import file Card mới bên dưới
 
 class AIRecipeScreen extends StatefulWidget {
-  const AIRecipeScreen({super.key});
+  final String? initialQuery;
+  const AIRecipeScreen({super.key, this.initialQuery});
   
   @override
   State<AIRecipeScreen> createState() => _AIRecipeScreenState();
@@ -28,13 +29,29 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
   }
 
   void _loadRecipes() {
-    final inventory = Provider.of<InventoryProvider>(context, listen: false);
-    final ingredients = inventory.ingredientNames;
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-    
-    // Logic: Luôn gọi API để refresh hoặc load mới nếu có nguyên liệu
-    if (ingredients.isNotEmpty) {
-      recipeProvider.searchRecipes(ingredients: ingredients);
+
+    // Ưu tiên 1: Nếu có dữ liệu từ Thông báo (Deep Link)
+    if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+      print("🔔 AI Recipe: Nhận yêu cầu tìm kiếm: ${widget.initialQuery}");
+
+      // [LOGIC MỚI] Tách chuỗi thành danh sách
+      // VD: "Thịt bò,Trứng gà" -> ["Thịt bò", "Trứng gà"]
+      List<String> searchIngredients = widget.initialQuery!.split(',');
+
+      // Gọi hàm searchRecipes với tham số 'ingredients' thay vì 'query'
+      // Để Provider biết đây là tìm theo nguyên liệu cụ thể
+      recipeProvider.searchRecipes(ingredients: searchIngredients);
+      
+    } 
+    // Ưu tiên 2: Logic cũ (Lấy toàn bộ tủ lạnh)
+    else {
+      final inventory = Provider.of<InventoryProvider>(context, listen: false);
+      final ingredients = inventory.ingredientNames;
+      
+      if (ingredients.isNotEmpty) {
+        recipeProvider.searchRecipes(ingredients: ingredients);
+      }
     }
   }
 

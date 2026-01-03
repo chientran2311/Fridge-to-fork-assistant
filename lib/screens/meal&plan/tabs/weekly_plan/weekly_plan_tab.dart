@@ -7,10 +7,10 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../widgets/plans/tabs/weekly_plan_tab/meal_card.dart';
-import '../../../../widgets/plans/tabs/weekly_plan_tab/today_shopping_list.dart';
 import '../../../../widgets/plans/tabs/weekly_plan_tab/day_item.dart';
 import '../../../../providers/recipe_provider.dart';
-import 'add_recipe_screen.dart';
+import '../weekly_plan/add_recipe_screen.dart';
+import '../../../../data/services/spoonacular_service.dart';
 
 class WeeklyPlanContent extends StatefulWidget {
   final Function(int)? onTabChange;
@@ -32,7 +32,8 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
   Map<String, List<Map<String, dynamic>>> _mealPlansByDate = {};
   bool _isLoading = true;
   bool _hasLoadedData = false; // ✅ Track if data already loaded
-  List<Map<String, dynamic>> _availableRecipes = []; // ✅ Store available recipes
+  List<Map<String, dynamic>> _availableRecipes =
+      []; // ✅ Store available recipes
 
   @override
   bool get wantKeepAlive => true; // ✅ Keep state when switching tabs
@@ -56,9 +57,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
     // Select today automatically
     selectedDayIndex = weekDays.indexWhere(
       (d) =>
-          d.year == today.year &&
-          d.month == today.month &&
-          d.day == today.day,
+          d.year == today.year && d.month == today.month && d.day == today.day,
     );
 
     if (selectedDayIndex == -1) {
@@ -76,9 +75,9 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
       debugPrint('   Step 1: Loading recipes...');
       await _loadAvailableRecipes(); // Load recipes FIRST (needs to complete)
       debugPrint('   ✅ Recipes loaded: ${_availableRecipes.length} recipes');
-      
+
       debugPrint('   Step 2: Loading meal plans...');
-      await _loadMealPlans();         // Then load meal plans
+      await _loadMealPlans(); // Then load meal plans
       debugPrint('🚀 _initializeData() COMPLETE');
     } catch (e) {
       debugPrint('❌ Error during initialization: $e');
@@ -90,16 +89,16 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
     return date.toIso8601String().split('T')[0];
   }
 
-  Future<void> _loadMealPlans() async {
-    // ✅ Guard: During initialization, only load once
-    if (_hasLoadedData && mounted) {
+  Future<void> _loadMealPlans({bool forceReload = false}) async {
+    // ✅ Guard: During initialization, only load once (unless force reload)
+    if (!forceReload && _hasLoadedData && mounted) {
       debugPrint('⏭️  Skipping _loadMealPlans() - data already loaded');
       return;
     }
 
     try {
       debugPrint('🔄 Loading meal plans...');
-      
+
       // ✅ Lấy user hiện tại từ FirebaseAuth
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
@@ -110,20 +109,21 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         });
         return;
       }
-      
+
       _userId = currentUser.uid;
-      
+
       debugPrint('👤 Current User ID: $_userId');
-      
+
       // ✅ Lấy household_id từ user document
       final userDoc = await _firestore.collection('users').doc(_userId).get();
-      
+
       debugPrint('📄 User document exists: ${userDoc.exists}');
       if (userDoc.exists) {
         debugPrint('📄 User document data: ${userDoc.data()}');
-        debugPrint('📄 current_household_id field: ${userDoc.data()?['current_household_id']}');
+        debugPrint(
+            '📄 current_household_id field: ${userDoc.data()?['current_household_id']}');
       }
-      
+
       if (!userDoc.exists || userDoc.data()?['current_household_id'] == null) {
         debugPrint('❌ User document not found or no current_household_id');
         debugPrint('💡 Tip: Run the database seeder to create user data');
@@ -133,7 +133,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         });
         return;
       }
-      
+
       _householdId = userDoc.data()!['current_household_id'] as String;
 
       debugPrint('🏠 Household ID: $_householdId');
@@ -166,7 +166,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         final data = doc.data();
         final timestamp = data['date'] as Timestamp;
         final date = timestamp.toDate();
-        
+
         debugPrint('');
         debugPrint('📅 ========== MEAL PLAN DEBUG ==========');
         debugPrint('   Doc ID: ${doc.id}');
@@ -179,7 +179,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         debugPrint('   🔑 local_recipe_id: ${data['local_recipe_id']}');
         debugPrint('========================================');
         debugPrint('');
-        
+
         if (_mealPlansByDate[dateKey] == null) {
           _mealPlansByDate[dateKey] = [];
         }
@@ -193,7 +193,8 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         final d = weekDays[i];
         final key = _formatDateKey(d);
         final hasMeal = _mealPlansByDate.containsKey(key);
-        debugPrint('   [$i] ${d.toIso8601String()} => Key: $key | Has Meal: $hasMeal');
+        debugPrint(
+            '   [$i] ${d.toIso8601String()} => Key: $key | Has Meal: $hasMeal');
       }
       debugPrint('========================================');
       debugPrint('');
@@ -223,8 +224,26 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         .doc(recipeId);
 
     final existing = await recipeDocRef.get();
+
+    // ✅ Check if recipe exists AND has full data (ingredients & instructions)
     if (existing.exists) {
-      return;
+      final existingData = existing.data() as Map<String, dynamic>;
+      final hasIngredients = existingData['ingredients'] != null &&
+          (existingData['ingredients'] as List).isNotEmpty;
+      final hasInstructions = existingData['instructions'] != null &&
+          (existingData['instructions'] as String).isNotEmpty;
+
+      if (hasIngredients && hasInstructions) {
+        debugPrint(
+            '✅ Recipe $recipeId already exists with full data, skipping');
+        return; // Recipe đã có đầy đủ dữ liệu
+      } else {
+        debugPrint(
+            '⚠️ Recipe $recipeId exists but missing data. Will update...');
+        debugPrint('   - Has ingredients: $hasIngredients');
+        debugPrint('   - Has instructions: $hasInstructions');
+        // Tiếp tục để fetch và update dữ liệu
+      }
     }
 
     // Try to find recipe data from the in-memory list
@@ -234,41 +253,108 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
     );
 
     if (recipe.isEmpty) {
-      debugPrint('⚠️ Cannot upsert recipe $recipeId because data not found locally');
+      debugPrint(
+          '⚠️ Cannot upsert recipe $recipeId because data not found locally');
       return;
     }
 
-    // Build a minimal document so MealCard/Detail screen can load it
     final calories = recipe['calories'];
-    final readyInMinutes = recipe['ready_in_minutes'] ?? recipe['readyInMinutes'] ?? 0;
+    final readyInMinutes =
+        recipe['ready_in_minutes'] ?? recipe['readyInMinutes'] ?? 0;
+    final apiRecipeId = recipe['api_recipe_id'];
 
+    // ✅ Fetch full details from API if this is an API recipe (not from favorites/household_recipes)
+    List<dynamic> fullIngredients = recipe['ingredients'] ?? [];
+    String fullInstructions = recipe['instructions'] ?? '';
+
+    // ✅ If ingredients or instructions are empty, fetch from API
+    if (apiRecipeId != null &&
+        (fullIngredients.isEmpty || fullInstructions.isEmpty)) {
+      debugPrint(
+          '🌐 Fetching full recipe details from API for recipe ID: $apiRecipeId');
+      try {
+        final apiService = SpoonacularService();
+        final fullData = await apiService.getRecipeInformation(apiRecipeId);
+
+        if (fullData != null) {
+          // ✅ Parse ingredients
+          if (fullData['extendedIngredients'] != null) {
+            final List<dynamic> rawIngs = fullData['extendedIngredients'];
+            fullIngredients = rawIngs.map((ing) {
+              return {
+                'name': ing['name'] ?? '',
+                'amount': (ing['amount'] as num?)?.toDouble() ?? 0.0,
+                'unit': ing['unit'] ?? '',
+                'original': ing['original'] ?? '',
+              };
+            }).toList();
+            debugPrint(
+                '   ✅ Loaded ${fullIngredients.length} ingredients from API');
+          }
+
+          // ✅ Parse instructions
+          if (fullData['analyzedInstructions'] != null &&
+              (fullData['analyzedInstructions'] as List).isNotEmpty) {
+            final List steps = fullData['analyzedInstructions'][0]['steps'];
+            fullInstructions =
+                steps.map<String>((step) => step['step'].toString()).join('\n');
+            debugPrint(
+                '   ✅ Loaded ${steps.length} instruction steps from API');
+          } else if (fullData['instructions'] != null) {
+            fullInstructions = fullData['instructions'].toString();
+            debugPrint(
+                '   ✅ Loaded raw instructions: ${fullInstructions.length} chars');
+          } else {
+            debugPrint('   ⚠️ No instructions found in API response');
+          }
+
+          debugPrint(
+              '   📝 Final instructions to save: ${fullInstructions.length} chars');
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error fetching full recipe details from API: $e');
+        // Continue with empty data - better than failing completely
+      }
+    }
+
+    // Build document with full data
     final docData = {
       'local_recipe_id': recipeId,
       'household_id': _householdId,
-      'api_recipe_id': recipe['api_recipe_id'],
+      'api_recipe_id': apiRecipeId,
       'title': recipe['title'] ?? 'Untitled',
       'image_url': recipe['image'] ?? '',
       'calories': calories is num ? calories.toInt() : 0,
       'ready_in_minutes': readyInMinutes is num ? readyInMinutes.toInt() : 0,
       'difficulty': recipe['difficulty'],
-      'instructions': recipe['instructions'] ?? '',
-      'ingredients': recipe['ingredients'] ?? <Map<String, dynamic>>[],
+      'instructions': fullInstructions,
+      'ingredients': fullIngredients,
       'servings': recipe['servings'] ?? 1,
       'added_by_uid': _userId,
       'added_at': Timestamp.now(),
     };
 
+    debugPrint('💾 Saving recipe to Firestore:');
+    debugPrint('   - Title: ${docData['title']}');
+    debugPrint(
+        '   - Ingredients count: ${(docData['ingredients'] as List).length}');
+    debugPrint(
+        '   - Instructions length: ${(docData['instructions'] as String).length} chars');
+
     await recipeDocRef.set(docData);
-    debugPrint('✅ Upserted API recipe into household_recipes: $recipeId');
+    debugPrint(
+        '✅ Saved API recipe with full details into household_recipes: $recipeId');
   }
 
   bool _hasMealPlan(DateTime date) {
     final dateKey = _formatDateKey(date);
-    return _mealPlansByDate.containsKey(dateKey) && _mealPlansByDate[dateKey]!.isNotEmpty;
+    return _mealPlansByDate.containsKey(dateKey) &&
+        _mealPlansByDate[dateKey]!.isNotEmpty;
   }
 
   // ✅ Add meal plan to Firebase when recipe is dropped on a day
-  Future<void> _addMealPlan(DateTime date, String recipeId, String mealType, {int servings = 1}) async {
+  Future<void> _addMealPlan(DateTime date, String recipeId, String mealType,
+      {int servings = 1}) async {
     try {
       // ✅ Kiểm tra xem đã có userId và householdId chưa
       if (_userId == null || _householdId == null) {
@@ -287,7 +373,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
 
       // ✅ If recipe is from API and not yet saved, upsert it into household_recipes
       await _ensureHouseholdRecipeExists(recipeId);
-      
+
       final newDocRef = _firestore
           .collection('households')
           .doc(_householdId)
@@ -308,7 +394,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
 
       // ✅ Reload meal plans to show the new addition
       _loadMealPlans();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -346,16 +432,26 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
   String _getWeekRangeText() {
     final firstDay = weekDays.first;
     final lastDay = weekDays.last;
-    
+
     final monthNames = [
-      'THÁNG 1', 'THÁNG 2', 'THÁNG 3', 'THÁNG 4', 'THÁNG 5', 'THÁNG 6',
-      'THÁNG 7', 'THÁNG 8', 'THÁNG 9', 'THÁNG 10', 'THÁNG 11', 'THÁNG 12'
+      'THÁNG 1',
+      'THÁNG 2',
+      'THÁNG 3',
+      'THÁNG 4',
+      'THÁNG 5',
+      'THÁNG 6',
+      'THÁNG 7',
+      'THÁNG 8',
+      'THÁNG 9',
+      'THÁNG 10',
+      'THÁNG 11',
+      'THÁNG 12'
     ];
-    
+
     final startMonth = monthNames[firstDay.month - 1];
     final startDate = '${firstDay.day}/${firstDay.month}/${firstDay.year}';
     final endDate = '${lastDay.day}/${lastDay.month}/${lastDay.year}';
-    
+
     return '$startMonth ($startDate - $endDate)';
   }
 
@@ -403,15 +499,16 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                     Text(
                       'Chọn ngày',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     TableCalendar(
                       focusedDay: selectedDate,
                       firstDay: DateTime(2025, 1, 1),
                       lastDay: DateTime(2027, 12, 31),
-                      selectedDayPredicate: (day) => isSameDay(selectedDate, day),
+                      selectedDayPredicate: (day) =>
+                          isSameDay(selectedDate, day),
                       onDaySelected: (selectedDay, focusedDay) {
                         setModalState(() {
                           selectedDate = selectedDay;
@@ -441,13 +538,14 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                     ElevatedButton(
                       onPressed: () {
                         // Calculate Monday of selected date's week
-                        final selectedMonday = selectedDate
-                            .subtract(Duration(days: selectedDate.weekday - DateTime.monday));
-                        
+                        final selectedMonday = selectedDate.subtract(Duration(
+                            days: selectedDate.weekday - DateTime.monday));
+
                         setState(() {
                           weekDays = List.generate(
                             7,
-                            (index) => selectedMonday.add(Duration(days: index)),
+                            (index) =>
+                                selectedMonday.add(Duration(days: index)),
                           );
                           // Find and select the clicked date
                           selectedDayIndex = weekDays.indexWhere(
@@ -498,19 +596,21 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         }
         return;
       }
-      
+
       final userId = currentUser.uid;
-      
+
       // ✅ Lấy household_id từ user document nếu chưa có
       String? householdId = _householdId;
       if (householdId == null) {
-        final userDoc = await _firestore.collection('users').doc(userId).get().timeout(
+        final userDoc =
+            await _firestore.collection('users').doc(userId).get().timeout(
           const Duration(seconds: 10),
           onTimeout: () {
             throw TimeoutException('Timeout loading user document');
           },
         );
-        if (!userDoc.exists || userDoc.data()?['current_household_id'] == null) {
+        if (!userDoc.exists ||
+            userDoc.data()?['current_household_id'] == null) {
           debugPrint('❌ User document not found or no current_household_id');
           if (mounted) {
             setState(() {
@@ -521,14 +621,14 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         }
         householdId = userDoc.data()!['current_household_id'] as String;
       }
-      
+
       debugPrint('');
       debugPrint('🔄 _loadAvailableRecipes() START');
       debugPrint('   Loading from:');
       debugPrint('   - households/$householdId/favorite_recipes');
       debugPrint('   - households/$householdId/household_recipes');
       debugPrint('   - API (via RecipeProvider)');
-      
+
       // 1️⃣ Load favorite recipes from household/favorite_recipes
       List<Map<String, dynamic>> favoriteRecipes = [];
       Set<int> favoriteApiIds = {};
@@ -539,26 +639,29 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
             .collection('favorite_recipes')
             .get()
             .timeout(
-              const Duration(seconds: 10),
-              onTimeout: () {
-                throw TimeoutException('Timeout loading favorite recipes');
-              },
-            );
+          const Duration(seconds: 10),
+          onTimeout: () {
+            throw TimeoutException('Timeout loading favorite recipes');
+          },
+        );
 
-        debugPrint('   Favorite recipes found: ${favoriteSnapshot.docs.length}');
-        
+        debugPrint(
+            '   Favorite recipes found: ${favoriteSnapshot.docs.length}');
+
         for (var doc in favoriteSnapshot.docs) {
           try {
             final data = doc.data();
-            final imageUrl = (data['image_url'] ?? data['image'] ?? '') as String;
+            final imageUrl =
+                (data['image_url'] ?? data['image'] ?? '') as String;
             final calories = data['calories'];
-            final caloriesInt = calories is int ? calories : (calories as num?)?.toInt() ?? 250;
+            final caloriesInt =
+                calories is int ? calories : (calories as num?)?.toInt() ?? 250;
             final apiRecipeId = data['api_recipe_id'];
-            
+
             if (apiRecipeId != null) {
               favoriteApiIds.add(apiRecipeId as int);
             }
-            
+
             favoriteRecipes.add({
               'id': doc.id,
               'api_recipe_id': apiRecipeId,
@@ -585,29 +688,33 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
             .collection('household_recipes')
             .get()
             .timeout(
-              const Duration(seconds: 10),
-              onTimeout: () {
-                throw TimeoutException('Timeout loading household recipes');
-              },
-            );
+          const Duration(seconds: 10),
+          onTimeout: () {
+            throw TimeoutException('Timeout loading household recipes');
+          },
+        );
 
-        debugPrint('   Household recipes found: ${householdSnapshot.docs.length}');
-        
+        debugPrint(
+            '   Household recipes found: ${householdSnapshot.docs.length}');
+
         for (var doc in householdSnapshot.docs) {
           try {
             final data = doc.data();
-            final imageUrl = (data['image_url'] ?? data['image'] ?? '') as String;
+            final imageUrl =
+                (data['image_url'] ?? data['image'] ?? '') as String;
             final calories = data['calories'];
-            final caloriesInt = calories is int ? calories : (calories as num?)?.toInt() ?? 250;
+            final caloriesInt =
+                calories is int ? calories : (calories as num?)?.toInt() ?? 250;
             final apiRecipeId = data['api_recipe_id'];
-            
+
             if (apiRecipeId != null) {
               householdApiIds.add(apiRecipeId as int);
             }
-            
+
             // Check if this recipe is in favorites
-            final isFav = apiRecipeId != null && favoriteApiIds.contains(apiRecipeId);
-            
+            final isFav =
+                apiRecipeId != null && favoriteApiIds.contains(apiRecipeId);
+
             householdRecipes.add({
               'id': doc.id,
               'api_recipe_id': apiRecipeId,
@@ -624,22 +731,32 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         debugPrint('⚠️ Error loading household recipes: $e');
       }
 
-      // 3️⃣ Load recipes from API via RecipeProvider (from Recipe screen)
+      // 3️⃣ Load recipes from API via RecipeProvider (currently displayed in Recipe screen)
       List<Map<String, dynamic>> apiRecipes = [];
       try {
-        // Check if widget is still mounted and context is valid
         if (mounted && context.mounted) {
-          final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-          
+          final recipeProvider =
+              Provider.of<RecipeProvider>(context, listen: false);
+
           final recipes = recipeProvider.recipes;
           debugPrint('   API recipes in provider: ${recipes.length}');
-          
-          // Convert to Map format
+
           for (var recipe in recipes) {
             final apiId = recipe.apiRecipeId;
+
+            // Skip if this recipe is already in favorites or household collections
+            if (apiId != null &&
+                (favoriteApiIds.contains(apiId) ||
+                    householdApiIds.contains(apiId))) {
+              debugPrint(
+                  '   ⏭️  Skipping API recipe ${recipe.title} - already saved');
+              continue;
+            }
+
             final isFav = apiId != null && favoriteApiIds.contains(apiId);
 
-            final generatedId = recipe.localRecipeId ?? (apiId != null ? 'api_$apiId' : UniqueKey().toString());
+            final generatedId = recipe.localRecipeId ??
+                (apiId != null ? 'api_$apiId' : UniqueKey().toString());
 
             apiRecipes.add({
               'id': generatedId,
@@ -653,35 +770,22 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
               'ingredients': const <Map<String, dynamic>>[],
               'servings': recipe.servings ?? 1,
               'isFavorite': isFav,
+              'isFromApi': true, // ✅ Mark as API recipe for filtering
             });
           }
+          debugPrint(
+              '   ✅ Loaded ${apiRecipes.length} unique API recipes (filtered)');
         }
       } catch (e) {
         debugPrint('⚠️ Error loading API recipes: $e');
       }
 
-      // 4️⃣ Merge: Favorite recipes first, then household recipes, then API recipes (avoiding duplicates)
-      final Set<int> allUsedApiIds = {...favoriteApiIds, ...householdApiIds};
-      final Set<String> allUsedLocalIds = {
-        ...favoriteRecipes.map((r) => r['id'] as String),
-        ...householdRecipes.map((r) => r['id'] as String),
-      };
-      
-      // Filter API recipes to avoid duplicates
-      final filteredApiRecipes = apiRecipes.where((recipe) {
-        final apiId = recipe['api_recipe_id'];
-        final localId = recipe['id'] as String;
-        // Skip if already in favorites or household recipes
-        if (apiId != null && allUsedApiIds.contains(apiId)) return false;
-        if (allUsedLocalIds.contains(localId)) return false;
-        return true;
-      }).toList();
-
-      // Combine all recipes
+      // 4️⃣ Merge: Favorite recipes first, then household recipes, then API recipes
       final allRecipes = [
-        ...favoriteRecipes,  // Favorites first
-        ...householdRecipes.where((r) => !favoriteApiIds.contains(r['api_recipe_id'])), // Non-favorite household recipes
-        ...filteredApiRecipes, // New API recipes
+        ...favoriteRecipes, // Favorites first
+        ...householdRecipes.where((r) => !favoriteApiIds
+            .contains(r['api_recipe_id'])), // Non-favorite household recipes
+        ...apiRecipes, // ✅ API recipes currently displayed in Recipe screen
       ];
 
       if (mounted) {
@@ -689,16 +793,17 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
           _availableRecipes = allRecipes;
         });
       }
-      
+
       debugPrint('✅ Loaded:');
       debugPrint('   - ${favoriteRecipes.length} favorite recipes');
       debugPrint('   - ${householdRecipes.length} household recipes');
-      debugPrint('   - ${filteredApiRecipes.length} new API recipes');
+      debugPrint('   - ${apiRecipes.length} API recipes (from Recipe screen)');
       debugPrint('   = ${allRecipes.length} total recipes available');
       debugPrint('🔄 _loadAvailableRecipes() COMPLETE');
-      
+
       if (allRecipes.isEmpty) {
-        debugPrint('⚠️ WARNING: No recipes found! Search for recipes in Recipe screen first.');
+        debugPrint(
+            '⚠️ WARNING: No recipes found! Search for recipes in Recipe screen first.');
       }
     } catch (e, stackTrace) {
       debugPrint('❌ Error loading recipes: $e');
@@ -712,12 +817,14 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
   }
 
   // ✅ Navigate to add recipe screen (hides bottom navigation)
-  void _showRecipeBottomSheet(DateTime selectedDate, List<Map<String, dynamic>> recipes) {
+  void _showRecipeBottomSheet(
+      DateTime selectedDate, List<Map<String, dynamic>> recipes) {
     debugPrint('🔵 Opening add recipe screen with ${recipes.length} recipes');
-    
+
     // ✅ Sử dụng ROOT Navigator để mở màn hình BÊN NGOÀI MainScreen
     // Điều này sẽ ẩn bottom navigation bar hoàn toàn
-    Navigator.of(context, rootNavigator: true).push(
+    Navigator.of(context, rootNavigator: true)
+        .push(
       MaterialPageRoute(
         builder: (context) => AddRecipeScreen(
           selectedDate: selectedDate,
@@ -727,599 +834,18 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
           },
         ),
       ),
-    );
-  }
-
-  // ✅ OLD: Show recipe selection bottom sheet with drag-drop (DEPRECATED - use screen above instead)
-  void _showRecipeBottomSheetOld(DateTime selectedDate, List<Map<String, dynamic>> recipes) {
-    debugPrint('🔵 Opening recipe bottom sheet with ${recipes.length} recipes');
-    
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (BuildContext context) {
-        DateTime pickedDate = selectedDate;
-        String selectedMealType = 'breakfast';
-        int servings = 1;
-        String recipeFilter = 'all'; // ✅ Filter: 'all', 'favorite', 'api'
-
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
-            // ✅ Filter recipes based on selected filter
-            List<Map<String, dynamic>> filteredRecipes = recipes;
-            if (recipeFilter == 'favorite') {
-              filteredRecipes = recipes.where((r) => r['isFavorite'] == true).toList();
-            } else if (recipeFilter == 'api') {
-              filteredRecipes = recipes.where((r) => r['isFavorite'] != true).toList();
-            }
-            
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.85,
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-              ),
-              child: Column(
-                children: [
-                  // ✅ Header
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(color: Colors.grey[200]!),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Thêm công thức vào kế hoạch',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // ✅ Calendar + Meal Type Selection
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        // ✅ DragTarget wrapping Calendar - drop recipes here to add to selected date
-                        DragTarget<Map<String, dynamic>>(
-                          onWillAccept: (data) {
-                            return true;
-                          },
-                          onAccept: (dragData) async {
-                            final recipe = dragData['recipe'] as Map<String, dynamic>;
-                            // Use the currently selected date and meal type from the bottom sheet state
-                            await _addMealPlan(
-                              pickedDate, 
-                              recipe['id'], 
-                              selectedMealType,
-                              servings: servings,
-                            );
-                            
-                            if (mounted) {
-                              Navigator.pop(context);
-                            }
-                          },
-                          builder: (context, candidateData, rejectedData) {
-                            final isHovering = candidateData.isNotEmpty;
-                            return Container(
-                              decoration: BoxDecoration(
-                                border: isHovering 
-                                  ? Border.all(color: const Color(0xFF214130), width: 2)
-                                  : Border.all(color: Colors.transparent, width: 2),
-                                borderRadius: BorderRadius.circular(12),
-                                color: isHovering ? const Color(0xFF214130).withOpacity(0.05) : null,
-                              ),
-                              child: TableCalendar(
-                                focusedDay: pickedDate,
-                                firstDay: DateTime(2025, 1, 1),
-                                lastDay: DateTime(2027, 12, 31),
-                                selectedDayPredicate: (day) =>
-                                    isSameDay(pickedDate, day),
-                                onDaySelected: (selectedDay, focusedDay) {
-                                  setModalState(() {
-                                    pickedDate = selectedDay;
-                                  });
-                                },
-                                calendarStyle: CalendarStyle(
-                                  selectedDecoration: BoxDecoration(
-                                    color: const Color(0xFF214130),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  todayDecoration: BoxDecoration(
-                                    color: const Color(0xFF214130).withOpacity(0.3),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  selectedTextStyle:
-                                      const TextStyle(color: Colors.white),
-                                ),
-                                headerStyle: HeaderStyle(
-                                  formatButtonVisible: false,
-                                  titleCentered: true,
-                                  titleTextStyle: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        // ✅ Meal Type Selection
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _mealTypeButton(
-                                'Bữa sáng',
-                                'breakfast',
-                                selectedMealType,
-                                () => setModalState(
-                                    () => selectedMealType = 'breakfast'),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _mealTypeButton(
-                                'Bữa trưa',
-                                'lunch',
-                                selectedMealType,
-                                () => setModalState(
-                                    () => selectedMealType = 'lunch'),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _mealTypeButton(
-                                'Bữa tối',
-                                'dinner',
-                                selectedMealType,
-                                () => setModalState(
-                                    () => selectedMealType = 'dinner'),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        // ✅ Servings Selection
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text('Khẩu phần:', style: TextStyle(fontWeight: FontWeight.w500)),
-                            const SizedBox(width: 12),
-                            Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey[300]!),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.remove, size: 18),
-                                    onPressed: () {
-                                      if (servings > 1) setModalState(() => servings--);
-                                    },
-                                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                    padding: EdgeInsets.zero,
-                                  ),
-                                  Container(
-                                    width: 30,
-                                    alignment: Alignment.center,
-                                    child: Text('$servings', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.add, size: 18),
-                                    onPressed: () => setModalState(() => servings++),
-                                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                                    padding: EdgeInsets.zero,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  // ✅ Recipe Filter Tabs
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: _recipeFilterButton(
-                            'Tất cả',
-                            'all',
-                            recipeFilter,
-                            recipes.length,
-                            () => setModalState(() => recipeFilter = 'all'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _recipeFilterButton(
-                            'Yêu thích',
-                            'favorite',
-                            recipeFilter,
-                            recipes.where((r) => r['isFavorite'] == true).length,
-                            () => setModalState(() => recipeFilter = 'favorite'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _recipeFilterButton(
-                            'Từ API',
-                            'api',
-                            recipeFilter,
-                            recipes.where((r) => r['isFavorite'] != true).length,
-                            () => setModalState(() => recipeFilter = 'api'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  // ✅ Draggable Recipe Cards - Display FILTERED recipes
-                  Expanded(
-                    child: filteredRecipes.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.restaurant_menu, 
-                                  size: 48, 
-                                  color: Colors.grey[300]
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  recipeFilter == 'favorite' 
-                                    ? 'Không có công thức yêu thích'
-                                    : recipeFilter == 'api'
-                                      ? 'Không có công thức từ API'
-                                      : 'Không có công thức nào',
-                                  style: TextStyle(color: Colors.grey[600]),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: filteredRecipes.length,
-                            itemBuilder: (context, index) {
-                              final recipe = filteredRecipes[index];
-                              debugPrint('   📋 Recipe [$index]: ${recipe['title']}');
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _buildDraggableRecipeCard(
-                                  recipe,
-                                  pickedDate,
-                                  selectedMealType,
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // ✅ Build meal type selection button
-  Widget _mealTypeButton(String label, String type, String selected,
-      VoidCallback onTap) {
-    final isSelected = type == selected;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF214130) : Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: isSelected ? Colors.white : Colors.black,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ✅ Build recipe filter button
-  Widget _recipeFilterButton(String label, String type, String selected, int count,
-      VoidCallback onTap) {
-    final isSelected = type == selected;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF214130) : Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
-          border: isSelected 
-            ? Border.all(color: const Color(0xFF214130), width: 2)
-            : null,
-        ),
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : Colors.black87,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ✅ Build draggable recipe card - requires 0.5 second hold to drag
-  Widget _buildDraggableRecipeCard(
-    Map<String, dynamic> recipe,
-    DateTime selectedDate,
-    String mealType,
-  ) {
-    final dragData = {
-      'recipe': recipe,
-      'date': selectedDate,
-      'mealType': mealType,
-    };
-    
-    debugPrint('🟣 Building draggable card for: ${recipe['title']} | MealType: $mealType | Date: ${selectedDate.toIso8601String()}');
-    
-    return LongPressDraggable<Map<String, dynamic>>(
-      data: dragData,
-      delay: const Duration(milliseconds: 500),
-      onDragStarted: () {
-        debugPrint('👆 [${recipe['title']}] Drag STARTED (after 0.5s hold)');
-        debugPrint('   Data being dragged: $dragData');
-      },
-      onDraggableCanceled: (velocity, offset) {
-        debugPrint('❌ [${recipe['title']}] Drag CANCELLED');
-      },
-      onDragCompleted: () {
-        debugPrint('✨ [${recipe['title']}] Drag COMPLETED');
-      },
-      feedback: Container(
-        width: 320,
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Stack(
-              children: [
-                if ((recipe['image'] as String).isNotEmpty)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      recipe['image'],
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Container(
-                        width: 80,
-                        height: 80,
-                        color: Colors.grey[300],
-                      ),
-                    ),
-                  )
-                else
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                // ✅ Heart icon for favorites
-                if (recipe['isFavorite'] == true)
-                  Positioned(
-                    top: 3,
-                    right: 3,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.favorite,
-                        size: 14,
-                        color: Colors.red,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    recipe['title'],
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${recipe['calories']} kcal',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!, width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Stack(
-              children: [
-                if ((recipe['image'] as String).isNotEmpty)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      recipe['image'],
-                      width: 60,
-                      height: 60,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Container(
-                        width: 60,
-                        height: 60,
-                        color: Colors.grey[300],
-                        child: Icon(Icons.restaurant, color: Colors.grey[400], size: 28),
-                      ),
-                    ),
-                  )
-                else
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.restaurant, color: Colors.grey[400], size: 28),
-                  ),
-                // ✅ Heart icon for favorites
-                if (recipe['isFavorite'] == true)
-                  Positioned(
-                    top: 3,
-                    right: 3,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.favorite,
-                        size: 14,
-                        color: Colors.red,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    recipe['title'],
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      height: 1.3,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.local_fire_department, 
-                        size: 14, 
-                        color: Colors.orange[700]
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        '${recipe['calories']} kcal',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[700],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 6),
-            Icon(Icons.drag_indicator, color: Colors.grey[400], size: 20),
-          ],
-        ),
-      ),
-    );
+    )
+        .then((_) {
+      // ✅ Refresh when returning from add_recipe_screen
+      debugPrint('🔄 Returned from add_recipe_screen - refreshing meal plans');
+      _loadMealPlans(forceReload: true);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context); // ✅ Call super for AutomaticKeepAliveClientMixin
-    
+
     return Stack(
       children: [
         Column(
@@ -1327,7 +853,8 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
             // ---------- WEEK HEADER (Month & Date Range) ----------
             Container(
               color: Colors.white,
-              padding: const EdgeInsets.only(left: 8, right: 8, top: 12, bottom: 8),
+              padding:
+                  const EdgeInsets.only(left: 8, right: 8, top: 12, bottom: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -1383,27 +910,32 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                       padding: const EdgeInsets.only(right: 12),
                       child: DragTarget<Map<String, dynamic>>(
                         onWillAccept: (data) {
-                          debugPrint('🟡 [Day ${date.day}] onWillAccept: Hovering over day');
+                          debugPrint(
+                              '🟡 [Day ${date.day}] onWillAccept: Hovering over day');
                           return true;
                         },
                         onAccept: (dragData) async {
                           // ✅ Recipe dropped on this day
-                          debugPrint('✅ [Day ${date.day}] onAccept: Received drag data!');
+                          debugPrint(
+                              '✅ [Day ${date.day}] onAccept: Received drag data!');
                           debugPrint('   Drag Data: $dragData');
-                          
-                          final recipe = dragData['recipe'] as Map<String, dynamic>;
+
+                          final recipe =
+                              dragData['recipe'] as Map<String, dynamic>;
                           final droppedDate = dragData['date'] as DateTime;
                           final mealType = dragData['mealType'] as String;
-                          
+
                           debugPrint('   Recipe: ${recipe['title']}');
                           debugPrint('   MealType: $mealType');
                           debugPrint('   DropDate: $droppedDate');
-                          
+
                           await _addMealPlan(date, recipe['id'], mealType);
-                          debugPrint('✅ Successfully added ${recipe['title']} to ${date.day}/${date.month}');
+                          debugPrint(
+                              '✅ Successfully added ${recipe['title']} to ${date.day}/${date.month}');
                         },
                         onLeave: (data) {
-                          debugPrint('🔵 [Day ${date.day}] onLeave: Left the day target');
+                          debugPrint(
+                              '🔵 [Day ${date.day}] onLeave: Left the day target');
                         },
                         builder: (context, candidateData, rejectedData) {
                           return GestureDetector(
@@ -1424,7 +956,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                 ),
               ),
             ),
-            
+
             // ---------- TITLE (FIXED) ----------
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -1444,7 +976,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                 ],
               ),
             ),
-            
+
             // ---------- SCROLLABLE CONTENT ----------
             Expanded(
               child: RefreshIndicator(
@@ -1463,8 +995,9 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
 
                       // ---------- DYNAMIC MEAL CARDS ----------
                       _buildMealCardsForSelectedDay(),
-                      
-                      const SizedBox(height: 40), // ✅ Spacing at bottom for scroll
+
+                      const SizedBox(
+                          height: 40), // ✅ Spacing at bottom for scroll
                     ],
                   ),
                 ),
@@ -1477,95 +1010,30 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
           bottom: 24,
           right: 24,
           child: FloatingActionButton(
-            onPressed: () async {
+            heroTag: 'weekly_plan_fab',
+            onPressed: () {
               if (!mounted) return;
-              
+
               final selectedDate = weekDays[selectedDayIndex];
-              final navigator = Navigator.of(context, rootNavigator: true);
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
-              bool dialogShown = false;
-              
-              try {
-                // Show loading indicator
-                showDialog(
-                  context: context,
-                  useRootNavigator: true,
-                  barrierDismissible: false,
-                  builder: (dialogContext) => WillPopScope(
-                    onWillPop: () async => false,
-                    child: const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF214130)),
-                      ),
-                    ),
+
+              // Check if recipes are loaded
+              if (_availableRecipes.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Không có công thức nào. Hãy tìm kiếm công thức ở tab Recipes.'),
+                    backgroundColor: Colors.orange,
+                    duration: Duration(seconds: 2),
                   ),
                 );
-                dialogShown = true;
-                
-                // Load recipes with timeout
-                await _loadAvailableRecipes().timeout(
-                  const Duration(seconds: 15),
-                  onTimeout: () {
-                    throw TimeoutException('Không thể tải công thức. Vui lòng thử lại.');
-                  },
-                );
-                
-                // Close loading dialog safely
-                if (dialogShown && mounted) {
-                  try {
-                    navigator.pop();
-                    dialogShown = false;
-                  } catch (e) {
-                    debugPrint('⚠️ Could not pop dialog: $e');
-                  }
-                  // Small delay to ensure dialog is fully closed
-                  await Future.delayed(const Duration(milliseconds: 200));
-                }
-                
-                if (!mounted) return;
-                
-                // Check if recipes are loaded
-                if (_availableRecipes.isEmpty) {
-                  scaffoldMessenger.showSnackBar(
-                    const SnackBar(
-                      content: Text('Không có công thức nào. Hãy tìm kiếm công thức ở tab Recipes.'),
-                      backgroundColor: Colors.orange,
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                  return;
-                }
-                
-                if (!mounted) return;
-                
-                // Navigate to add recipe screen
-                _showRecipeBottomSheet(selectedDate, _availableRecipes);
-              } catch (e) {
-                debugPrint('❌ Error opening add recipe screen: $e');
-                
-                // Close loading dialog if still showing
-                if (dialogShown && mounted) {
-                  try {
-                    navigator.pop();
-                    dialogShown = false;
-                  } catch (popError) {
-                    debugPrint('⚠️ Could not pop dialog in error handler: $popError');
-                  }
-                }
-                
-                if (mounted) {
-                  await Future.delayed(const Duration(milliseconds: 100));
-                  scaffoldMessenger.showSnackBar(
-                    SnackBar(
-                      content: Text('Lỗi: ${e.toString()}'),
-                      backgroundColor: Colors.red,
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                }
+                return;
               }
+
+              // Navigate to add recipe screen immediately
+              _showRecipeBottomSheet(selectedDate, _availableRecipes);
             },
             backgroundColor: const Color(0xFF214130),
+            shape: const CircleBorder(), // ✅ Ensure circular shape
             child: const Icon(Icons.add, color: Colors.white),
           ),
         ),
@@ -1615,7 +1083,8 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
             debugPrint('🔍 ========== PREPARING TO FETCH RECIPE ==========');
             debugPrint('   Recipe ID from meal plan: $recipeId');
             debugPrint('   Meal Type: $mealType');
-            debugPrint('   Will fetch from: households/$_householdId/household_recipes/$recipeId');
+            debugPrint(
+                '   Will fetch from: households/$_householdId/household_recipes/$recipeId');
             debugPrint('==================================================');
             debugPrint('');
 
@@ -1637,7 +1106,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                       return MealCard(
                         label: 'LOADING',
                         title: 'Loading recipe...',
-                        kcal: 0,
+                        kcal: 0.0,
                         recipeId: recipeId,
                         householdId: _householdId!,
                         mealPlanDate: _formatDateKey(selectedDate),
@@ -1650,11 +1119,12 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                       debugPrint('❌ Recipe fetch error: ${snapshot.error}');
                       debugPrint('   Recipe ID: $recipeId');
                       debugPrint('   Household ID: $_householdId');
-                      debugPrint('   Path: households/$_householdId/household_recipes/$recipeId');
+                      debugPrint(
+                          '   Path: households/$_householdId/household_recipes/$recipeId');
                       return MealCard(
                         label: mealType.toUpperCase(),
                         title: 'Error loading recipe',
-                        kcal: 0,
+                        kcal: 0.0,
                         recipeId: recipeId,
                         householdId: _householdId!,
                         mealPlanDate: _formatDateKey(selectedDate),
@@ -1666,12 +1136,14 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                     if (!snapshot.hasData || snapshot.data?.data() == null) {
                       debugPrint('⚠️ Recipe $recipeId not found');
                       debugPrint('   Snapshot has data: ${snapshot.hasData}');
-                      debugPrint('   Document exists: ${snapshot.data?.exists}');
-                      debugPrint('   Path: households/$_householdId/household_recipes/$recipeId');
+                      debugPrint(
+                          '   Document exists: ${snapshot.data?.exists}');
+                      debugPrint(
+                          '   Path: households/$_householdId/household_recipes/$recipeId');
                       return MealCard(
                         label: mealType.toUpperCase(),
                         title: 'Recipe not found ($recipeId)',
-                        kcal: 0,
+                        kcal: 0.0,
                         recipeId: recipeId,
                         householdId: _householdId!,
                         mealPlanDate: _formatDateKey(selectedDate),
@@ -1679,16 +1151,18 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                       );
                     }
 
-                    final recipe = snapshot.data!.data() as Map<String, dynamic>?;
+                    final recipe =
+                        snapshot.data!.data() as Map<String, dynamic>?;
                     if (recipe == null) {
                       return const SizedBox.shrink();
                     }
 
                     debugPrint('✅ Recipe loaded: ${recipe['title']}');
 
-                    // Tính calories dựa trên servings
-                    final baseCalories = (recipe['calories'] as num?)?.toInt() ?? 0;
-                    
+                    // Tính calories dựa trên servings - keep as double
+                    final baseCalories =
+                        (recipe['calories'] as num?)?.toDouble() ?? 0.0;
+                    final imageUrl = recipe['image_url'] as String?;
 
                     return MealCard(
                       label: mealType.toUpperCase(),
@@ -1696,23 +1170,24 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                       kcal: baseCalories,
                       recipeId: recipeId, // ✅ Pass recipe ID
                       householdId: _householdId!, // ✅ Pass household ID
-                      mealPlanDate: _formatDateKey(selectedDate), // ✅ Pass meal plan date
+                      mealPlanDate:
+                          _formatDateKey(selectedDate), // ✅ Pass meal plan date
                       mealType: mealType,
+                      imageUrl: imageUrl, // ✅ Pass recipe image
+                      mealPlanServings:
+                          servings, // ✅ Pass servings from meal_plan
+                      onDeleted: () {
+                        // ✅ Reload meal plans when deleted
+                        debugPrint('🔄 Reloading meal plans after deletion');
+                        _hasLoadedData = false;
+                        _loadMealPlans();
+                      },
                     );
                   },
                 ),
                 if (index < mealPlans.length - 1) const SizedBox(height: 16),
               ],
             );
-          },
-        ),
-        const SizedBox(height: 24),
-        ShoppingList(
-          onViewAllTap: () {
-            // Navigate to Shopping List tab (index 1)
-            if (widget.onTabChange != null) {
-              widget.onTabChange!(1);
-            }
           },
         ),
       ],

@@ -15,7 +15,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController(text: '1');
   
-  String _selectedUnit = 'kg';
+  String _selectedUnit = 'kg'; // Đổi mặc định thành kg cho khớp list
   DateTime? _selectedExpiryDate;
   String _selectedCategory = 'Rau củ';
   bool _isLoading = false;
@@ -31,6 +31,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
   }
 
   void _selectExpiryDate() async {
+    // Ẩn bàn phím trước khi mở lịch
     FocusScope.of(context).unfocus();
     
     final date = await showDatePicker(
@@ -41,7 +42,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(primary: Color(0xFF0FBD3B)),
+            colorScheme: const ColorScheme.light(primary: Color(0xFF0FBD3B)), // Màu xanh chủ đạo
           ),
           child: child!,
         );
@@ -53,6 +54,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
     }
   }
 
+  // HÀM QUAN TRỌNG: Gọi Provider để đẩy lên Firestore
   Future<void> _addItem() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
@@ -62,9 +64,13 @@ class _AddItemDialogState extends State<AddItemDialog> {
       return;
     }
 
+    // Ẩn bàn phím ngay lập tức
+    FocusScope.of(context).unfocus();
+
     setState(() => _isLoading = true);
 
     try {
+      // Gọi hàm addItem trong InventoryProvider
       await Provider.of<InventoryProvider>(context, listen: false).addItem(
         name: name,
         quantity: double.tryParse(_quantityController.text) ?? 1.0,
@@ -74,11 +80,11 @@ class _AddItemDialogState extends State<AddItemDialog> {
       );
 
       if (mounted) {
-        Navigator.pop(context);
+        Navigator.pop(context); // Đóng Dialog
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('✅ Đã thêm món mới thành công!'),
-            backgroundColor: Color(0xFF0FBD3B),
+            backgroundColor:  Color.fromARGB(255, 36, 75, 45),
           ),
         );
       }
@@ -95,12 +101,15 @@ class _AddItemDialogState extends State<AddItemDialog> {
 
   @override
   Widget build(BuildContext context) {
+    // Bọc trong Dialog để hiển thị giữa màn hình
     return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+      backgroundColor: Colors.transparent, // Để Container bo góc hiển thị đẹp
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20), // Khoảng cách lề
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
+          // Đổi thành bo tròn 4 góc (circular) thay vì chỉ vertical top
+          // để phù hợp với giao diện Dialog
           borderRadius: BorderRadius.circular(24), 
         ),
         padding: const EdgeInsets.all(20),
@@ -250,8 +259,8 @@ class _AddItemDialogState extends State<AddItemDialog> {
 
               const SizedBox(height: 20),
 
-              // Scan Barcode Button (commented out - uncomment when dotted_border is installed)
-              /* 
+              // Scan Barcode Button (Giữ lại UI của bạn)
+              /* // Bỏ comment đoạn này nếu bạn đã cài dotted_border và có file scan
               DottedBorder(
                 borderType: BorderType.RRect,
                 radius: const Radius.circular(12),
@@ -293,7 +302,7 @@ class _AddItemDialogState extends State<AddItemDialog> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _addItem,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0FBD3B),
+                    backgroundColor: const Color.fromARGB(255, 36, 75, 45),// Màu xanh chủ đạo
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 0,
                   ),

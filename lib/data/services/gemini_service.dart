@@ -6,57 +6,61 @@ import '../../models/household_recipe.dart';
 class GeminiService {
   GenerativeModel? _model;
 
-  // Khởi tạo Model
   void _initModel() {
     final apiKey = dotenv.env['GEMINI_API_KEY'];
     if (apiKey == null || apiKey.isEmpty) {
       print("❌ Lỗi: Chưa có API Key trong file .env");
       return;
     }
-
-    // --- ĐIỂM QUAN TRỌNG: CHỌN ĐÚNG MODEL ---
-    // Theo bài viết bạn gửi, chúng ta cần dùng model dòng 1.5
-    // 'gemini-1.5-flash': Nhanh, miễn phí, ổn định nhất hiện nay.
-    // Nếu vẫn lỗi, bạn có thể thử đổi thành 'gemini-1.5-pro'
-    print("🔑 Đang khởi tạo SDK với model: gemini-1.5-flash");
-    
+    // Sử dụng flash cho tốc độ nhanh và chi phí thấp cho việc phân tích
     _model = GenerativeModel(
-      model: 'gemini-flash-latest', 
+      model: 'gemini-1.5-flash', 
       apiKey: apiKey,
     );
   }
 
-  // --- HÀM TEST KẾT NỐI (DEBUG) ---
-  Future<void> testConnection() async {
+  // --- [MỚI] HÀM 3: PHÂN TÍCH SỞ THÍCH NGƯỜI DÙNG ---
+  /// Input: Danh sách tên món yêu thích & lịch sử nấu
+  /// Output: Map JSON chứa tham số tìm kiếm (Query + Filter)
+  Future<Map<String, dynamic>?> analyzeUserTaste({
+    required List<String> favoriteTitles,
+    required List<String> historyTitles,
+  }) async {
     if (_model == null) _initModel();
-    if (_model == null) return;
+    if (_model == null) return null;
 
-    print("--------------------------------------------------");
-    print("📡 ĐANG GỌI TEST KẾT NỐI ĐẾN GOOGLE...");
-    
-    try {
-      final content = [Content.text('Trả lời ngắn gọn: "Kết nối thành công! Mạng tốt."')];
-      final response = await _model!.generateContent(content);
+    final prompt = '''
+      Bạn là chuyên gia ẩm thực AI. Hãy phân tích dữ liệu người dùng:
+      - Yêu thích: ${favoriteTitles.join(', ')}
+      - Lịch sử nấu: ${historyTitles.join(', ')}
 
-      print("✅ KẾT QUẢ TỪ GEMINI:");
-      print("👇👇👇");
-      print(response.text);
-      print("👆👆👆");
-    } catch (e) {
-      print("🔥 LỖI KHI GỌI GEMINI:");
-      print(e);
-      // Gợi ý sửa lỗi dựa trên mã lỗi
-      if (e.toString().contains("404")) {
-        print("👉 Gợi ý: Lỗi 404 nghĩa là model này không tồn tại với Key của bạn.");
-        print("👉 Hãy thử đổi tên model trong hàm _initModel thành 'gemini-pro' hoặc 'gemini-1.0-pro'");
-      } else if (e.toString().contains("API key not valid")) {
-        print("👉 Gợi ý: Key sai. Hãy tạo Key mới tại aistudio.google.com");
+      Nhiệm vụ: Đề xuất MỘT ý tưởng tìm kiếm món ăn mới phù hợp gu của họ (tránh trùng món cũ).
+      Yêu cầu: Trả về JSON thuần túy (không markdown) với cấu trúc để gọi API:
+      {
+        "query": "tên món hoặc từ khóa tiếng Anh ngắn gọn (ví dụ: 'Pasta' hoặc 'Spicy Chicken')",
+        "cuisine": "một trong: Italian, Mexican, Asian, Mediterranean, Vegan (hoặc null)",
+        "difficulty": "Easy, Medium hoặc Hard",
+        "maxPrepTime": số phút (int)
       }
+    ''';
+
+    try {
+      final content = [Content.text(prompt)];
+      final response = await _model!.generateContent(content);
+      
+      if (response.text != null) {
+        String rawText = _cleanJson(response.text!);
+        final Map<String, dynamic> result = jsonDecode(rawText);
+        print("🤖 Gemini Phân tích xong: $result");
+        return result;
+      }
+    } catch (e) {
+      print("❌ Lỗi Analyze Taste: $e");
     }
-    print("--------------------------------------------------");
+    return null;
   }
 
-  // --- HÀM 1: Gợi ý món ăn (UI gọi hàm này) ---
+  // --- HÀM 1: Gợi ý món ăn (Logic cũ - fallback) ---
   Future<List<HouseholdRecipe>> recommendRecipes(List<String> ingredients) async {
     if (_model == null) _initModel();
     if (_model == null) return [];
@@ -81,7 +85,7 @@ class GeminiService {
           return HouseholdRecipe(
             apiRecipeId: fakeId,
             title: data['title'] ?? "Món AI gợi ý",
-            imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80", // Ảnh placeholder
+            imageUrl: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80",
             readyInMinutes: data['readyInMinutes'] ?? 30,
             difficulty: data['difficulty'] ?? "Medium",
             calories: (data['calories'] as num?)?.toDouble(),
@@ -96,7 +100,7 @@ class GeminiService {
     return [];
   }
 
-  // --- HÀM 2: Lấy chi tiết (UI gọi hàm này) ---
+  // --- HÀM 2: Lấy chi tiết ---
   Future<Map<String, dynamic>?> getRecipeDetail(String recipeTitle) async {
     if (_model == null) _initModel();
     if (_model == null) return null;

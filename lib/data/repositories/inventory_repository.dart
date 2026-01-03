@@ -20,11 +20,14 @@ class InventoryRepository {
   // Logic tạo nhà mới (Tách khỏi Provider cho gọn)
   Future<String> createNewHousehold(String userId) async {
     final newHouseRef = _firestore.collection('households').doc();
+    // Tạo ID nhà mới (ví dụ: house_UID) để dễ quản lý, hoặc để autoID cũng được
+    // Ở đây giữ autoID như cũ nhưng sửa field members
+    
     await newHouseRef.set({
       'household_id': newHouseRef.id,
       'name': 'Nhà của tôi',
       'owner_id': userId,
-      'residents': [userId],
+      'members': [userId], // [SỬA QUAN TRỌNG] Đổi 'residents' -> 'members'
       'created_at': FieldValue.serverTimestamp(),
     });
     
@@ -46,7 +49,7 @@ class InventoryRepository {
 
     await newItemRef.set({
       'ingredient_id': newItemRef.id,
-      'household_id': householdId,
+      'household_id': householdId, // Đảm bảo field này luôn có
       'name': item.name,
       'quantity': item.quantity,
       'unit': item.unit,

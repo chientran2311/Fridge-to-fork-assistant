@@ -72,8 +72,8 @@ class CustomToast extends StatelessWidget {
   static void show(BuildContext context, String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
-    // Sử dụng Extension từ responsive_ui.dart để kiểm tra màn hình
-    final bool isMobileScreen = context.isMobile;
+    // 2. Sử dụng Extension từ responsive_ui.dart để kiểm tra màn hình
+    final bool isDesktopOrTablet = context.isDesktop || context.isTablet;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -83,12 +83,16 @@ class CustomToast extends StatelessWidget {
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
         
-        // --- FIX: Không dùng width và margin cùng lúc ---
-        // Desktop/Tablet: Dùng width để cố định, margin chỉ dùng bottom
-        width: isMobileScreen ? null : 400,
-        margin: isMobileScreen 
-            ? const EdgeInsets.only(bottom: 20, left: 24, right: 24) // Mobile: full responsive
-            : const EdgeInsets.only(bottom: 30), // Desktop: chỉ margin bottom
+        // --- LOGIC RESPONSIVE VỊ TRÍ ---
+        
+        // A. Nếu là Desktop/Tablet: Dùng 'width' để cố định kích thước ở giữa
+        width: isDesktopOrTablet ? 400 : null, 
+        
+        // B. Nếu là Mobile: Dùng 'margin' để căn lề trái phải
+        // Lưu ý: Nếu đã set 'width' thì 'margin' chỉ tác dụng theo chiều dọc (bottom)
+        margin: isDesktopOrTablet 
+            ? const EdgeInsets.only(bottom: 30) // Desktop: Cách đáy 30px, tự căn giữa
+            : const EdgeInsets.only(bottom: 20, left: 24, right: 24), // Mobile: Cách đáy 20px, cách bên 24px
       ),
     );
   }

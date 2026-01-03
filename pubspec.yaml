@@ -20,7 +20,8 @@ dependencies:
   # Lấy bản mới hơn
   google_fonts: ^6.3.3
   table_calendar: ^3.0.9
-  # mobile_scanner: ^7.1.4  # Tạm comment - không support web tốt
+  # Giữ lại thư viện quét mã từ nhánh manh
+  mobile_scanner: ^7.1.4
   firebase_core: ^4.3.0
   firebase_auth: ^6.1.3
   http: ^1.6.0
@@ -31,7 +32,12 @@ dependencies:
   flutter_dotenv: ^6.0.0
   google_generative_ai: ^0.4.7
   flutter_localization: ^0.3.3
-  barcode_widget: ^2.0.4
+  flutter_local_notifications: ^19.5.0
+  flutter_timezone: ^5.0.1
+  timezone: ^0.10.1
+  firebase_messaging: ^16.1.0
+  barcode_widget: ^2.0.3
+  shared_preferences: ^2.3.3
   
 dev_dependencies:
   flutter_test:

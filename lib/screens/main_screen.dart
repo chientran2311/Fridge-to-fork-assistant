@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/recipe/bottom_nav.dart';
-// import 'package:fridge_to_fork_assistant/screens/fridge/fridge_home.dart';
-// import 'package:fridge_to_fork_assistant/screens/recipe/ai_recipe.dart';
-// import 'package:fridge_to_fork_assistant/screens/meal&plan/planner/planner_screen.dart';
 
 class MainScreen extends StatelessWidget {
   final StatefulNavigationShell navigationShell;

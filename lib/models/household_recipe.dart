@@ -7,10 +7,11 @@ class HouseholdRecipe {
   final String title;
   final String? imageUrl;
   final int readyInMinutes;
-  final int? servings;        
+  final int? servings;
   final double? calories;
   final String? difficulty; // Lưu trữ chuỗi "Easy", "Medium", "Hard"
   final String? instructions;
+  final List<Map<String, dynamic>>? ingredients; // ✅ Add ingredients field
   final String? addedByUid;
   final DateTime? addedAt;
   final int usedIngredientCount;
@@ -27,6 +28,7 @@ class HouseholdRecipe {
     this.calories,
     this.difficulty,
     this.instructions,
+    this.ingredients, // ✅ Add ingredients parameter
     this.addedByUid,
     this.addedAt,
     this.usedIngredientCount = 0,
@@ -51,15 +53,15 @@ class HouseholdRecipe {
       imageUrl: json['image'],
       usedIngredientCount: json['usedIngredientCount'] ?? 0,
       missedIngredientCount: json['missedIngredientCount'] ?? 0,
-      
+
       // [CẬP NHẬT] Gán giá trị time đã xử lý null safety
       readyInMinutes: time,
-      
-      servings: (json['servings'] as num?)?.toInt(),
-      
+
+      servings: (json['servings'] as num?)?.toInt() ?? 1, // ✅ Default to 1
+
       instructions: json['instructions'],
       calories: _parseCalories(json),
-      
+
       // [CẬP NHẬT] Tự động tính độ khó dựa trên thời gian ngay khi parse từ API
       difficulty: _calculateDifficulty(time),
     );
@@ -73,14 +75,17 @@ class HouseholdRecipe {
       apiRecipeId: data['api_recipe_id'],
       title: data['title'],
       imageUrl: data['image_url'],
-      
+
       // [CẬP NHẬT] Thêm ?? 0 để an toàn
       readyInMinutes: data['ready_in_minutes'] ?? 0,
-      
+
       servings: data['servings'],
       calories: (data['calories'] as num?)?.toDouble(),
       difficulty: data['difficulty'],
       instructions: data['instructions'],
+      ingredients: (data['ingredients'] as List<dynamic>?)
+          ?.map((e) => e as Map<String, dynamic>)
+          .toList(), // ✅ Add ingredients
       addedByUid: data['added_by_uid'],
       addedAt: (data['added_at'] as Timestamp?)?.toDate(),
       usedIngredientCount: 0,
@@ -112,27 +117,44 @@ class HouseholdRecipe {
       'calories': calories,
       'difficulty': difficulty, // Lưu giá trị đã tính toán vào DB
       'instructions': instructions,
+      'ingredients': ingredients ?? [], // ✅ Add ingredients
       'added_by_uid': addedByUid,
-      'added_at': addedAt != null ? Timestamp.fromDate(addedAt!) : FieldValue.serverTimestamp(),
+      'added_at': addedAt != null
+          ? Timestamp.fromDate(addedAt!)
+          : FieldValue.serverTimestamp(),
     };
   }
 
   static double? _parseCalories(Map<String, dynamic> json) {
-    // Kiểm tra an toàn hơn
+    // 1. Try to get from nutrition.nutrients array
     if (json['nutrition'] != null && json['nutrition']['nutrients'] is List) {
       final nutrients = json['nutrition']['nutrients'] as List;
-      // Dùng firstWhereOrNull (cần collection package) hoặc try/catch check range
-      // Cách cơ bản:
       try {
         final calItem = nutrients.firstWhere(
           (element) => element['name'] == 'Calories',
           orElse: () => null,
         );
-        return (calItem?['amount'] as num?)?.toDouble();
+        if (calItem != null && calItem['amount'] != null) {
+          return (calItem['amount'] as num?)?.toDouble();
+        }
       } catch (e) {
-        return null;
+        // Continue to fallback
       }
     }
+
+    // 2. Fallback: Try to get from nutrition.nutrients first item if available
+    if (json['nutrition'] != null &&
+        json['nutrition']['caloricBreakdown'] != null) {
+      final breakdown = json['nutrition']['caloricBreakdown'];
+      // Sometimes total calories in percentProtein/Carb/Fat can help estimate
+      // But this is not accurate, skip for now
+    }
+
+    // 3. Another fallback: Some APIs return calories directly
+    if (json['calories'] != null) {
+      return (json['calories'] as num?)?.toDouble();
+    }
+
     return null;
   }
 

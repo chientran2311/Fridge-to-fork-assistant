@@ -5,12 +5,12 @@ class EditableShoppingItem extends StatefulWidget {
   final String itemId;
   final String title;
   final String category;
-  final int quantity;
+  final double quantity;
   final String unit;
   final bool isChecked;
   final VoidCallback onDelete;
   final Function(bool) onToggleCheck;
-  final Function(int) onQuantityChange;
+  final Function(double) onQuantityChange;
   final String householdId;
 
   const EditableShoppingItem({
@@ -32,7 +32,7 @@ class EditableShoppingItem extends StatefulWidget {
 
 class EditableShoppingItemState extends State<EditableShoppingItem> {
   late bool isEditing;
-  late int quantity;
+  late double quantity;
   late String itemName;
   late String selectedUnit;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -60,10 +60,11 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
   }
 
   Future<void> _loadUnits() async {
-    setState(() => availableUnits = ['pcs', 'g', 'kg', 'ml', 'L', 'pack', 'block']);
+    setState(
+        () => availableUnits = ['pcs', 'g', 'kg', 'ml', 'L', 'pack', 'block']);
   }
 
-  Future<void> _updateQuantity(int newQuantity) async {
+  Future<void> _updateQuantity(double newQuantity) async {
     // ✅ Chỉ update local state, không ghi lên Firebase
     setState(() => quantity = newQuantity);
     _quantityController.text = quantity.toString();
@@ -114,7 +115,8 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
                 widget.title,
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  decoration: widget.isChecked ? TextDecoration.lineThrough : null,
+                  decoration:
+                      widget.isChecked ? TextDecoration.lineThrough : null,
                 ),
               ),
               const SizedBox(height: 2),
@@ -138,7 +140,8 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
           children: [
             const Icon(Icons.edit, size: 18, color: Color(0xFF214130)),
             const SizedBox(width: 6),
-            const Text("Edit Item", style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const Text("Edit Item",
+                style: TextStyle(fontSize: 12, color: Colors.grey)),
             const Spacer(),
             IconButton(
               icon: const Icon(Icons.delete, color: Colors.red),
@@ -147,7 +150,8 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
                   context: context,
                   builder: (context) => AlertDialog(
                     title: const Text("Delete Item?"),
-                    content: Text("Remove '${widget.title}' from shopping list?"),
+                    content:
+                        Text("Remove '${widget.title}' from shopping list?"),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
@@ -158,7 +162,8 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
                           Navigator.pop(context);
                           widget.onDelete();
                         },
-                        child: const Text("Delete", style: TextStyle(color: Colors.red)),
+                        child: const Text("Delete",
+                            style: TextStyle(color: Colors.red)),
                       ),
                     ],
                   ),
@@ -170,7 +175,9 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
         const SizedBox(height: 12),
 
         // ===== ITEM NAME EDIT =====
-        const Text("Item Name", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
+        const Text("Item Name",
+            style: TextStyle(
+                fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
         const SizedBox(height: 6),
         TextField(
           controller: _nameController,
@@ -178,7 +185,8 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
             hintText: "Enter item name",
             filled: true,
             fillColor: const Color(0xFFF6F8F6),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: BorderSide.none,
@@ -197,7 +205,11 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Quantity", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
+                  const Text("Quantity",
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey)),
                   const SizedBox(height: 6),
                   Row(
                     children: [
@@ -215,7 +227,8 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
                             color: const Color(0xFFF0F0F0),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.remove, size: 16, color: Color(0xFF214130)),
+                          child: const Icon(Icons.remove,
+                              size: 16, color: Color(0xFF214130)),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -228,14 +241,15 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: const Color(0xFFF6F8F6),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 10),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                               borderSide: BorderSide.none,
                             ),
                           ),
                           onChanged: (value) {
-                            final newQty = int.tryParse(value) ?? quantity;
+                            final newQty = double.tryParse(value) ?? quantity;
                             if (newQty > 0) {
                               _updateQuantity(newQty);
                             }
@@ -253,7 +267,8 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
                             color: const Color(0xFF214130),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(Icons.add, size: 16, color: Colors.white),
+                          child: const Icon(Icons.add,
+                              size: 16, color: Colors.white),
                         ),
                       ),
                     ],
@@ -268,7 +283,11 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Unit", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
+                  const Text("Unit",
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey)),
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -279,7 +298,11 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         isExpanded: true,
-                        value: availableUnits.contains(selectedUnit) ? selectedUnit : (availableUnits.isNotEmpty ? availableUnits[0] : selectedUnit),
+                        value: availableUnits.contains(selectedUnit)
+                            ? selectedUnit
+                            : (availableUnits.isNotEmpty
+                                ? availableUnits[0]
+                                : selectedUnit),
                         items: availableUnits.map((unit) {
                           return DropdownMenuItem(
                             value: unit,
@@ -310,7 +333,10 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
           ),
           child: Text(
             "Category: ${widget.category.toUpperCase()}",
-            style: const TextStyle(fontSize: 12, color: Color(0xFF214130), fontWeight: FontWeight.w600),
+            style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF214130),
+                fontWeight: FontWeight.w600),
           ),
         ),
         const SizedBox(height: 16),
@@ -341,7 +367,8 @@ class EditableShoppingItemState extends State<EditableShoppingItem> {
                 setState(() => isEditing = false);
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text("Updated: $itemName ($quantity$selectedUnit)"),
+                    content:
+                        Text("Updated: $itemName ($quantity$selectedUnit)"),
                     duration: const Duration(seconds: 2),
                   ),
                 );

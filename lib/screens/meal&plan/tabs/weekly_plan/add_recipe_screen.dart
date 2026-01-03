@@ -5,7 +5,8 @@ import 'package:table_calendar/table_calendar.dart';
 class AddRecipeScreen extends StatefulWidget {
   final DateTime selectedDate;
   final List<Map<String, dynamic>> recipes;
-  final Function(DateTime date, String recipeId, String mealType, int servings) onAddMealPlan;
+  final Function(DateTime date, String recipeId, String mealType, int servings)
+      onAddMealPlan;
 
   const AddRecipeScreen({
     super.key,
@@ -35,9 +36,13 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
     // Filter recipes based on selected filter
     List<Map<String, dynamic>> filteredRecipes = widget.recipes;
     if (recipeFilter == 'favorite') {
-      filteredRecipes = widget.recipes.where((r) => r['isFavorite'] == true).toList();
+      filteredRecipes =
+          widget.recipes.where((r) => r['isFavorite'] == true).toList();
     } else if (recipeFilter == 'api') {
-      filteredRecipes = widget.recipes.where((r) => r['isFavorite'] != true).toList();
+      // ✅ Show only API recipes (not saved to favorites)
+      filteredRecipes = widget.recipes
+          .where((r) => r['isFromApi'] == true && r['isFavorite'] != true)
+          .toList();
     }
 
     return Scaffold(
@@ -86,16 +91,20 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                       return Container(
                         decoration: BoxDecoration(
                           border: isHovering
-                              ? Border.all(color: const Color(0xFF214130), width: 2)
+                              ? Border.all(
+                                  color: const Color(0xFF214130), width: 2)
                               : Border.all(color: Colors.transparent, width: 2),
                           borderRadius: BorderRadius.circular(12),
-                          color: isHovering ? const Color(0xFF214130).withOpacity(0.05) : null,
+                          color: isHovering
+                              ? const Color(0xFF214130).withOpacity(0.05)
+                              : null,
                         ),
                         child: TableCalendar(
                           focusedDay: pickedDate,
                           firstDay: DateTime(2025, 1, 1),
                           lastDay: DateTime(2027, 12, 31),
-                          selectedDayPredicate: (day) => isSameDay(pickedDate, day),
+                          selectedDayPredicate: (day) =>
+                              isSameDay(pickedDate, day),
                           onDaySelected: (selectedDay, focusedDay) {
                             setState(() {
                               pickedDate = selectedDay;
@@ -110,7 +119,8 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                               color: const Color(0xFF214130).withOpacity(0.3),
                               shape: BoxShape.circle,
                             ),
-                            selectedTextStyle: const TextStyle(color: Colors.white),
+                            selectedTextStyle:
+                                const TextStyle(color: Colors.white),
                           ),
                           headerStyle: HeaderStyle(
                             formatButtonVisible: false,
@@ -146,7 +156,8 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('Khẩu phần:', style: TextStyle(fontWeight: FontWeight.w500)),
+                      const Text('Khẩu phần:',
+                          style: TextStyle(fontWeight: FontWeight.w500)),
                       const SizedBox(width: 12),
                       Container(
                         decoration: BoxDecoration(
@@ -161,18 +172,22 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                               onPressed: () {
                                 if (servings > 1) setState(() => servings--);
                               },
-                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                              constraints: const BoxConstraints(
+                                  minWidth: 32, minHeight: 32),
                               padding: EdgeInsets.zero,
                             ),
                             Container(
                               width: 30,
                               alignment: Alignment.center,
-                              child: Text('$servings', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              child: Text('$servings',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
                             ),
                             IconButton(
                               icon: const Icon(Icons.add, size: 18),
                               onPressed: () => setState(() => servings++),
-                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                              constraints: const BoxConstraints(
+                                  minWidth: 32, minHeight: 32),
                               padding: EdgeInsets.zero,
                             ),
                           ],
@@ -212,14 +227,16 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.restaurant_menu, size: 48, color: Colors.grey[300]),
+                        Icon(Icons.restaurant_menu,
+                            size: 48, color: Colors.grey[300]),
                         const SizedBox(height: 12),
                         Text(
                           recipeFilter == 'favorite'
                               ? 'Không có công thức yêu thích'
                               : recipeFilter == 'api'
-                                  ? 'Không có công thức từ API'
-                                  : 'Không có công thức nào',
+                                  ? 'Không có công thức từ API.\nHãy tìm kiếm công thức ở màn hình Recipes!'
+                                  : 'Không có công thức nào.\nHãy thêm công thức vào yêu thích hoặc tìm kiếm!',
+                          textAlign: TextAlign.center,
                           style: TextStyle(color: Colors.grey[600]),
                         ),
                       ],
@@ -274,7 +291,9 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF214130) : Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
-          border: isSelected ? Border.all(color: const Color(0xFF214130), width: 2) : null,
+          border: isSelected
+              ? Border.all(color: const Color(0xFF214130), width: 2)
+              : null,
         ),
         child: Text(
           label,
@@ -327,10 +346,13 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                       ? Image.network(
                           recipe['image'],
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Icon(Icons.restaurant, color: Colors.grey[400], size: 28),
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.restaurant,
+                              color: Colors.grey[400],
+                              size: 28),
                         )
-                      : Icon(Icons.restaurant, color: Colors.grey[400], size: 28),
+                      : Icon(Icons.restaurant,
+                          color: Colors.grey[400], size: 28),
                 ),
               ),
               const SizedBox(width: 10),
@@ -352,11 +374,13 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                     const SizedBox(height: 3),
                     Row(
                       children: [
-                        Icon(Icons.local_fire_department, size: 12, color: Colors.orange[700]),
+                        Icon(Icons.local_fire_department,
+                            size: 12, color: Colors.orange[700]),
                         const SizedBox(width: 3),
                         Text(
                           '${recipe['calories']} kcal',
-                          style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                          style:
+                              TextStyle(fontSize: 11, color: Colors.grey[600]),
                         ),
                       ],
                     ),
@@ -395,12 +419,15 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                         ? Image.network(
                             recipe['image'],
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Center(
-                              child: Icon(Icons.restaurant, color: Colors.grey[300], size: 28),
+                            errorBuilder: (context, error, stackTrace) =>
+                                Center(
+                              child: Icon(Icons.restaurant,
+                                  color: Colors.grey[300], size: 28),
                             ),
                           )
                         : Center(
-                            child: Icon(Icons.restaurant, color: Colors.grey[300], size: 28),
+                            child: Icon(Icons.restaurant,
+                                color: Colors.grey[300], size: 28),
                           ),
                   ),
                 ),
@@ -449,7 +476,8 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      Icon(Icons.local_fire_department, size: 12, color: Colors.orange[700]),
+                      Icon(Icons.local_fire_department,
+                          size: 12, color: Colors.orange[700]),
                       const SizedBox(width: 3),
                       Text(
                         '${recipe['calories']} kcal',
@@ -462,7 +490,8 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                       const Spacer(),
                       if (recipe['isFavorite'] == true)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: const Color(0xFF214130).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(10),

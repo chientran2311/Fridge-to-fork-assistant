@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../utils/database_seeder.dart';
 import 'barcode_generator.dart';
 
 class DebugToolsScreen extends StatefulWidget {
@@ -12,63 +9,6 @@ class DebugToolsScreen extends StatefulWidget {
 }
 
 class _DebugToolsScreenState extends State<DebugToolsScreen> {
-  bool _isSeeding = false;
-
-  void _runSeeder() async {
-    setState(() => _isSeeding = true);
-    
-    try {
-      // Lấy user hiện tại
-      final currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser == null) {
-        throw Exception('No user logged in');
-      }
-      
-      final userId = currentUser.uid;
-      
-      // Lấy household_id từ user document
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
-      
-      if (!userDoc.exists || userDoc.data()?['household_id'] == null) {
-        throw Exception('User document not found or no household_id');
-      }
-      
-      final householdId = userDoc.data()!['household_id'] as String;
-      
-      // Chạy seeder với userId và householdId
-      final seeder = DatabaseSeeder();
-      await seeder.seedDatabase(
-        userId: userId,
-        householdId: householdId,
-      );
-      
-      setState(() => _isSeeding = false);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Database seeding completed!'),
-            backgroundColor: Color(0xFF28A745),
-          ),
-        );
-      }
-    } catch (e) {
-      setState(() => _isSeeding = false);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -91,15 +31,6 @@ class _DebugToolsScreenState extends State<DebugToolsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildToolCard(
-              icon: Icons.cloud_upload,
-              title: 'Seed Database',
-              description: 'Populate Firebase with sample data',
-              color: const Color(0xFF214130),
-              onTap: _isSeeding ? null : _runSeeder,
-              isLoading: _isSeeding,
-            ),
-            const SizedBox(height: 16),
             _buildToolCard(
               icon: Icons.qr_code_2,
               title: 'Barcode Generator',
@@ -126,7 +57,6 @@ class _DebugToolsScreenState extends State<DebugToolsScreen> {
     required String description,
     required Color color,
     VoidCallback? onTap,
-    bool isLoading = false,
   }) {
     return Card(
       elevation: 2,
@@ -147,15 +77,7 @@ class _DebugToolsScreenState extends State<DebugToolsScreen> {
                   color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: isLoading
-                    ? const Center(
-                        child: SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : Icon(icon, color: color, size: 32),
+                child: Icon(icon, color: color, size: 32),
               ),
               const SizedBox(width: 16),
               Expanded(

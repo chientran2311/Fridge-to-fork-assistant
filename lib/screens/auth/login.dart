@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
-import '../../utils/database_seeder.dart';
 import 'package:go_router/go_router.dart';
 // Import Localization
 import '../../l10n/app_localizations.dart';

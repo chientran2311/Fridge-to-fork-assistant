@@ -1,197 +1,214 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // [MỚI] Import Auth để lấy User thật
 import 'package:flutter/foundation.dart';
 
 class DatabaseSeeder {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Nhận userId và householdId từ user đang đăng nhập
-  Future<void> seedDatabase({
-    required String userId,
-    required String householdId,
-  }) async {
+  // IDs Nguyên liệu gốc (Master Data) - Giữ nguyên vì dùng chung
+  final String _beefId = 'ing_beef_01';
+  final String _eggId = 'ing_egg_01';
+  final String _milkId = 'ing_milk_01';
+  final String _recipeId = 'recipe_seed_01';
+
+  Future<void> seedDatabase() async {
     try {
-      debugPrint("🚀 Bắt đầu tạo dữ liệu mẫu cho user: $userId...");
+      debugPrint("🚀 Bắt đầu tạo dữ liệu mẫu...");
+
+      // [BƯỚC QUAN TRỌNG NHẤT] Lấy User đang đăng nhập
+      final User? currentUser = FirebaseAuth.instance.currentUser;
+      
+      if (currentUser == null) {
+        debugPrint("❌ LỖI: Bạn chưa đăng nhập! Vui lòng login trước khi Seed.");
+        return;
+      }
+
+      // Sử dụng thông tin thật thay vì 'user_seed_01'
+      final String userId = currentUser.uid; 
+      final String userEmail = currentUser.email ?? "user@test.com";
+      final String displayName = currentUser.displayName ?? "Admin Bếp";
+      
+      // Tạo ID Nhà dựa trên ID User để dễ quản lý (Mỗi user 1 nhà riêng khi seed)
+      final String householdId = 'house_$userId';
 
       // ==========================================
-      // BƯỚC 1: LẤY HOUSEHOLD REFERENCE
+      // MASTER DATA: INGREDIENTS (Giữ nguyên)
+      // ==========================================
+      await _firestore.collection('ingredients').doc(_beefId).set({
+        'ingredient_id': _beefId,
+        'name': 'Thịt bò',
+        'barcode': '8938505974194',
+        'category': 'meat',
+        'default_unit': 'g',
+        'image_url': 'https://spoonacular.com/cdn/ingredients_100x100/beef-cubes-raw.png',
+        'created_at': FieldValue.serverTimestamp(),
+      });
+
+      await _firestore.collection('ingredients').doc(_milkId).set({
+        'ingredient_id': _milkId,
+        'name': 'Sữa tươi TH True Milk',
+        'barcode': '8938505974200',
+        'category': 'dairy',
+        'default_unit': 'ml',
+        'image_url': 'https://spoonacular.com/cdn/ingredients_100x100/milk.png',
+        'created_at': FieldValue.serverTimestamp(),
+      });
+      debugPrint("✅ 1. Đã tạo Master Ingredients");
+
+      // ==========================================
+      // BƯỚC 1: CẬP NHẬT USER (Collection: users)
+      // ==========================================
+      // Dùng SetOptions(merge: true) để KHÔNG ghi đè mất FCM Token đã lưu khi Login
+      await _firestore.collection('users').doc(userId).set({
+        'uid': userId,
+        'email': userEmail,
+        'display_name': displayName,
+        'photo_url': currentUser.photoURL ?? '',
+        'language': 'vi',
+        'fcm_token': '',
+        'current_household_id': householdId, // Gắn user vào nhà mới
+        'cuisines': ['Vietnamese', 'Healthy'],
+        'updated_at': FieldValue.serverTimestamp(), // Đánh dấu thời điểm seed
+      }, SetOptions(merge: true));
+      debugPrint("✅ 2. Đã cập nhật User thật: $userId");
+
+      // ==========================================
+      // BƯỚC 2: TẠO HOUSEHOLD (Collection: households)
       // ==========================================
       final houseRef = _firestore.collection('households').doc(householdId);
 
-      // ==========================================
-      // BƯỚC 2: TẠO TỦ LẠNH (Sub-collection: inventory) - 10 items
-      // ==========================================
-      final inventoryItems = [
-        {'name': 'Thịt bò', 'quantity': 500.0, 'unit': 'g', 'tag': 'meat', 'days': 5},
-        {'name': 'Trứng gà', 'quantity': 10.0, 'unit': 'quả', 'tag': 'dairy', 'days': 2},
-        {'name': 'Cà rốt', 'quantity': 3.0, 'unit': 'củ', 'tag': 'vegetable', 'days': 7},
-        {'name': 'Sữa tươi', 'quantity': 1.0, 'unit': 'lít', 'tag': 'dairy', 'days': 3},
-        {'name': 'Thịt gà', 'quantity': 800.0, 'unit': 'g', 'tag': 'meat', 'days': 4},
-        {'name': 'Cải thảo', 'quantity': 1.0, 'unit': 'kg', 'tag': 'vegetable', 'days': 6},
-        {'name': 'Cá hồi', 'quantity': 400.0, 'unit': 'g', 'tag': 'seafood', 'days': 2},
-        {'name': 'Khoai tây', 'quantity': 5.0, 'unit': 'củ', 'tag': 'vegetable', 'days': 10},
-        {'name': 'Phô mai', 'quantity': 200.0, 'unit': 'g', 'tag': 'dairy', 'days': 15},
-        {'name': 'Tôm tươi', 'quantity': 300.0, 'unit': 'g', 'tag': 'seafood', 'days': 1},
-      ];
-      
-      for (int i = 0; i < inventoryItems.length; i++) {
-        final item = inventoryItems[i];
-        await houseRef.collection('inventory').doc('inv_${(i + 1).toString().padLeft(2, '0')}').set({
-          'name': item['name'],
-          'quantity': item['quantity'],
-          'unit': item['unit'],
-          'image_url': '',
-          'expiry_date': Timestamp.fromDate(
-            DateTime.now().add(Duration(days: item['days'] as int))
-          ),
-          'quick_tag': item['tag'],
-          'created_at': FieldValue.serverTimestamp(),
-        });
-      }
-      
-      debugPrint("✅ Đã tạo 10 Inventory items");
+      await houseRef.set({
+        'household_id': householdId,
+        'name': 'Gia Đình của $displayName', // Tên nhà động theo user
+        'owner_id': userId,
+        'invite_code': 'SEED-${userId.substring(0, 4).toUpperCase()}',
+        'members': [userId], // [QUAN TRỌNG] Thêm chính user vào mảng members
+        'created_at': FieldValue.serverTimestamp(),
+      });
+      debugPrint("✅ Đã tạo Households");
 
       // ==========================================
-      // BƯỚC 3: TẠO CÔNG THỨC (Sub-collection: household_recipes) - 10 recipes
+      // BƯỚC 3: TẠO TỦ LẠNH (Sub-collection: inventory)
       // ==========================================
-      final recipes = [
-        {'title': 'Bò Kho Tiêu', 'time': 45, 'cal': 350.5, 'diff': 'Medium', 'apiId': 12345},
-        {'title': 'Gà Rán Giòn', 'time': 30, 'cal': 420.0, 'diff': 'Easy', 'apiId': 12346},
-        {'title': 'Cá Hồi Nướng', 'time': 25, 'cal': 280.0, 'diff': 'Easy', 'apiId': 12347},
-        {'title': 'Canh Cải Thảo', 'time': 20, 'cal': 120.0, 'diff': 'Easy', 'apiId': 12348},
-        {'title': 'Mì Ý Sốt Kem', 'time': 35, 'cal': 480.0, 'diff': 'Medium', 'apiId': 12349},
-        {'title': 'Phở Bò', 'time': 60, 'cal': 400.0, 'diff': 'Hard', 'apiId': 12350},
-        {'title': 'Tôm Chiên Xù', 'time': 25, 'cal': 320.0, 'diff': 'Medium', 'apiId': 12351},
-        {'title': 'Salad Rau Củ', 'time': 15, 'cal': 150.0, 'diff': 'Easy', 'apiId': 12352},
-        {'title': 'Súp Khoai Tây', 'time': 40, 'cal': 220.0, 'diff': 'Easy', 'apiId': 12353},
-        {'title': 'Bánh Pizza Phô Mai', 'time': 50, 'cal': 520.0, 'diff': 'Medium', 'apiId': 12354},
-      ];
       
-      for (int i = 0; i < recipes.length; i++) {
-        final recipe = recipes[i];
-        final recipeId = 'recipe_${householdId}_${(i + 1).toString().padLeft(2, '0')}';
-        
-        await houseRef.collection('household_recipes').doc(recipeId).set({
-          'local_recipe_id': recipeId,
-          'household_id': householdId,
-          'api_recipe_id': recipe['apiId'],
-          'title': recipe['title'],
-          'image_url': 'https://spoonacular.com/recipeImages/${recipe["apiId"]}.jpg',
-          'ready_in_minutes': recipe['time'],
-          'calories': recipe['cal'],
-          'difficulty': recipe['diff'],
-          'added_by_uid': userId,
-          'added_at': FieldValue.serverTimestamp(),
-          'ingredients': [
-            {'name': 'Nguyên liệu 1', 'amount': 100, 'unit': 'g'},
-            {'name': 'Nguyên liệu 2', 'amount': 2, 'unit': 'thìa'},
-          ],
-          'instructions': 'Bước 1: Chuẩn bị...\nBước 2: Chế biến...\nBước 3: Hoàn thành.',
-        });
-      }
-      debugPrint("✅ Đã tạo 10 Recipes");
+      // Món 1: Thịt bò (Hết hạn NGAY MAI -> Để test thông báo)
+      await houseRef.collection('inventory').doc('inv_01').set({
+        'ingredient_id': 'inv_01',
+        'household_id': householdId, // Gắn vào nhà mới
+        'name': 'Thịt bò',
+        'quantity': 500,
+        'unit': 'g',
+        'image_url': '',
+        // Hết hạn sau 1 ngày (Ngày mai)
+        'expiry_date': Timestamp.fromDate(DateTime.now().add(const Duration(days: 1))),
+        'quick_tag': 'meat',
+        'added_by_uid': userId,
+        'created_at': FieldValue.serverTimestamp(),
+      });
+
+      // Món 2: Trứng gà (Hết hạn ngày kia)
+      await houseRef.collection('inventory').doc('inv_02').set({
+        'ingredient_id': 'inv_02',
+        'household_id': householdId,
+        'name': 'Trứng gà',
+        'quantity': 10,
+        'unit': 'quả',
+        'image_url': '',
+        'expiry_date': Timestamp.fromDate(DateTime.now().add(const Duration(days: 2))),
+        'quick_tag': 'dairy',
+        'added_by_uid': userId,
+        'created_at': FieldValue.serverTimestamp(),
+      });
+      debugPrint("✅ Đã tạo Inventory");
 
       // ==========================================
-      // BƯỚC 4: TẠO LỊCH SỬ NẤU ĂN (Sub-collection: cooking_history) - 10 items
+      // BƯỚC 4: TẠO CÔNG THỨC (Sub-collection: household_recipes)
       // ==========================================
-      for (int i = 0; i < 10; i++) {
-        final recipe = recipes[i];
-        await houseRef.collection('cooking_history').add({
-          'recipe_id': 'recipe_${householdId}_${(i + 1).toString().padLeft(2, '0')}',
-          'api_recipe_id': recipe['apiId'],
-          'title': recipe['title'],
-          'cooked_at': Timestamp.fromDate(
-            DateTime.now().subtract(Duration(days: 10 - i))
-          ),
-          'is_favorite': i < 3,
-          'servings': 2 + (i % 4),
-          'tags': ['Tag ${i + 1}'],
-        });
-      }
-      debugPrint("✅ Đã tạo 10 Cooking History items");
+      await houseRef.collection('household_recipes').doc(_recipeId).set({
+        'local_recipe_id': _recipeId,
+        'household_id': householdId,
+        'api_recipe_id': 12345,
+        'title': 'Bò Kho Tiêu',
+        'image_url': 'https://spoonacular.com/recipeImages/beef-stew.jpg',
+        'ready_in_minutes': 45,
+        'calories': 350.5,
+        'difficulty': 'Medium',
+        'added_by_uid': userId,
+        'added_at': FieldValue.serverTimestamp(),
+        'ingredients': [
+          {'name': 'Thịt bò', 'amount': 300, 'unit': 'g'},
+          {'name': 'Tiêu đen', 'amount': 1, 'unit': 'thìa'},
+          {'name': 'Hành tím', 'amount': 2, 'unit': 'củ'},
+        ],
+        'instructions': 'Bước 1: Rửa sạch thịt bò...\nBước 2: Ướp gia vị...\nBước 3: Kho lửa nhỏ.',
+      });
+      debugPrint("✅ Đã tạo Recipes");
+
+      // Sub-collection: Cooking History
+      await houseRef.collection('cooking_history').add({
+        'recipe_id': _recipeId,
+        'api_recipe_id': 12345,
+        'title': 'Bò Kho Tiêu',
+        'cooked_at': FieldValue.serverTimestamp(),
+        'is_favorite': true,
+        'servings': 4,
+        'tags': ['Beef', 'Spicy'],
+      });
+      debugPrint("✅ Đã tạo Cooking History");
+
+      // Sub-collection: Favorite Recipes
+      await houseRef.collection('favorite_recipes').doc('fav_01').set({
+        'local_recipe_id': 'fav_01',
+        'household_id': householdId,
+        'api_recipe_id': 12345,
+        'title': 'Bò Kho Tiêu',
+        'image_url': 'https://spoonacular.com/recipeImages/beef-stew.jpg',
+        'ready_in_minutes': 45,
+        'calories': 350.5,
+        'difficulty': 'Medium',
+        'servings': 4,
+        'added_by_uid': userId,
+        'added_at': FieldValue.serverTimestamp(),
+        'is_favorite': true,
+      });
 
       // ==========================================
-      // BƯỚC 5: TẠO FAVORITE RECIPES - 10 items
+      // BƯỚC 5: TẠO LỊCH ĂN (Sub-collection: meal_plans)
       // ==========================================
-      for (int i = 0; i < 10; i++) {
-        final recipe = recipes[i];
-        await houseRef.collection('favorite_recipes').doc('fav_${(i + 1).toString().padLeft(2, '0')}').set({
-          'local_recipe_id': 'fav_${(i + 1).toString().padLeft(2, '0')}',
-          'household_id': householdId,
-          'api_recipe_id': recipe['apiId'],
-          'title': recipe['title'],
-          'image_url': 'https://spoonacular.com/recipeImages/${recipe["apiId"]}.jpg',
-          'ready_in_minutes': recipe['time'],
-          'calories': recipe['cal'],
-          'difficulty': recipe['diff'],
-          'servings': 2 + (i % 4),
-          'added_by_uid': userId,
-          'added_at': FieldValue.serverTimestamp(),
-          'is_favorite': true,
-        });
-      }
-      debugPrint("✅ Đã tạo 10 Favorite Recipes");
-      
-      // ==========================================
-      // BƯỚC 6: TẠO LỊCH ĂN (Sub-collection: meal_plans) - 10 items
-      // ==========================================
-      final mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
-      for (int i = 0; i < 10; i++) {
-        final recipe = recipes[i];
-        await houseRef.collection('meal_plans').doc('plan_${(i + 1).toString().padLeft(2, '0')}').set({
-          'plan_id': 'plan_${(i + 1).toString().padLeft(2, '0')}',
-          'household_id': householdId,
-          'date': Timestamp.fromDate(
-            DateTime.now().add(Duration(days: i ~/ 3))
-          ),
-          'meal_type': mealTypes[i % mealTypes.length],
-          'local_recipe_id': 'recipe_${householdId}_${(i + 1).toString().padLeft(2, '0')}',
-          'display_title': recipe['title'],
-          'display_image': 'https://spoonacular.com/recipeImages/${recipe["apiId"]}.jpg',
-          'servings': 2 + (i % 4),
-          'is_cooked': i < 2,
-          'planned_by_uid': userId,
-          'created_at': FieldValue.serverTimestamp(),
-        });
-      }
-      debugPrint("✅ Đã tạo 10 Meal Plans");
+      await houseRef.collection('meal_plans').doc('plan_01').set({
+        'plan_id': 'plan_01',
+        'household_id': householdId,
+        'date': Timestamp.fromDate(DateTime.now()),
+        'meal_type': 'Dinner',
+        'local_recipe_id': _recipeId,
+        'display_title': 'Bò Kho Tiêu',
+        'display_image': 'https://spoonacular.com/recipeImages/beef-stew.jpg',
+        'servings': 4,
+        'is_cooked': false,
+        'planned_by_uid': userId,
+        'created_at': FieldValue.serverTimestamp(),
+      });
+      debugPrint("✅ Đã tạo Meal Plans");
 
       // ==========================================
-      // BƯỚC 7: TẠO SHOPPING LIST (Sub-collection: shopping_list) - 10 items
+      // BƯỚC 6: TẠO SHOPPING LIST (Sub-collection: shopping_list)
       // ==========================================
-      final shoppingItems = [
-        {'name': 'Hành tím', 'qty': 2, 'unit': 'củ', 'note': 'Mua loại củ to'},
-        {'name': 'Gừng', 'qty': 100, 'unit': 'g', 'note': 'Tươi'},
-        {'name': 'Nước mắm', 'qty': 1, 'unit': 'chai', 'note': 'Loại ngon'},
-        {'name': 'Dầu ăn', 'qty': 1, 'unit': 'lít', 'note': ''},
-        {'name': 'Rau mùi', 'qty': 1, 'unit': 'bó', 'note': ''},
-        {'name': 'Tỏi', 'qty': 3, 'unit': 'củ', 'note': ''},
-        {'name': 'Ớt', 'qty': 5, 'unit': 'quả', 'note': 'Ớt hiểm'},
-        {'name': 'Mì gói', 'qty': 10, 'unit': 'gói', 'note': ''},
-        {'name': 'Rau xà lách', 'qty': 1, 'unit': 'kg', 'note': 'Rửa sạch'},
-        {'name': 'Nước lọc', 'qty': 2, 'unit': 'chai', 'note': ''},
-      ];
-      
-      for (int i = 0; i < shoppingItems.length; i++) {
-        final item = shoppingItems[i];
-        await houseRef.collection('shopping_list').doc('shop_${(i + 1).toString().padLeft(2, '0')}').set({
-          'item_id': 'shop_${(i + 1).toString().padLeft(2, '0')}',
-          'household_id': householdId,
-          'name': item['name'],
-          'quantity': item['qty'],
-          'unit': item['unit'],
-          'is_checked': i < 2,
-          'is_auto_generated': i % 2 == 0,
-          'for_recipe_id': 'recipe_${householdId}_${((i % 10) + 1).toString().padLeft(2, '0')}',
-          'target_date': Timestamp.fromDate(
-            DateTime.now().add(Duration(days: i % 5))
-          ),
-          'created_at': FieldValue.serverTimestamp(),
-          'note': item['note'],
-        });
-      }
-      debugPrint("✅ Đã tạo 10 Shopping List items");
+      await houseRef.collection('shopping_list').doc('shop_01').set({
+        'item_id': 'shop_01',
+        'household_id': householdId,
+        'name': 'Hành tím',
+        'quantity': 2,
+        'unit': 'củ',
+        'is_checked': false,
+        'is_auto_generated': true,
+        'for_recipe_id': _recipeId,
+        'target_date': Timestamp.fromDate(DateTime.now()),
+        'created_at': FieldValue.serverTimestamp(),
+        'note': 'Mua loại củ to',
+      });
+      debugPrint("✅ Đã tạo Shopping List");
 
-      debugPrint("🎉 HOÀN TẤT! Dữ liệu mẫu đã sẵn sàng.");
+      debugPrint("🎉 HOÀN TẤT! Dữ liệu mẫu đã sẵn sàng cho User: $displayName");
     } catch (e) {
       debugPrint("❌ Lỗi khi tạo dữ liệu: $e");
     }

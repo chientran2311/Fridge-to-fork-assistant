@@ -9,7 +9,6 @@ import 'package:provider/provider.dart';
 import '../../../../widgets/plans/tabs/weekly_plan_tab/meal_card.dart';
 import '../../../../widgets/plans/tabs/weekly_plan_tab/today_shopping_list.dart';
 import '../../../../widgets/plans/tabs/weekly_plan_tab/day_item.dart';
-import '../../../../utils/firebase_seeder.dart';
 import '../../../../providers/recipe_provider.dart';
 import 'add_recipe_screen.dart';
 
@@ -483,22 +482,6 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
         );
       },
     );
-  }
-
-  // ✅ Function để chạy seeder
-  Future<void> _runSeeder() async {
-    debugPrint('🚀 Running Seeder...');
-    try {
-      final seeder = DatabaseSeederV2();
-      await seeder.seedDatabase();
-      debugPrint('✅ Seeder completed!');
-      
-      // Reload data sau khi seeder chạy xong
-      await Future.delayed(const Duration(milliseconds: 500));
-      _loadMealPlans();
-    } catch (e) {
-      debugPrint('❌ Seeder error: $e');
-    }
   }
 
   // ✅ Load available recipes from favorite_recipes + API + household_recipes

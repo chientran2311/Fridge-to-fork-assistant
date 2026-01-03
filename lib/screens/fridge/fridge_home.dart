@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Import Localizations
 import '../../l10n/app_localizations.dart';
@@ -116,29 +115,9 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
         return;
       }
       
-      // Lấy household_id từ Firestore
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      
-      final householdId = userDoc.data()?['current_household_id'] as String?;
-      
-      if (householdId == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Không tìm thấy household!'), backgroundColor: Colors.red),
-          );
-        }
-        return;
-      }
-      
-      // Chạy seeder với userId và householdId
+      // Chạy seeder (tự lấy user + tạo household bên trong)
       final seeder = DatabaseSeeder();
-      await seeder.seedDatabase(
-        userId: user.uid,
-        householdId: householdId,
-      );
+      await seeder.seedDatabase();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

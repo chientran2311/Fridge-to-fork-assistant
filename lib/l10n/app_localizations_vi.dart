@@ -140,7 +140,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get shoppingList => 'Danh Sách Mua Sắm';
 
   @override
-  String get general => 'Cài đặt chung';
+  String get general => 'CÀI ĐẶT CHUNG';
 
   @override
   String get inviteMember => 'Mời thành viên mới';
@@ -241,4 +241,148 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get favoriterecipe => 'Món ăn yêu thích';
+
+  @override
+  String get fridgeManagement => 'QUẢN LÝ TỦ LẠNH';
+
+  @override
+  String get createNewFridge => 'Tạo Tủ Lạnh Mới';
+
+  @override
+  String get joinFridge => 'Tham Gia Tủ Lạnh';
+
+  @override
+  String get fridgeList => 'Danh Sách Tủ Lạnh';
+
+  @override
+  String get currentFridge => 'Tủ Lạnh Hiện Tại';
+
+  @override
+  String get inviteCode => 'Mã mời';
+
+  @override
+  String get youAreOwner => 'Bạn là chủ nhà';
+
+  @override
+  String get youAreMember => 'Bạn là thành viên';
+
+  @override
+  String get selectLanguage => 'Chọn Ngôn Ngữ';
+
+  @override
+  String get vietnamese => 'Tiếng Việt';
+
+  @override
+  String get english => 'English';
+
+  @override
+  String get creatingData => 'Đang tạo dữ liệu mẫu... Vui lòng đợi!';
+
+  @override
+  String get dataCreatedSuccess =>
+      '✅ Đã tạo dữ liệu thành công! Hãy kiểm tra Home.';
+
+  @override
+  String get codeCopied => 'Đã sao chép mã!';
+
+  @override
+  String get inviteCodeCopied => 'Đã sao chép mã mời!';
+
+  @override
+  String get accountDeleted => 'Đã xóa tài khoản thành công';
+
+  @override
+  String get notificationsEnabled => 'Đã bật thông báo';
+
+  @override
+  String get notificationsDisabled => 'Đã tắt thông báo';
+
+  @override
+  String get fridgeName => 'Tên tủ lạnh';
+
+  @override
+  String get fridgeNameHint => 'Ví dụ: Nhà ở Hà Nội';
+
+  @override
+  String get create => 'Tạo';
+
+  @override
+  String get join => 'Tham gia';
+
+  @override
+  String get fridgeCreated => 'Đã tạo tủ lạnh mới!';
+
+  @override
+  String get cannotCreate => 'Không thể tạo';
+
+  @override
+  String get joinedSuccess => 'Đã tham gia thành công!';
+
+  @override
+  String get invalidCode => 'Mã mời không hợp lệ';
+
+  @override
+  String get alreadyMember => 'Bạn đã là thành viên';
+
+  @override
+  String get cannotJoin => 'Không thể tham gia';
+
+  @override
+  String get noFridgesYet => 'Chưa có tủ lạnh nào';
+
+  @override
+  String get switchFridge => 'Chuyển';
+
+  @override
+  String get enterInviteCode => 'Nhập mã 6 ký tự';
+
+  @override
+  String get close => 'Đóng';
+
+  @override
+  String get shareCodeToInvite => 'Chia sẻ mã này để mời thành viên:';
+
+  @override
+  String get developerTools => 'DEVELOPER TOOLS';
+
+  @override
+  String get seedDatabase => 'Seed Database (Tạo dữ liệu mẫu)';
+
+  @override
+  String get members => 'Thành viên';
+
+  @override
+  String get viewMembers => 'Xem thành viên';
+
+  @override
+  String get removeMember => 'Xóa';
+
+  @override
+  String get memberRemoved => 'Đã xóa thành viên';
+
+  @override
+  String get cannotRemoveMember => 'Không thể xóa thành viên';
+
+  @override
+  String get leaveFridge => 'Rời Tủ Lạnh';
+
+  @override
+  String get leaveConfirm => 'Bạn có chắc muốn rời khỏi tủ lạnh này?';
+
+  @override
+  String get leftFridge => 'Đã rời khỏi tủ lạnh';
+
+  @override
+  String get ownerCannotLeave =>
+      'Chủ nhà không thể rời đi. Hãy chuyển quyền trước.';
+
+  @override
+  String get alreadyOwnFridge =>
+      'Bạn đã sở hữu một tủ lạnh. Mỗi người chỉ được sở hữu một.';
+
+  @override
+  String get owner => 'Chủ nhà';
+
+  @override
+  String get member => 'Thành viên';
 }

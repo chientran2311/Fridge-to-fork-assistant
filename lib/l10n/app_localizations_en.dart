@@ -241,4 +241,147 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get favoriterecipe => 'Favorite Recipe';
+
+  @override
+  String get fridgeManagement => 'FRIDGE MANAGEMENT';
+
+  @override
+  String get createNewFridge => 'Create New Fridge';
+
+  @override
+  String get joinFridge => 'Join Fridge';
+
+  @override
+  String get fridgeList => 'Fridge List';
+
+  @override
+  String get currentFridge => 'Current Fridge';
+
+  @override
+  String get inviteCode => 'Invite code';
+
+  @override
+  String get youAreOwner => 'You are the owner';
+
+  @override
+  String get youAreMember => 'You are a member';
+
+  @override
+  String get selectLanguage => 'Select Language';
+
+  @override
+  String get vietnamese => 'Vietnamese';
+
+  @override
+  String get english => 'English';
+
+  @override
+  String get creatingData => 'Creating sample data... Please wait!';
+
+  @override
+  String get dataCreatedSuccess => '✅ Data created successfully! Check Home.';
+
+  @override
+  String get codeCopied => 'Code copied!';
+
+  @override
+  String get inviteCodeCopied => 'Invite code copied!';
+
+  @override
+  String get accountDeleted => 'Account deleted successfully';
+
+  @override
+  String get notificationsEnabled => 'Notifications enabled';
+
+  @override
+  String get notificationsDisabled => 'Notifications disabled';
+
+  @override
+  String get fridgeName => 'Fridge name';
+
+  @override
+  String get fridgeNameHint => 'Ex: Home in New York';
+
+  @override
+  String get create => 'Create';
+
+  @override
+  String get join => 'Join';
+
+  @override
+  String get fridgeCreated => 'New fridge created!';
+
+  @override
+  String get cannotCreate => 'Cannot create';
+
+  @override
+  String get joinedSuccess => 'Joined successfully!';
+
+  @override
+  String get invalidCode => 'Invalid invite code';
+
+  @override
+  String get alreadyMember => 'You are already a member';
+
+  @override
+  String get cannotJoin => 'Cannot join';
+
+  @override
+  String get noFridgesYet => 'No fridges yet';
+
+  @override
+  String get switchFridge => 'Switch';
+
+  @override
+  String get enterInviteCode => 'Enter 6-character code';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get shareCodeToInvite => 'Share this code to invite members:';
+
+  @override
+  String get developerTools => 'DEVELOPER TOOLS';
+
+  @override
+  String get seedDatabase => 'Seed Database (Create sample data)';
+
+  @override
+  String get members => 'Members';
+
+  @override
+  String get viewMembers => 'View Members';
+
+  @override
+  String get removeMember => 'Remove';
+
+  @override
+  String get memberRemoved => 'Member removed';
+
+  @override
+  String get cannotRemoveMember => 'Cannot remove member';
+
+  @override
+  String get leaveFridge => 'Leave Fridge';
+
+  @override
+  String get leaveConfirm => 'Are you sure you want to leave this fridge?';
+
+  @override
+  String get leftFridge => 'Left fridge successfully';
+
+  @override
+  String get ownerCannotLeave =>
+      'Owner cannot leave. Transfer ownership first.';
+
+  @override
+  String get alreadyOwnFridge =>
+      'You already own a fridge. Each user can only own one.';
+
+  @override
+  String get owner => 'Owner';
+
+  @override
+  String get member => 'Member';
 }

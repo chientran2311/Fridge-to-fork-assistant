@@ -7,6 +7,7 @@ class FridgeItem {
   final String imageUrl;
   final int? expiryDays; // Số ngày còn lại trước khi hết hạn
   final DateTime? expiryDate;
+  final String? ingredientId; // Empty for manual entry, has value for barcode scanned
 
   FridgeItem({
     required this.id,
@@ -17,6 +18,7 @@ class FridgeItem {
     required this.imageUrl,
     this.expiryDays,
     this.expiryDate,
+    this.ingredientId,
   });
 
   bool get isExpiringSoon => expiryDays != null && expiryDays! <= 3;
@@ -32,6 +34,7 @@ class FridgeItem {
     String? imageUrl,
     int? expiryDays,
     DateTime? expiryDate,
+    String? ingredientId,
   }) {
     return FridgeItem(
       id: id ?? this.id,
@@ -42,6 +45,7 @@ class FridgeItem {
       imageUrl: imageUrl ?? this.imageUrl,
       expiryDays: expiryDays ?? this.expiryDays,
       expiryDate: expiryDate ?? this.expiryDate,
+      ingredientId: ingredientId ?? this.ingredientId,
     );
   }
 }

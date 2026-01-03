@@ -3,7 +3,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:fridge_to_fork_assistant/router/app_router.dart'; // Import để dùng appRouter trực tiếp
 // Hàm xử lý khi App đang tắt (Background/Terminated)
 // Bắt buộc phải là Top-level function (nằm ngoài class)
 @pragma('vm:entry-point') 
@@ -97,7 +97,7 @@ class NotificationService {
   }
 
   // Logic điều hướng dựa trên Data từ Backend gửi về
- void _handleRedirect(RemoteMessage message, GlobalKey<NavigatorState> navigatorKey) async{
+  void _handleRedirect(RemoteMessage message, GlobalKey<NavigatorState> navigatorKey) async {
     final data = message.data;
     
     // Kiểm tra action_id
@@ -107,12 +107,18 @@ class NotificationService {
       final String ingredientsStr = data['ingredients_list'] ?? data['ingredient'] ?? '';
       
       print("🚀 Deep Link: Tìm công thức với list -> $ingredientsStr");
-      await Future.delayed(const Duration(milliseconds: 500));
-      final context = navigatorKey.currentContext;
-      if (context != null) {
-        // Truyền nguyên chuỗi sang Router (Router sẽ hứng ở query param 'search')
-        // URL: /recipes?search=Thịt bò,Trứng gà
-        context.go('/recipes?search=$ingredientsStr');
+      
+      // [QUAN TRỌNG] Đợi một chút để app khởi động hoàn toàn
+      await Future.delayed(const Duration(milliseconds: 800));
+      
+      // [FIX] Dùng appRouter.go() thay vì context.go() 
+      // vì MaterialApp.router không tự động bind navigatorKey
+      try {
+        final encodedQuery = Uri.encodeComponent(ingredientsStr);
+        appRouter.go('/recipes?search=$encodedQuery');
+        print("✅ Đã navigate tới /recipes?search=$encodedQuery");
+      } catch (e) {
+        print("❌ Lỗi navigate: $e");
       }
     }
   }

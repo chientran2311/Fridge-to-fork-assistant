@@ -81,7 +81,7 @@ class DatabaseSeeder {
         'household_id': householdId,
         'name': 'Gia Đình của $displayName', // Tên nhà động theo user
         'owner_id': userId,
-        'invite_code': 'SEED-${userId.substring(0, 4).toUpperCase()}',
+        'invite_code': householdId, // invite_code = household_id
         'members': [userId], // [QUAN TRỌNG] Thêm chính user vào mảng members
         'created_at': FieldValue.serverTimestamp(),
       });

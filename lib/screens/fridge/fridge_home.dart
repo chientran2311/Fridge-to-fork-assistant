@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
+
+// Import Localization
+import '../../l10n/app_localizations.dart';
+import '../../utils/responsive_ui.dart';
+
 // Import Models & Providers
 import '../../providers/inventory_provider.dart';
 import '../../models/inventory_item.dart';
@@ -13,11 +17,8 @@ import '../../widgets/fridge/fridge_search_bar.dart';
 import '../../widgets/fridge/fridge_section_header.dart';
 import '../../widgets/fridge/fridge_delete_bar.dart';
 import '../../widgets/fridge/add_item_bottom_sheet.dart';
+import '../../widgets/fridge/edit_item_bottom_sheet.dart';
 import '../../widgets/fridge/delete_confirmation_modal.dart';
-import '../../utils/responsive_ui.dart';
-
-// Import Màn hình Settings
-
 
 class FridgeHomeScreen extends StatefulWidget {
   const FridgeHomeScreen({super.key});
@@ -61,13 +62,8 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     if (_isMultiSelectMode) {
       _toggleItemSelection(item.id);
     } else {
-      // ✅ UPDATE: Dùng localization cho SnackBar
-      final s = AppLocalizations.of(context);
-      final msg = s?.itemSelected(item.name) ?? "Selected: ${item.name}";
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      // Mở bottom sheet để sửa item
+      _showEditBottomSheet(item);
     }
   }
 
@@ -77,30 +73,43 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     }
   }
 
+  // ==================== EDIT ITEM ====================
+  void _showEditBottomSheet(InventoryItem item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => EditItemBottomSheet(
+        item: item,
+        onSave: (updatedItem) async {
+          // Gọi provider để cập nhật
+          await context.read<InventoryProvider>().updateItem(updatedItem);
+        },
+      ),
+    );
+  }
+
   // ==================== ACTIONS ====================
   void _showAddItemDialog() {
     showDialog(
       context: context,
       useRootNavigator: true,
-      builder: (context) => const AddItemDialog(), 
+      builder: (context) => const AddItemBottomSheet(), 
     );
   }
 
-void _navigateToSettings() {
-  // Đường dẫn phải khớp với cấu trúc router: /fridge/settings
-  context.go('/fridge/settings'); 
-}
+  void _navigateToSettings() {
+    context.go('/fridge/settings'); 
+  }
 
   void _deleteSelectedItems() {
-    // Gọi provider để xóa item thật ở đây
     final provider = Provider.of<InventoryProvider>(context, listen: false);
     provider.deleteItems(_selectedItems.toList());
     
     _exitMultiSelectMode();
 
-    // ✅ UPDATE: Dùng localization cho thông báo xóa
     final s = AppLocalizations.of(context);
-    final msg = s?.itemsDeleted ?? 'Deleted selected items';
+    final msg = s?.itemsDeleted ?? 'Đã xóa các món đã chọn';
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(msg)),
@@ -136,21 +145,20 @@ void _navigateToSettings() {
   }
 
   Widget _buildLayout() {
-    // 1. Lấy s (ngôn ngữ) ở chế độ nullable (có thể null)
     final s = AppLocalizations.of(context);
 
-    // Chuẩn bị các text an toàn (Nếu s chưa tải kịp thì hiện text mặc định)
-    final titleEatMe = s?.eatMeFirst ?? 'Eat Me First';
-    final titleInStock = s?.inStock ?? 'In Stock';
-    final msgEmpty = s?.emptyFridge ?? '...';
-    final msgAddFirst = s?.addFirstItem ?? '...';
+    // Text fallback nếu localization chưa load
+    final titleEatMe = s?.eatMeFirst ?? 'Ăn ngay';
+    final titleInStock = s?.inStock ?? 'Còn trong kho';
+    final msgEmpty = s?.emptyFridge ?? 'Tủ lạnh trống';
+    final msgAddFirst = s?.addFirstItem ?? 'Thêm món đầu tiên nào!';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: Column(
           children: [
-            // 2. Header luôn hiển thị (không bị chặn bởi loading ngôn ngữ)
+            // Header
             FridgeHeader(
               isMultiSelectMode: _isMultiSelectMode,
               onCancel: _exitMultiSelectMode,
@@ -159,11 +167,11 @@ void _navigateToSettings() {
             ),
             const FridgeSearchBar(),
             
-            // 3. Nội dung chính (Chứa logic Loading của Provider)
+            // Main Content với Consumer
             Expanded(
               child: Consumer<InventoryProvider>(
                 builder: (context, provider, child) {
-                  // A. Loading Data từ Firestore -> Chỉ xoay ở giữa màn hình body
+                  // Loading
                   if (provider.isLoading) {
                     return const Center(
                       child: CircularProgressIndicator(color: Color(0xFF0FBD3B)),
@@ -172,7 +180,7 @@ void _navigateToSettings() {
 
                   final allItems = provider.items;
 
-                  // B. Empty Data
+                  // Empty State
                   if (allItems.isEmpty) {
                     return Center(
                       child: Column(
@@ -181,20 +189,20 @@ void _navigateToSettings() {
                           Icon(Icons.kitchen, size: 80, color: Colors.grey[300]),
                           const SizedBox(height: 16),
                           Text(msgEmpty, style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+                          const SizedBox(height: 4),
                           Text(msgAddFirst, style: TextStyle(color: Colors.grey[400], fontSize: 14)),
                         ],
                       ),
                     );
                   }
 
-                  // C. Data List
+                  // Phân loại items
                   final eatMeFirst = allItems.where((item) => item.daysLeft <= 3).toList();
                   final inStock = allItems.where((item) => item.daysLeft > 3).toList();
                   final displayInStock = _isMultiSelectMode ? allItems : inStock;
 
                   return RefreshIndicator(
                     onRefresh: () async {
-                      // Gọi hàm refresh trong provider
                       provider.listenToInventory(); 
                     },
                     child: SingleChildScrollView(
@@ -205,7 +213,7 @@ void _navigateToSettings() {
                         children: [
                           const SizedBox(height: 20),
 
-                          // Section: Eat Me First
+                          // Section: Eat Me First (Sắp hết hạn)
                           if (eatMeFirst.isNotEmpty && !_isMultiSelectMode) ...[
                             FridgeSectionHeader(title: titleEatMe),
                             const SizedBox(height: 12),
@@ -232,6 +240,7 @@ void _navigateToSettings() {
           ],
         ),
       ),
+      
       // FAB Thêm món
       floatingActionButton: _isMultiSelectMode 
           ? null 
@@ -243,6 +252,7 @@ void _navigateToSettings() {
             ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
+      // Bottom Bar khi Multi-Select
       bottomNavigationBar: _isMultiSelectMode
           ? FridgeDeleteBar(
               onDelete: _showDeleteConfirmation,
@@ -254,6 +264,7 @@ void _navigateToSettings() {
 
   // ==================== SUB-WIDGETS ====================
 
+  /// Section ngang cho các món sắp hết hạn
   Widget _buildEatMeFirstSection(List<InventoryItem> items) {
     return SizedBox(
       height: 220,
@@ -281,6 +292,7 @@ void _navigateToSettings() {
     );
   }
 
+  /// Grid cho các món trong kho
   Widget _buildInStockGrid(List<InventoryItem> items) {
     return GridView.builder(
       shrinkWrap: true,

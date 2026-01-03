@@ -11,7 +11,8 @@ import 'l10n/app_localizations.dart';
 import 'providers/locale_provider.dart';
 import 'package:fridge_to_fork_assistant/providers/inventory_provider.dart';
 import 'package:fridge_to_fork_assistant/providers/recipe_provider.dart';
-import '../providers/auth_provider.dart';
+import 'providers/auth_provider.dart';
+import 'providers/household_provider.dart';
 
 // Import Router (Để lấy biến rootNavigatorKey và appRouter)
 import 'package:fridge_to_fork_assistant/router/app_router.dart';
@@ -49,6 +50,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => RecipeProvider()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => HouseholdProvider()), // [MỚI] Thêm HouseholdProvider
       ],
       child: Consumer<LocaleProvider>(
         builder: (context, localeProvider, child) {
@@ -69,10 +71,8 @@ class MyApp extends StatelessWidget {
                 primary: const Color(0xFF0FBD3B),
                 secondary: const Color(0xFFFF9F1C),
                 surface: Colors.white,
-                background: const Color(0xFFF8F9FA),
               ),
               fontFamily: 'Merriweather', 
-              // ... (Giữ nguyên các config theme của bạn)
               elevatedButtonTheme: ElevatedButtonThemeData(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF0FBD3B),

@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
-import 'package:fridge_to_fork_assistant/screens/main_screen.dart'; // Import màn hình chính
+import 'package:fridge_to_fork_assistant/screens/main_screen.dart';
 
-// Import widgets, service và toast
+// Import Localization
+import '../../l10n/app_localizations.dart';
+
 import '../../widgets/auth/common_auth_widgets.dart'; 
-import '../../services/auth_service.dart';
-import '../../widgets/notification.dart'; // Import CustomToast
-
+import '../../data/services/auth_service.dart';
+import '../../widgets/notification.dart'; 
+import 'package:go_router/go_router.dart';  
+import '../../data/services/notification_service.dart';
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -16,25 +19,20 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  // --- CẤU HÌNH UI ---
   final Color mainColor = const Color(0xFF1B3B36);
   final Color secondaryColor = const Color(0xFFF0F1F1);
 
-  // --- LOGIC AUTH ---
   final AuthService _authService = AuthService();
   
-  // 1. Khai báo các Controller
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
 
-  // 2. Các biến trạng thái
   bool _isPasswordObscure = true;
   bool _isConfirmPasswordObscure = true;
-  bool _isLoading = false; // Trạng thái loading
+  bool _isLoading = false;
 
-  // Giải phóng bộ nhớ
   @override
   void dispose() {
     _nameController.dispose();
@@ -44,55 +42,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  // --- HÀM XỬ LÝ ĐĂNG KÝ ---
   Future<void> _handleRegister() async {
-    // A. Lấy dữ liệu
+    final s = AppLocalizations.of(context)!; // ✅ Lấy ngôn ngữ
+
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final confirmPass = _confirmPasswordController.text.trim();
 
-    // B. Validate (Kiểm tra lỗi)
+    // Validate
     if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPass.isEmpty) {
-      CustomToast.show(context, "Vui lòng điền đầy đủ thông tin", isError: true);
+      CustomToast.show(context, s.registerErrorMissing, isError: true); // ✅ Updated
       return;
     }
 
     if (password != confirmPass) {
-      CustomToast.show(context, "Mật khẩu xác nhận không khớp", isError: true);
+      CustomToast.show(context, s.registerErrorMatch, isError: true); // ✅ Updated
       return;
     }
     
-    // C. Bắt đầu Loading
     setState(() => _isLoading = true);
 
-    // D. Gọi Service đăng ký
     String? errorMessage = await _authService.registerWithEmail(
       email: email, 
       password: password
     );
 
-    // Kiểm tra widget còn tồn tại
     if (!mounted) return;
-
-    // E. Kết thúc Loading
     setState(() => _isLoading = false);
 
-    // F. Xử lý kết quả
-   if (errorMessage == null) {
-      // --- THÀNH CÔNG ---
-      CustomToast.show(context, "Tạo tài khoản thành công! Vui lòng đăng nhập.");
-      
-      // SỬA Ở ĐÂY:
-      // pop(context) sẽ đóng màn hình đăng ký và quay lại màn hình trước đó (là Login)
+    if (errorMessage == null) {
+      // 2. [SỬA] Đăng ký thành công -> Lưu FCM Token ngay lập tức
+      // Vì Firebase tự login sau khi register nên ta lấy được user hiện tại
+      try {
+        await NotificationService().saveTokenToDatabase();
+        print("✅ Đã tạo FCM Token cho tài khoản mới");
+      } catch (e) {
+        print("⚠️ Lỗi lưu token: $e");
+      }
+
+      setState(() => _isLoading = false);
+      CustomToast.show(context, s.registerSuccess);
+
       if (mounted) {
+        // 3. Chuyển thẳng vào App hoặc về Login tùy luồng của bạn
+        // Ở đây giữ logic cũ là pop về Login để người dùng tự đăng nhập lại (hoặc login auto)
         Navigator.pop(context); 
       }
-      
-      // Hoặc nếu bạn muốn chắc chắn chuyển sang Login (trong trường hợp không phải pop):
-      // Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
     } else {
-      // --- THẤT BẠI ---
+      setState(() => _isLoading = false);
       CustomToast.show(context, errorMessage, isError: true);
     }
   }
@@ -102,7 +100,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: ResponsiveLayout(
-        // --- Mobile ---
         mobileBody: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -111,8 +108,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
         ),
-
-        // --- Desktop ---
         desktopBody: Container(
           color: secondaryColor,
           child: Center(
@@ -138,11 +133,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // Nội dung Form
   Widget _buildRegisterContent(BuildContext context) {
+    final s = AppLocalizations.of(context)!; // ✅ Lấy ngôn ngữ
+
     return Column(
       children: [
-        // 1. Back Button
+        // Back Button
         Align(
           alignment: Alignment.centerLeft,
           child: IconButton(
@@ -151,16 +147,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ),
 
-        // 2. Avatar Widget
         const AvatarDisplay(
           imageUrl: "https://i.pravatar.cc/300",
           size: 100,
         ),
         const SizedBox(height: 24),
 
-        // 3. Title Text
+        // Title Text
         Text(
-          "Create Account",
+          s.registerTitle, // ✅ Updated
           style: GoogleFonts.merriweather(
             fontSize: 28,
             fontWeight: FontWeight.bold,
@@ -169,35 +164,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          "Start saving food today",
+          s.registerSubtitle, // ✅ Updated
           style: TextStyle(fontSize: 16, color: Colors.grey[600]),
         ),
         const SizedBox(height: 32),
 
-        // 4. Các trường nhập liệu (GẮN CONTROLLER VÀO ĐÂY)
+        // Input Fields
         CustomAuthField(
-          label: "Full Name",
-          hintText: "Jane Doe",
+          label: s.fullNameLabel, // ✅ Updated
+          hintText: s.fullNameHint, // ✅ Updated
           mainColor: mainColor,
-          controller: _nameController, // <--- Controller Tên
+          controller: _nameController,
         ),
         const SizedBox(height: 16),
         
         CustomAuthField(
-          label: "Email Address",
-          hintText: "jane@example.com",
+          label: s.emailLabel, // ✅ Updated (Dùng chung với login)
+          hintText: s.emailHint, // ✅ Updated
           mainColor: mainColor,
-          controller: _emailController, // <--- Controller Email
+          controller: _emailController,
         ),
         const SizedBox(height: 16),
         
         CustomAuthField(
-          label: "Password",
-          hintText: "........",
+          label: s.passwordLabel, // ✅ Updated
+          hintText: s.passwordHint, // ✅ Updated
           isPassword: true,
           isObscure: _isPasswordObscure,
           mainColor: mainColor,
-          controller: _passwordController, // <--- Controller Pass
+          controller: _passwordController,
           onIconTap: () {
             setState(() {
               _isPasswordObscure = !_isPasswordObscure;
@@ -207,12 +202,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         const SizedBox(height: 16),
         
         CustomAuthField(
-          label: "Confirm Password",
-          hintText: "........",
+          label: s.confirmPasswordLabel, // ✅ Updated
+          hintText: s.passwordHint, // ✅ Updated
           isPassword: true,
           isObscure: _isConfirmPasswordObscure,
           mainColor: mainColor,
-          controller: _confirmPasswordController, // <--- Controller Confirm Pass
+          controller: _confirmPasswordController,
           onIconTap: () {
             setState(() {
               _isConfirmPasswordObscure = !_isConfirmPasswordObscure;
@@ -221,33 +216,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         const SizedBox(height: 32),
 
-        // 5. Nút đăng ký (Có Loading State)
+        // Button
         SizedBox(
           width: double.infinity,
-          height: 56, // Chiều cao cố định
+          height: 56, 
           child: _isLoading
-              ? Center(child: CircularProgressIndicator(color: mainColor)) // Vòng xoay khi loading
+              ? Center(child: CircularProgressIndicator(color: mainColor))
               : PrimaryButton(
-                  text: "Sign Up",
+                  text: s.signupButton, // ✅ Updated
                   color: mainColor,
-                  onPressed: _handleRegister, // Gọi hàm xử lý đăng ký
+                  onPressed: _handleRegister,
                 ),
         ),
         
         const SizedBox(height: 24),
 
-        // 6. Footer Text
+        // Footer Text
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              "Already have an account? ",
+              s.alreadyHaveAccount, // ✅ Updated
               style: TextStyle(color: Colors.grey[600], fontSize: 16),
             ),
             GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Text(
-                "Log in",
+                s.loginLink, // ✅ Updated
                 style: TextStyle(
                   color: mainColor,
                   fontSize: 16,

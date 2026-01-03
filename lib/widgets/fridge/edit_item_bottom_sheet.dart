@@ -1,12 +1,9 @@
-import 'dart:ui';
-import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
-import 'package:fridge_to_fork_assistant/widgets/fridge/models/fridge_item.dart';
-import 'package:fridge_to_fork_assistant/screens/fridge/fridge_barcode_scan.dart';
+import '../../models/inventory_item.dart';
 
 class EditItemBottomSheet extends StatefulWidget {
-  final FridgeItem item;
-  final Function(FridgeItem) onSave;
+  final InventoryItem item;
+  final Function(InventoryItem) onSave;
 
   const EditItemBottomSheet({
     super.key,
@@ -21,27 +18,26 @@ class EditItemBottomSheet extends StatefulWidget {
 class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
   late TextEditingController _nameController;
   late TextEditingController _quantityController;
-  String _selectedUnit = 'pcs';
+  String _selectedUnit = 'cái';
   DateTime? _selectedExpiryDate;
-  String _selectedCategory = 'Vegetables';
+  String _selectedCategory = 'Rau củ';
 
-  final List<String> _units = ['pcs', 'g', 'kg', 'ml', 'L', 'pack', 'block'];
+  final List<String> _units = ['cái', 'g', 'kg', 'ml', 'L', 'hộp', 'gói'];
   final List<String> _categories = [
-    'Vegetables',
-    'Dairy',
-    'Meat',
-    'Fruit',
-    '+ Add Tag'
+    'Rau củ',
+    'Sữa/Trứng',
+    'Thịt',
+    'Trái cây',
+    'Khác'
   ];
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.item.name);
-    _quantityController =
-        TextEditingController(text: widget.item.quantity.toString());
+    _quantityController = TextEditingController(text: widget.item.quantity.toString());
     _selectedUnit = widget.item.unit;
-    _selectedCategory = widget.item.category;
+    _selectedCategory = widget.item.quickTag ?? 'Rau củ';
     _selectedExpiryDate = widget.item.expiryDate;
   }
 
@@ -55,8 +51,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
   void _selectExpiryDate() async {
     final date = await showDatePicker(
       context: context,
-      initialDate:
-          _selectedExpiryDate ?? DateTime.now().add(const Duration(days: 7)),
+      initialDate: _selectedExpiryDate ?? DateTime.now().add(const Duration(days: 7)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
@@ -66,7 +61,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
               primary: Color(0xFF2D5F4F),
             ),
           ),
-          child: child!,
+          child: child ?? const SizedBox(),
         );
       },
     );
@@ -79,28 +74,35 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
   }
 
   void _save() {
-    final updatedItem = widget.item.copyWith(
+    // Tạo InventoryItem mới với thông tin đã sửa
+    final updatedItem = InventoryItem(
+      id: widget.item.id,
+      ingredientId: widget.item.ingredientId,
+      householdId: widget.item.householdId,
       name: _nameController.text,
-      quantity: int.tryParse(_quantityController.text) ?? widget.item.quantity,
+      quantity: double.tryParse(_quantityController.text) ?? widget.item.quantity,
       unit: _selectedUnit,
-      category: _selectedCategory,
+      quickTag: _selectedCategory,
       expiryDate: _selectedExpiryDate,
+      imageUrl: widget.item.imageUrl,
+      addedByUid: widget.item.addedByUid,
+      createdAt: widget.item.createdAt,
     );
 
     widget.onSave(updatedItem);
     Navigator.pop(context);
-    showSuccessSnackbar();
+    _showSuccessSnackbar();
   }
 
-  void showSuccessSnackbar() {
+  void _showSuccessSnackbar() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Row(
-          children: const [
+        content: const Row(
+          children: [
             Icon(Icons.check_circle, color: Colors.white),
             SizedBox(width: 12),
             Text(
-              "Item added successfully!",
+              "Cập nhật thành công!",
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -151,7 +153,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
-                    'Edit Item',
+                    'Sửa thông tin',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -175,9 +177,9 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Ingredient Name
+                  // Tên thực phẩm
                   const Text(
-                    'Ingredient Name',
+                    'Tên thực phẩm',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -188,7 +190,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                   TextField(
                     controller: _nameController,
                     decoration: InputDecoration(
-                      hintText: 'Enter ingredient name (e.g. Homemade Milk)',
+                      hintText: 'Nhập tên (ví dụ: Sữa tươi)',
                       hintStyle: TextStyle(
                         color: Colors.grey[400],
                         fontSize: 14,
@@ -208,16 +210,16 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
 
                   const SizedBox(height: 20),
 
-                  // Quantity and Expiry Date Row
+                  // Số lượng và Ngày hết hạn
                   Row(
                     children: [
-                      // Quantity
+                      // Số lượng
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Quantity',
+                              'Số lượng',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -239,8 +241,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                                         borderRadius: BorderRadius.circular(12),
                                         borderSide: BorderSide.none,
                                       ),
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
+                                      contentPadding: const EdgeInsets.symmetric(
                                         horizontal: 16,
                                         vertical: 14,
                                       ),
@@ -249,8 +250,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                                 ),
                                 const SizedBox(width: 8),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFF5F5F5),
                                     borderRadius: BorderRadius.circular(12),
@@ -282,13 +282,13 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
 
                       const SizedBox(width: 16),
 
-                      // Expiry Date
+                      // Ngày hết hạn
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Expiry Date',
+                              'Hết hạn',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -308,13 +308,12 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       _selectedExpiryDate != null
                                           ? '${_selectedExpiryDate!.day}/${_selectedExpiryDate!.month}/${_selectedExpiryDate!.year}'
-                                          : 'Select Date',
+                                          : 'Chọn ngày',
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: _selectedExpiryDate != null
@@ -322,10 +321,10 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                                             : Colors.grey[400],
                                       ),
                                     ),
-                                    Icon(
+                                    const Icon(
                                       Icons.calendar_today_outlined,
                                       size: 18,
-                                      color: const Color(0xFF0FBD3B),
+                                      color: Color(0xFF0FBD3B),
                                     ),
                                   ],
                                 ),
@@ -339,9 +338,9 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
 
                   const SizedBox(height: 20),
 
-                  // Quick Tags
+                  // Phân loại nhanh
                   const Text(
-                    'Quick Tags',
+                    'Phân loại nhanh',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -390,63 +389,11 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                       );
                     }).toList(),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // Scan Barcode Button
-                  DottedBorder(
-                    borderType: BorderType.RRect,
-                    radius: const Radius.circular(12), // Bo góc giống code cũ
-                    padding: EdgeInsets.zero, // Quan trọng để inkwell tràn viền
-                    color: const Color.fromARGB(150, 15, 189,
-                        59), // Màu viền (đậm hơn chút cho rõ nét đứt)
-                    strokeWidth: 1.5, // Độ dày nét đứt
-                    dashPattern: const [6, 4], // [độ dài nét, khoảng cách]
-                    child: Material(
-                      color: const Color.fromARGB(
-                          5, 15, 189, 59), // Màu nền (backgroundColor cũ)
-                      borderRadius: BorderRadius.circular(12),
-                      child: InkWell(
-                        onTap: () {
-                          Navigator.pushReplacement(context,
-                              MaterialPageRoute(builder: (context) {
-                            return const FridgeBarcodeScanScreen();
-                          }));
-                        },
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          width:
-                              double.infinity, // minimumSize: width infinity cũ
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 14), // padding cũ
-                          alignment: Alignment.center,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(
-                                Icons.qr_code_scanner,
-                                color: Color(0xFF0A8A2B), // foregroundColor cũ
-                              ),
-                              SizedBox(
-                                  width: 8), // Khoảng cách giữa icon và text
-                              Text(
-                                'Scan Barcode',
-                                style: TextStyle(
-                                  color:
-                                      Color(0xFF0A8A2B), // foregroundColor cũ
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
 
                   const SizedBox(height: 12),
 
-                  // Add to Fridge Button
+                  // Nút Lưu thay đổi
                   ElevatedButton(
                     onPressed: _save,
                     style: ElevatedButton.styleFrom(
@@ -459,13 +406,13 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
                       minimumSize: const Size(double.infinity, 52),
                       elevation: 0,
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
+                      children: [
                         Icon(Icons.check),
                         SizedBox(width: 8),
                         Text(
-                          'Add to Fridge',
+                          'Lưu thay đổi',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -485,4 +432,3 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
     );
   }
 }
-

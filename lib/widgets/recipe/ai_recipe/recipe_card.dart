@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:fridge_to_fork_assistant/screens/recipe/detail_recipe.dart';
-import 'info_chip.dart';
+import 'package:provider/provider.dart'; // Import Provider
+import '../../../models/household_recipe.dart';
+import '../../../providers/recipe_provider.dart'; // Import RecipeProvider
 
 class RecipeCard extends StatelessWidget {
-  final Map<String, dynamic> data;
+  final HouseholdRecipe recipe;
 
-  const RecipeCard({super.key, required this.data});
+  const RecipeCard({super.key, required this.recipe});
 
   @override
   Widget build(BuildContext context) {
-    final mainColor = const Color(0xFF1B3B36);
+    final bool isFullMatch = recipe.missedIngredientCount == 0;
+
+    // Sử dụng Consumer hoặc context.watch để lắng nghe thay đổi trạng thái yêu thích
+    final recipeProvider = Provider.of<RecipeProvider>(context);
+    final isFavorite = recipeProvider.isFavorite(recipe.apiRecipeId);
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const RecipeDetailScreen(),
-          ),
-        );
+        context.go('/recipes/detail', extra: recipe);
       },
       child: Container(
         decoration: BoxDecoration(
@@ -29,122 +30,106 @@ class RecipeCard extends StatelessWidget {
             BoxShadow(
               color: Colors.black.withOpacity(0.06),
               blurRadius: 15,
-              offset: const Offset(0, 5),
+              offset: const Offset(0, 8),
             ),
           ],
-          border: Border.all(color: Colors.grey.shade100),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Stack(
               children: [
+                // Ảnh món ăn
                 ClipRRect(
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(24)),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                   child: AspectRatio(
                     aspectRatio: 16 / 10,
                     child: Image.network(
-                      data['image'],
+                      recipe.imageUrl ?? "https://via.placeholder.com/400",
                       fit: BoxFit.cover,
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Container(
-                            color: Colors.grey[200]); // Placeholder
-                      },
-                      errorBuilder: (context, error, stackTrace) => Container(
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.broken_image)),
+                      errorBuilder: (context, error, stackTrace) =>
+                          Container(color: Colors.grey[200], child: const Icon(Icons.image)),
                     ),
                   ),
                 ),
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.95),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          data['tagIcon'],
-                          size: 14,
-                          color: mainColor,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          data['matchTag'],
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: mainColor,
-                          ),
-                        ),
-                      ],
+
+                // Badge Match
+                if (isFullMatch)
+                  Positioned(
+                    top: 12, left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle, size: 14, color: Colors.green[700]),
+                          const SizedBox(width: 4),
+                          Text("100% Match", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green[800])),
+                        ],
+                      ),
                     ),
                   ),
-                ),
+
+                // --- [CẬP NHẬT] NÚT TIM ---
                 Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.4),
-                      shape: BoxShape.circle,
+                  top: 12, right: 12,
+                  child: GestureDetector(
+                    onTap: () {
+                      // Gọi hàm toggle trong Provider
+                      recipeProvider.toggleFavorite(recipe, context);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.95),
+                        shape: BoxShape.circle,
+                        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                      ),
+                      child: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        size: 20,
+                        color: isFavorite ? Colors.redAccent : Colors.grey,
+                      ),
                     ),
-                    child: const Icon(Icons.favorite_border,
-                        color: Colors.white, size: 20),
                   ),
                 ),
               ],
             ),
+            
+            // ... (Phần nội dung bên dưới giữ nguyên) ...
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    data['title'],
+                    recipe.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.merriweather(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: mainColor,
-                      height: 1.2,
+                      color: const Color(0xFF1B3B36),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    data['desc'],
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                  const SizedBox(height: 6),
+                  // ... Các widget con khác giữ nguyên ...
+                   Row(
                     children: [
-                      InfoChip(icon: Icons.access_time, text: data['time']),
-                      InfoChip(
-                          icon: Icons.local_fire_department_outlined,
-                          text: data['kcal']),
-                      InfoChip(
-                        icon: Icons.shopping_bag_outlined,
-                        text: "Missing: ${data['missing']}",
-                        isHighlight: data['missing'] > 0,
-                      ),
+                      _buildInfoChip(Icons.access_time, "${recipe.readyInMinutes ?? 30} min"),
+                      const SizedBox(width: 8),
+                      if (recipe.missedIngredientCount > 0)
+                        _buildInfoChip(
+                          Icons.shopping_bag_outlined, 
+                          "Thiếu: ${recipe.missedIngredientCount}",
+                          isHighlight: true,
+                        )
+                      else 
+                         _buildInfoChip(Icons.check, "Đủ đồ", isSuccess: true),
                     ],
                   )
                 ],
@@ -152,6 +137,42 @@ class RecipeCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+  
+  // ... Helper _buildInfoChip giữ nguyên ...
+   Widget _buildInfoChip(IconData icon, String text, {bool isHighlight = false, bool isSuccess = false}) {
+    Color bgColor = Colors.grey[100]!;
+    Color textColor = Colors.grey[800]!;
+    Color iconColor = Colors.grey[600]!;
+
+    if (isHighlight) {
+      bgColor = Colors.orange[50]!;
+      textColor = Colors.orange[800]!;
+      iconColor = Colors.orange[800]!;
+    } else if (isSuccess) {
+      bgColor = Colors.green[50]!;
+      textColor = Colors.green[800]!;
+      iconColor = Colors.green[800]!;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: iconColor),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textColor),
+          ),
+        ],
       ),
     );
   }

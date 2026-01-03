@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+// ⚠️ Hãy đảm bảo đường dẫn import này đúng với cấu trúc thư mục của bạn
+import '../../l10n/app_localizations.dart';
 
 class FridgeHeader extends StatelessWidget {
   final bool isMultiSelectMode;
@@ -16,12 +18,16 @@ class FridgeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Lấy dữ liệu ngôn ngữ (Safe Mode)
+    final s = AppLocalizations.of(context);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
       color: const Color(0xFFF8F9FA),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Nút Cancel (Hủy)
           if (isMultiSelectMode)
             TextButton(
               onPressed: onCancel,
@@ -30,24 +36,30 @@ class FridgeHeader extends StatelessWidget {
                 minimumSize: const Size(60, 40),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(
+              child: Text(
+                s?.cancel ?? 'Cancel',
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFFDC3545),
                 ),
               ),
             ),
-          const Text(
-            'My Fridge',
-            style: TextStyle(
+          
+          // Tiêu đề (Fridge / Tủ lạnh)
+          Text(
+            // Nếu đang chọn nhiều thì hiện "Đã chọn...", nếu không thì hiện tên Tab
+            isMultiSelectMode 
+                ? (s?.language == 'vi' ? 'Đã chọn' : 'Selected') 
+                : (s?.fridgeTab ?? 'My Fridge'), // ✅ Đa ngôn ngữ
+            style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1A1A1A),
             ),
           ),
           
+          // Nút Save (Lưu) hoặc Settings
           if (isMultiSelectMode)
             TextButton(
               onPressed: onSave,
@@ -56,9 +68,9 @@ class FridgeHeader extends StatelessWidget {
                 minimumSize: const Size(60, 40),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text(
-                'Save',
-                style: TextStyle(
+              child: Text(
+                s?.save ?? 'Save', // ✅ Đa ngôn ngữ
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF28A745),

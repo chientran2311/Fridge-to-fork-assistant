@@ -12,11 +12,7 @@ class FridgeSectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: Color(0xFF1A1A1A),
-      ),
+      style: Theme.of(context).textTheme.titleLarge,
     );
   }
 }

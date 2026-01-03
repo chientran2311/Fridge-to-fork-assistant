@@ -13,7 +13,7 @@ class SocialButtons extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                "Or continue with",
+                "Hoặc tiếp tục với",
                 style: TextStyle(color: Colors.grey[500]),
               ),
             ),

@@ -1,11 +1,12 @@
-
 import 'package:flutter/material.dart';
-import 'package:fridge_to_fork_assistant/screens/recipe/favorite_recipes.dart';
+
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import 'add_item_overlay.dart';
 import 'weekly_plan_tab.dart';
 import 'shopping_list_tab.dart';
-import '../../widgets/recipe/bottom_nav.dart';
+import 'package:go_router/go_router.dart';
+// Import Localization
+import '../../l10n/app_localizations.dart';
 
 const _bgColor = Color(0xFFF4F6F4);
 const _primaryColor = Color(0xFF214130);
@@ -30,18 +31,24 @@ class _PlannerScreenState extends State<PlannerScreen> {
   @override
   Widget build(BuildContext context) {
     final isDesktop = context.isDesktop;
+    // ✅ 1. Lấy ngôn ngữ (Safe Mode)
+    final s = AppLocalizations.of(context);
+
+    // Chuẩn bị text an toàn
+    final titleText = s?.planTab ?? "Planner";
+    final weeklyPlanText = s?.weeklyPlan ?? "Weekly Plan";
+    final shoppingListText = s?.shoppingList ?? "Shopping List";
 
     return Scaffold(
       backgroundColor: _bgColor,
-
       appBar: isDesktop
           ? null
           : AppBar(
               elevation: 0,
               backgroundColor: _bgColor,
-              title: const Text(
-                "Planner",
-                style: TextStyle(
+              title: Text(
+                titleText, // ✅ Dùng biến đa ngôn ngữ
+                style: const TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
                 ),
@@ -49,12 +56,8 @@ class _PlannerScreenState extends State<PlannerScreen> {
               actions: [
                 GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const FavoriteRecipesScreen(),
-                      ),
-                    );
+                    // Đường dẫn con của recipes: /recipes/favorites
+                    context.go('/recipes/favorites');
                   },
                   child: Container(
                     width: 40,
@@ -72,12 +75,12 @@ class _PlannerScreenState extends State<PlannerScreen> {
                         )
                       ],
                     ),
-                    child: Icon(Icons.favorite_border_outlined, size: 20, color: _primaryColor),
+                    child: const Icon(Icons.favorite_border_outlined,
+                        size: 20, color: _primaryColor),
                   ),
                 ),
               ],
             ),
-
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 900),
@@ -86,15 +89,17 @@ class _PlannerScreenState extends State<PlannerScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                /// 🔹 TABS
+                /// 🔹 TABS (Truyền text đa ngôn ngữ vào)
                 _Tabs(
                   currentTab: _currentTab,
                   onChanged: _onTabChanged,
+                  weeklyPlanText: weeklyPlanText, // ✅ Truyền text
+                  shoppingListText: shoppingListText, // ✅ Truyền text
                 ),
 
                 const SizedBox(height: 24),
 
-                /// 🔥 SWITCH CONTENT (KHÔNG PUSH SCREEN)
+                /// 🔥 SWITCH CONTENT
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 250),
                   child: _currentTab == PlannerTab.weeklyPlan
@@ -106,19 +111,24 @@ class _PlannerScreenState extends State<PlannerScreen> {
           ),
         ),
       ),
-
-      
       floatingActionButton: isDesktop ? null : const _FloatingAddButton(),
     );
   }
 }
+
 class _Tabs extends StatelessWidget {
   final PlannerTab currentTab;
   final ValueChanged<PlannerTab> onChanged;
 
+  // ✅ Nhận text từ cha
+  final String weeklyPlanText;
+  final String shoppingListText;
+
   const _Tabs({
     required this.currentTab,
     required this.onChanged,
+    required this.weeklyPlanText,
+    required this.shoppingListText,
   });
 
   @override
@@ -132,12 +142,12 @@ class _Tabs extends StatelessWidget {
       child: Row(
         children: [
           _TabButton(
-            text: "Weekly Plan",
+            text: weeklyPlanText, // ✅ Hiển thị text
             active: currentTab == PlannerTab.weeklyPlan,
             onTap: () => onChanged(PlannerTab.weeklyPlan),
           ),
           _TabButton(
-            text: "Shopping List",
+            text: shoppingListText, // ✅ Hiển thị text
             active: currentTab == PlannerTab.shoppingList,
             onTap: () => onChanged(PlannerTab.shoppingList),
           ),
@@ -183,7 +193,6 @@ class _TabButton extends StatelessWidget {
   }
 }
 
-
 class _FloatingAddButton extends StatelessWidget {
   const _FloatingAddButton();
 
@@ -195,7 +204,7 @@ class _FloatingAddButton extends StatelessWidget {
       onPressed: () {
         showModalBottomSheet(
           context: context,
-          isScrollControlled: true, // 🔴 rất quan trọng
+          isScrollControlled: true,
           backgroundColor: Colors.transparent,
           builder: (_) => const AddItemBottomSheet(),
         );
@@ -204,5 +213,3 @@ class _FloatingAddButton extends StatelessWidget {
     );
   }
 }
-
-

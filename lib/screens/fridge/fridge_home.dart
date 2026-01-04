@@ -91,9 +91,10 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
 
   // ==================== ACTIONS ====================
   void _showAddItemDialog() {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => const AddItemBottomSheet(), 
     );
   }

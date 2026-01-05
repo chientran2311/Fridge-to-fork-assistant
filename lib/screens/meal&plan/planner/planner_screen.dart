@@ -54,6 +54,16 @@ class _PlannerScreenState extends State<PlannerScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.favorite),
+                  onPressed: () {
+                    context.push('/recipes/favorites');
+                  },
+                  color: const Color(0xFFE63946),
+                  tooltip: 'Favorite Recipes',
+                ),
+              ],
             ),
       body: Center(
         child: ConstrainedBox(

@@ -8,6 +8,7 @@ class GeminiService {
 
   void _initModel() {
     final apiKey = dotenv.env['GEMINI_API_KEY'];
+    print("🔑 DEBUG: GEMINI_API_KEY = $apiKey");
     if (apiKey == null || apiKey.isEmpty) {
       print("❌ Lỗi: Chưa có API Key trong file .env");
       return;
@@ -17,6 +18,7 @@ class GeminiService {
       model: 'gemini-1.5-flash', 
       apiKey: apiKey,
     );
+    print("✅ Gemini Model initialized successfully");
   }
 
   // --- [MỚI] HÀM 3: PHÂN TÍCH SỞ THÍCH NGƯỜI DÙNG ---

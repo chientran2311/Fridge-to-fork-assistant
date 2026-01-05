@@ -53,7 +53,7 @@ flutter:
   generate: true
   assets:
     - assets/images/
-    # - .env  
+    - .env  
 
 flutter_launcher_icons:
   android: true

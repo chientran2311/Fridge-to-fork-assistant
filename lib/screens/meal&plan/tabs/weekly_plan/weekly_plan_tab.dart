@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../widgets/plans/tabs/weekly_plan_tab/meal_card.dart';
 import '../../../../widgets/plans/tabs/weekly_plan_tab/day_item.dart';
@@ -12,6 +13,7 @@ import '../../../../providers/recipe_provider.dart';
 import '../weekly_plan/add_recipe_screen.dart';
 import '../../../../data/services/spoonacular_service.dart';
 import '../shopping_list/shopping_list_tab.dart';
+import '../../../recipe/favorite_recipes.dart';
 
 class WeeklyPlanContent extends StatefulWidget {
   final Function(int)? onTabChange;
@@ -986,12 +988,18 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                     "Meal Plans",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  if (_isLoading)
-                    const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
+                  Row(
+                    children: [
+                      if (_isLoading)
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      const SizedBox(width: 8),
+                    
+                    ],
+                  ),
                 ],
               ),
             ),

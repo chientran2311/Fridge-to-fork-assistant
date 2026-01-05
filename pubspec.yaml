@@ -1,8 +1,8 @@
 name: fridge_to_fork_assistant
-description: A new Flutter project.
+description: "Fridge to Fork Assistant - A smart kitchen companion app that helps reduce food waste by tracking ingredients and suggesting recipes."
 publish_to: "none"
 
-# Bạn có thể chọn version nào cũng được, thường để 1.0.0 cho bản đầu tiên
+# Version: Major.Minor.Patch+BuildNumber
 version: 1.0.0+1
 
 environment:

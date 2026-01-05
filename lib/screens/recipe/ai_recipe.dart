@@ -1,3 +1,23 @@
+/// ============================================
+/// AI RECIPE SCREEN - SMART RECIPE SEARCH
+/// ============================================
+/// 
+/// Main screen for AI-powered recipe search functionality.
+/// 
+/// Features:
+/// - Search recipes by ingredients from inventory
+/// - Deep link support for notification-triggered searches
+/// - Filter recipes by cuisine, diet, time
+/// - Display recipe cards with match information
+/// - Responsive layout for mobile/tablet/desktop
+/// 
+/// Data Flow:
+/// 1. Get ingredients from InventoryProvider
+/// 2. Call RecipeProvider.searchRecipes()
+/// 3. Display results via RecipeCard widgets
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/models/household_recipe.dart';
 import 'package:provider/provider.dart';
@@ -9,8 +29,9 @@ import '../../providers/recipe_provider.dart';
 
 // Import Widgets
 import '../../widgets/recipe/ai_recipe/ai_recipe_header.dart';
-import '../../widgets/recipe/ai_recipe/recipe_card.dart'; // Đảm bảo import file Card mới bên dưới
+import '../../widgets/recipe/ai_recipe/recipe_card.dart';
 
+/// AI Recipe search screen with smart ingredient matching
 class AIRecipeScreen extends StatefulWidget {
   final String? initialQuery;
   const AIRecipeScreen({super.key, this.initialQuery});
@@ -23,28 +44,29 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
   @override
   void initState() {
     super.initState();
+    // Load recipes after widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadRecipes();
     });
   }
 
+  /// Load recipes based on initial query or inventory ingredients
   void _loadRecipes() {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
 
-    // Ưu tiên 1: Nếu có dữ liệu từ Thông báo (Deep Link)
+    // Priority 1: Deep link search from notification
     if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
-      print("🔔 AI Recipe: Nhận yêu cầu tìm kiếm: ${widget.initialQuery}");
+      print("🔔 AI Recipe: Received search request: ${widget.initialQuery}");
 
-      // [LOGIC MỚI] Tách chuỗi thành danh sách
-      // VD: "Thịt bò,Trứng gà" -> ["Thịt bò", "Trứng gà"]
+      // Parse comma-separated ingredients
+      // Example: "Beef,Eggs" -> ["Beef", "Eggs"]
       List<String> searchIngredients = widget.initialQuery!.split(',');
 
-      // Gọi hàm searchRecipes với tham số 'ingredients' thay vì 'query'
-      // Để Provider biết đây là tìm theo nguyên liệu cụ thể
+      // Search with specific ingredients
       recipeProvider.searchRecipes(ingredients: searchIngredients);
       
     } 
-    // Ưu tiên 2: Logic cũ (Lấy toàn bộ tủ lạnh)
+    // Priority 2: Default - search with all inventory ingredients
     else {
       final inventory = Provider.of<InventoryProvider>(context, listen: false);
       final ingredients = inventory.ingredientNames;

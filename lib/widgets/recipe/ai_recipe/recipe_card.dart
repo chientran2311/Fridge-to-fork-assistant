@@ -1,10 +1,29 @@
+/// ============================================
+/// RECIPE CARD WIDGET
+/// ============================================
+/// 
+/// Displays a recipe card with image, title, and favorite button.
+/// 
+/// Features:
+/// - Recipe image with gradient overlay
+/// - Favorite toggle button
+/// - Recipe info (time, difficulty, ingredients)
+/// - Full match indicator
+/// - Navigation to recipe details
+/// 
+/// Usage:
+///   RecipeCard(recipe: myRecipe)
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart'; // Import Provider
+import 'package:provider/provider.dart';
 import '../../../models/household_recipe.dart';
-import '../../../providers/recipe_provider.dart'; // Import RecipeProvider
+import '../../../providers/recipe_provider.dart';
 
+/// Widget displaying a recipe card with favorite functionality
 class RecipeCard extends StatelessWidget {
   final HouseholdRecipe recipe;
 
@@ -12,14 +31,16 @@ class RecipeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Check if all ingredients are available
     final bool isFullMatch = recipe.missedIngredientCount == 0;
 
-    // Sử dụng Consumer hoặc context.watch để lắng nghe thay đổi trạng thái yêu thích
+    // Listen to favorite state changes
     final recipeProvider = Provider.of<RecipeProvider>(context);
     final isFavorite = recipeProvider.isFavorite(recipe.apiRecipeId);
 
     return GestureDetector(
       onTap: () {
+        // Navigate to recipe detail screen
         context.go('/recipes/detail', extra: recipe);
       },
       child: Container(

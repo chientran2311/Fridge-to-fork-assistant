@@ -1,42 +1,62 @@
+/// ============================================
+/// SPOONACULAR SERVICE - RECIPE API CLIENT
+/// ============================================
+/// 
+/// HTTP client for Spoonacular Recipe API integration.
+/// 
+/// Features:
+/// - Search recipes by text query
+/// - Search recipes by ingredients
+/// - Filter by cuisine, diet, prep time
+/// - Get detailed recipe information with nutrition
+/// 
+/// API Documentation:
+/// https://spoonacular.com/food-api/docs
+/// 
+/// Environment Variables Required:
+/// - SPOONACULAR_API_KEY: API key from spoonacular.com
+/// 
+/// ============================================
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-// Đảm bảo import đúng đường dẫn Model
 import '../../models/household_recipe.dart';
 import '../../models/RecipeFilter.dart';
 
+/// Service class for Spoonacular API interactions
 class SpoonacularService {
-  // Lấy API Key từ file .env
+  // API Key from environment variables
   static String get _apiKey => dotenv.env['SPOONACULAR_API_KEY'] ?? '';
   static const String _baseUrl = 'https://api.spoonacular.com/recipes';
   static const String _authority = 'api.spoonacular.com';
   static const String _path = '/recipes/complexSearch';
-  // --- 1. Tìm kiếm món ăn theo tên (Search) ---
-  // Trong file spoonacular_service.dart
 
+  /// Search recipes with optional filters
+  /// Returns list of HouseholdRecipe matching criteria
   Future<List<HouseholdRecipe>> searchRecipes({
     String? query,
     List<String>? ingredients,
     RecipeFilter? filter,
   }) async {
-    if (_apiKey.isEmpty) throw Exception('Chưa cấu hình API Key');
+    if (_apiKey.isEmpty) throw Exception('API Key not configured');
 
-    // 1. Các tham số cơ bản
+    // Build query parameters
     final Map<String, String> queryParameters = {
       'apiKey': _apiKey,
       'number': '10',
       'addRecipeInformation': 'true',
-      'addRecipeNutrition': 'true', // ✅ Add nutrition data
+      'addRecipeNutrition': 'true',
       'fillIngredients': 'true',
       'instructionsRequired': 'true',
     };
 
-    // 2. Xử lý Query (Search Text)
+    // Add text search query
     if (query != null && query.isNotEmpty) {
       queryParameters['query'] = query;
     }
 
-    // 3. Xử lý Nguyên liệu
+    // Add ingredients filter
     if (ingredients != null && ingredients.isNotEmpty) {
       queryParameters['includeIngredients'] = ingredients.join(',');
       queryParameters['sort'] = 'min-missing-ingredients';

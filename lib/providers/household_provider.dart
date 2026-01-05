@@ -52,10 +52,15 @@ class HouseholdProvider extends ChangeNotifier {
     try {
       _currentHousehold = await _householdService.getCurrentUserHousehold();
       
+      debugPrint('🏠 HouseholdProvider: Loaded household = $_currentHousehold');
+      debugPrint('🔑 Invite code = ${_currentHousehold?['invite_code']}');
+      
       // Nếu chưa có household, tự động tạo mới
       if (_currentHousehold == null) {
+        debugPrint('⚠️ No household found, creating new one...');
         await _householdService.initializeUserHousehold();
         _currentHousehold = await _householdService.getCurrentUserHousehold();
+        debugPrint('✅ Created new household = $_currentHousehold');
       }
     } catch (e) {
       _errorMessage = 'Không thể tải thông tin nhà: $e';

@@ -38,7 +38,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     // Load household data when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('🏠 Settings: Loading household data...');
       context.read<HouseholdProvider>().loadCurrentHousehold();
+      context.read<HouseholdProvider>().loadUserHouseholds();
     });
     // Load notification setting
     _loadNotificationSetting();
@@ -360,76 +362,378 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
-        return FutureBuilder<List<Map<String, dynamic>>>(
-          future: householdProvider.getMembers(),
-          builder: (context, snapshot) {
-            return Container(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    s.members,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                  const SizedBox(height: 16),
-                  if (snapshot.connectionState == ConnectionState.waiting)
-                    const Center(child: CircularProgressIndicator())
-                  else if (snapshot.data?.isEmpty ?? true)
-                    const Center(child: Text("No members"))
-                  else
-                    ...snapshot.data!.map((member) {
-                      final isOwner = member['is_owner'] == true;
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: isOwner ? mainColor : Colors.grey[300],
-                          child: Text(
-                            (member['display_name'] ?? 'U')[0].toUpperCase(),
-                            style: TextStyle(
-                              color: isOwner ? Colors.white : Colors.black54,
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFF9F9F7),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.75,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                margin: const EdgeInsets.only(top: 12, bottom: 8),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [mainColor, mainColor.withOpacity(0.8)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: mainColor.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.people,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            s.members,
+                            style: GoogleFonts.merriweather(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: mainColor,
                             ),
                           ),
-                        ),
-                        title: Text(member['display_name'] ?? 'User'),
-                        subtitle: Text(member['email'] ?? ''),
-                        trailing: isOwner 
-                            ? Chip(
-                                label: Text(s.owner, style: const TextStyle(fontSize: 11)),
-                                backgroundColor: mainColor.withOpacity(0.1),
-                              )
-                            : householdProvider.isOwner // Chỉ owner mới xóa được thành viên
-                                ? TextButton(
-                                    onPressed: () async {
-                                      Navigator.pop(ctx);
-                                      final success = await householdProvider.removeMember(member['uid']);
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text(success ? s.memberRemoved : s.cannotRemoveMember),
-                                            backgroundColor: success ? mainColor : redColor,
-                                          ),
-                                        );
-                                      }
-                                    },
-                                    child: Text(s.removeMember, style: TextStyle(color: redColor)),
-                                  )
-                                : Chip(
-                                    label: Text(s.member, style: const TextStyle(fontSize: 11)),
-                                    backgroundColor: Colors.grey[200],
-                                  ),
-                      );
-                    }),
-                ],
+                          Text(
+                            householdProvider.currentHouseholdName ?? '',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            );
-          },
+              
+              const Divider(height: 1),
+              
+              // Members list
+              Flexible(
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: householdProvider.getMembers(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(40),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
+                    
+                    if (snapshot.data?.isEmpty ?? true) {
+                      return Padding(
+                        padding: const EdgeInsets.all(40),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.people_outline,
+                                size: 64,
+                                color: Colors.grey[400],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              'Chưa có thành viên',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                    
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      itemCount: snapshot.data!.length,
+                      itemBuilder: (context, index) {
+                        final member = snapshot.data![index];
+                        final isOwner = member['is_owner'] == true;
+                        final canRemove = householdProvider.isOwner && !isOwner;
+                        
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isOwner ? mainColor.withOpacity(0.3) : Colors.grey[200]!,
+                              width: isOwner ? 1.5 : 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            leading: Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                gradient: isOwner
+                                    ? LinearGradient(
+                                        colors: [mainColor, mainColor.withOpacity(0.8)],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      )
+                                    : null,
+                                color: isOwner ? null : Colors.grey[200],
+                                shape: BoxShape.circle,
+                                boxShadow: isOwner ? [
+                                  BoxShadow(
+                                    color: mainColor.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ] : null,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  (member['display_name'] ?? 'U')[0].toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: isOwner ? Colors.white : Colors.grey[600],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    member['display_name'] ?? 'User',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                                if (isOwner)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [Colors.amber[600]!, Colors.amber[700]!],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.amber.withOpacity(0.3),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.star, color: Colors.white, size: 14),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          s.owner,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                member['email'] ?? '',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                            trailing: canRemove
+                                ? IconButton(
+                                    icon: Icon(Icons.person_remove, color: redColor, size: 22),
+                                    tooltip: s.removeMember,
+                                    onPressed: () {
+                                      _showRemoveMemberConfirmation(
+                                        ctx,
+                                        s,
+                                        member['display_name'] ?? 'User',
+                                        member['uid'],
+                                        householdProvider,
+                                      );
+                                    },
+                                  )
+                                : null,
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+            ],
+          ),
         );
       },
+    );
+  }
+
+  void _showRemoveMemberConfirmation(
+    BuildContext context,
+    AppLocalizations s,
+    String memberName,
+    String memberUid,
+    HouseholdProvider provider,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: redColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(Icons.person_remove, color: redColor, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                s.removeMember,
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Bạn có chắc muốn xóa "$memberName" khỏi tủ lạnh không?',
+          style: const TextStyle(fontSize: 15),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
+            child: Text(
+              s.cancel,
+              style: TextStyle(color: Colors.grey[600], fontSize: 15),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx); // Close confirmation
+              Navigator.pop(context); // Close members sheet
+              
+              final success = await provider.removeMember(memberUid);
+              
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        Icon(
+                          success ? Icons.check_circle : Icons.error,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            success ? s.memberRemoved : s.cannotRemoveMember,
+                            style: const TextStyle(fontSize: 15),
+                          ),
+                        ),
+                      ],
+                    ),
+                    backgroundColor: success ? mainColor : redColor,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    margin: const EdgeInsets.all(16),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: redColor,
+              foregroundColor: Colors.white,
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: const Text(
+              'Xóa',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

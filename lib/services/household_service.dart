@@ -55,23 +55,43 @@ class HouseholdService {
   /// Get household info for current user
   Future<Map<String, dynamic>?> getCurrentUserHousehold() async {
     final user = _auth.currentUser;
-    if (user == null) return null;
+    if (user == null) {
+      debugPrint('⚠️ getCurrentUserHousehold: No user logged in');
+      return null;
+    }
+
+    debugPrint('👤 Getting household for user: ${user.uid}');
 
     // Get user's current household ID from user document
     final userDoc = await _firestore.collection('users').doc(user.uid).get();
     final currentHouseholdId = userDoc.data()?['current_household_id'];
     
+    debugPrint('📋 User document current_household_id: $currentHouseholdId');
+    
     if (currentHouseholdId == null) {
       // Fallback to default household
       final householdId = 'house_${user.uid}';
+      debugPrint('⚠️ No current_household_id, trying default: $householdId');
       final doc = await _firestore.collection('households').doc(householdId).get();
-      return doc.exists ? doc.data() : null;
+      
+      if (doc.exists) {
+        final data = doc.data();
+        debugPrint('✅ Found default household: $data');
+        return data;
+      } else {
+        debugPrint('❌ Default household not found');
+        return null;
+      }
     }
     
     final doc = await _firestore.collection('households').doc(currentHouseholdId).get();
     if (doc.exists) {
-      return doc.data();
+      final data = doc.data();
+      debugPrint('✅ Found household: $data');
+      return data;
     }
+    
+    debugPrint('❌ Household not found for ID: $currentHouseholdId');
     return null;
   }
 

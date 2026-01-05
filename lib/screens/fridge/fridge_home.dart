@@ -162,6 +162,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
             // Header
             FridgeHeader(
               isMultiSelectMode: _isMultiSelectMode,
+              selectedCount: _selectedItems.length,
               onCancel: _exitMultiSelectMode,
               onSave: _exitMultiSelectMode,
               onSettings: _navigateToSettings,

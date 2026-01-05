@@ -1,6 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
+import 'firebase_options.dart';
 
-void main() {
+// Import Localization
+import 'l10n/app_localizations.dart';
+
+// Import Providers
+import 'providers/locale_provider.dart';
+import 'package:fridge_to_fork_assistant/providers/inventory_provider.dart';
+import 'package:fridge_to_fork_assistant/providers/recipe_provider.dart';
+import 'providers/auth_provider.dart';
+import 'providers/household_provider.dart';
+import 'providers/profile_image_provider.dart';
+
+// Import Router (Để lấy biến rootNavigatorKey và appRouter)
+import 'package:fridge_to_fork_assistant/router/app_router.dart';
+
+// Import Notification Service
+import 'data/services/notification_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint("⚠️ config: $e");
+  }
+
+  // [QUAN TRỌNG] Load trạng thái onboarding TRƯỚC khi khởi tạo router
+  await initializeRouter();
+
+  // [QUAN TRỌNG] Truyền key (lấy từ app_router.dart) vào Service
+  await NotificationService().init(rootNavigatorKey);
+
   runApp(const MyApp());
 }
 
@@ -10,113 +49,109 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+            create: (_) => InventoryProvider()..listenToInventory(),
+            lazy: false),
+        ChangeNotifierProvider(create: (_) => RecipeProvider()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => HouseholdProvider()),
+        ChangeNotifierProvider(create: (_) => ProfileImageProvider()),
+      ],
+      child: const _AuthProfileImageSync(
+        child: _AppWithLocale(),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+/// Widget lắng nghe thay đổi auth state và sync với ProfileImageProvider
+/// Khi user đăng nhập: load ảnh của user đó
+/// Khi user đăng xuất: reset về mặc định
+class _AuthProfileImageSync extends StatefulWidget {
+  final Widget child;
+  
+  const _AuthProfileImageSync({required this.child});
+  
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<_AuthProfileImageSync> createState() => _AuthProfileImageSyncState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
+class _AuthProfileImageSyncState extends State<_AuthProfileImageSync> {
+  String? _lastUserId;
+  
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+    // ✅ Lắng nghe AuthProvider trong build
+    final authProvider = context.watch<AuthProvider>();
+    final currentUserId = authProvider.user?.uid;
+    
+    // ✅ Sử dụng addPostFrameCallback để tránh gọi notifyListeners() trong build
+    if (currentUserId != _lastUserId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        
+        _lastUserId = currentUserId;
+        final profileProvider = context.read<ProfileImageProvider>();
+        
+        if (currentUserId != null) {
+          // User đăng nhập -> load ảnh của user đó
+          profileProvider.loadProfileImageForUser(currentUserId);
+        } else {
+          // User đăng xuất -> reset về mặc định
+          profileProvider.resetToDefault();
+        }
+      });
+    }
+    
+    return widget.child;
+  }
+}
+
+/// Widget con có locale
+class _AppWithLocale extends StatelessWidget {
+  const _AppWithLocale();
+  
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<LocaleProvider>(
+      builder: (context, localeProvider, child) {
+        return MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          title: 'Bếp Trợ Lý',
+
+          // Localization
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: localeProvider.locale,
+
+          // Theme
+          theme: ThemeData(
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF0FBD3B),
+              primary: const Color(0xFF0FBD3B),
+              secondary: const Color(0xFFFF9F1C),
+              surface: Colors.white,
             ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+            fontFamily: 'Merriweather',
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0FBD3B),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+
+          // [QUAN TRỌNG] Gắn router đã cấu hình key
+          routerConfig: appRouter,
+        );
+      },
     );
   }
 }

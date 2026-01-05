@@ -1,105 +1,101 @@
+/// ============================================
+/// APP ROUTER - Cấu hình điều hướng ứng dụng
+/// Sử dụng GoRouter với Firebase Auth
+/// ============================================
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:async'; 
+import 'dart:async';
 
-// Import các màn hình
-import '../screens/auth/login.dart';
+/// Import màn hình chính
 import '../screens/auth/register.dart';
-import '../screens/main_screen.dart';
-import '../screens/fridge/fridge_home.dart';
-import '../screens/recipe/ai_recipe.dart';
-import '../screens/meal&plan/planner_screen.dart';
-import '../../screens/recipe/detail_recipe.dart'; 
-import '../models/household_recipe.dart'; 
-import '../screens/settings/settings.dart'; 
-import '../screens/recipe/favorite_recipes.dart'; 
 
-// [QUAN TRỌNG] Khai báo biến global public để Main dùng chung
+/// Key global cho Navigator - dùng cho NotificationService
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
+/// Router chính của ứng dụng
 final GoRouter appRouter = GoRouter(
-  navigatorKey: rootNavigatorKey, // Gắn chìa khóa vào đây
-  initialLocation: '/fridge',
+  navigatorKey: rootNavigatorKey,
+  initialLocation: '/register',
   
   refreshListenable: GoRouterRefreshStream(FirebaseAuth.instance.authStateChanges()),
 
   redirect: (context, state) {
     final bool isLoggedIn = FirebaseAuth.instance.currentUser != null;
-    final bool isLoggingIn = state.matchedLocation == '/login' || state.matchedLocation == '/register';
+    final bool isOnRegister = state.matchedLocation == '/register';
 
-    if (!isLoggedIn && !isLoggingIn) return '/login';
-    if (isLoggedIn && isLoggingIn) return '/fridge';
-    return null; 
+    if (!isLoggedIn && !isOnRegister) return '/register';
+    if (isLoggedIn && isOnRegister) return '/home';
+    
+    return null;
   },
 
   routes: [
-    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-    GoRoute(path: '/register', builder: (context, state) => const RegisterScreen()),
-
-    StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) {
-        return MainScreen(navigationShell: navigationShell);
-      },
-      branches: [
-        // Branch 1: Fridge
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/fridge',
-              builder: (context, state) => const FridgeHomeScreen(),
-              routes: [
-                GoRoute(path: 'settings', builder: (context, state) => const SettingsScreen()),
-              ],
-            ),
-          ],
-        ),
-        
-        // Branch 2: Recipes (Có logic Deep Link)
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/recipes',
-              builder: (context, state) {
-                // Hứng tham số search từ URL (do Notification Service gọi)
-                final searchQuery = state.uri.queryParameters['search'];
-                return AIRecipeScreen(initialQuery: searchQuery);
-              },
-              routes: [
-                GoRoute(
-                  path: 'detail',
-                  builder: (context, state) {
-                    final recipe = state.extra as HouseholdRecipe;
-                    return RecipeDetailScreen(recipe: recipe);
-                  },
-                ),
-                GoRoute(path: 'favorites', builder: (context, state) => const FavoriteRecipesScreen()),
-              ],
-            ),
-          ],
-        ),
-
-        // Branch 3: Planner
-        StatefulShellBranch(
-          routes: [
-            GoRoute(path: '/planner', builder: (context, state) => const PlannerScreen()),
-          ],
-        ),
-      ],
+    GoRoute(
+      path: '/register', 
+      builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: '/home',
+      builder: (context, state) => const HomeScreen(),
     ),
   ],
 );
 
-// Class tiện ích Stream -> Listenable
 class GoRouterRefreshStream extends ChangeNotifier {
   GoRouterRefreshStream(Stream<dynamic> stream) {
     notifyListeners();
     _subscription = stream.asBroadcastStream().listen((_) => notifyListeners());
   }
   late final StreamSubscription<dynamic> _subscription;
+  
   @override
   void dispose() {
     _subscription.cancel();
     super.dispose();
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Dang ky thanh cong!'),
+        backgroundColor: const Color(0xFF1B3B36),
+        foregroundColor: Colors.white,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.check_circle, size: 100, color: Color(0xFF1B3B36)),
+            const SizedBox(height: 24),
+            const Text(
+              'Chao mung ban!',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Email: ${FirebaseAuth.instance.currentUser?.email ?? "N/A"}',
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1B3B36),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+              child: const Text('Dang xuat', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

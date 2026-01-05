@@ -1,3 +1,28 @@
+/// ============================================
+/// RECIPE DETAIL SCREEN - FULL RECIPE VIEW
+/// ============================================
+/// 
+/// Displays complete recipe information including:
+/// - Recipe image and title
+/// - Cooking time, servings, difficulty
+/// - Ingredients list with inventory matching
+/// - Step-by-step cooking instructions
+/// - Save to meal plan functionality
+/// 
+/// Data Flow:
+/// 1. Receive HouseholdRecipe via constructor
+/// 2. Fetch full details from Spoonacular API
+/// 3. Process ingredients and instructions
+/// 4. Display with responsive layout
+/// 
+/// Features:
+/// - Servings adjustment with ingredient scaling
+/// - Ingredient availability check
+/// - Save recipe to meal planner
+/// - Share recipe functionality
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
@@ -5,18 +30,20 @@ import 'package:fridge_to_fork_assistant/widgets/common/primary_button.dart';
 import 'package:fridge_to_fork_assistant/models/household_recipe.dart';
 import 'package:fridge_to_fork_assistant/providers/inventory_provider.dart';
 
-// [THÊM] Import thư viện Firebase
+// Firebase imports for data persistence
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../data/services/spoonacular_service.dart';
 
+// Widget imports for UI components
 import 'package:fridge_to_fork_assistant/widgets/recipe/detail/ingredients_section.dart';
 import 'package:fridge_to_fork_assistant/widgets/recipe/detail/instructions_section.dart';
 import 'package:fridge_to_fork_assistant/widgets/recipe/detail/recipe_detail_app_bar.dart';
 import 'package:fridge_to_fork_assistant/widgets/recipe/detail/recipe_tags_section.dart';
 import 'package:fridge_to_fork_assistant/widgets/recipe/detail/recipe_title_section.dart';
 
+/// Main screen for displaying detailed recipe information
 class RecipeDetailScreen extends StatefulWidget {
   final HouseholdRecipe recipe;
 
@@ -27,20 +54,24 @@ class RecipeDetailScreen extends StatefulWidget {
 }
 
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
+  // Theme colors
   final Color mainColor = const Color(0xFF1B3B36);
-  // [THÊM] Màu chủ đạo cho lịch (Everglade)
   final Color calendarColor = const Color(0xFF214130);
 
+  // Service for API calls
   final SpoonacularService _spoonacularService = SpoonacularService();
 
+  // Loading and error states
   bool _isLoading = true;
   String? _errorMessage;
   bool _isSaving = false;
+  
+  // Recipe data
   List<Map<String, dynamic>> _processedIngredients = [];
   List<String> _processedInstructions = [];
   int _readyInMinutes = 0;
   
-  // Quản lý trạng thái servings
+  // Servings management for ingredient scaling
   int _originalServings = 1;
   int _currentServings = 1;
   

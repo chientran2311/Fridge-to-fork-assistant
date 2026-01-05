@@ -11,7 +11,7 @@ class CustomToast extends StatelessWidget {
     required this.message,
     this.isError = false,
   });
-
+//// new
   static const Color successColor = Color(0xFF1B3B36);
   static const Color errorColor = Color(0xFFD32F2F);
 

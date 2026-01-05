@@ -69,7 +69,7 @@ class CustomAuthField extends StatelessWidget {
     );
   }
 }
-
+//new widget file
 // 2. Widget Button Chính (Sign Up / Login)
 class PrimaryButton extends StatelessWidget {
   final String text;

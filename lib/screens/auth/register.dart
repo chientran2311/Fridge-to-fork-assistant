@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
-import 'package:fridge_to_fork_assistant/screens/main_screen.dart';
 
+/////////new file
 // Import Localization
 import '../../l10n/app_localizations.dart';
 

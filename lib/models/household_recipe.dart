@@ -1,5 +1,27 @@
+/// ============================================
+/// HOUSEHOLD RECIPE MODEL
+/// ============================================
+/// 
+/// Data model for recipes stored in household collections.
+/// 
+/// Fields:
+/// - localRecipeId: Firestore document ID
+/// - householdId: Parent household ID
+/// - apiRecipeId: External API recipe ID (Spoonacular)
+/// - title: Recipe name
+/// - imageUrl: Recipe image URL
+/// - readyInMinutes: Cooking time
+/// - servings: Number of servings
+/// - calories: Nutritional info
+/// - difficulty: Easy/Medium/Hard
+/// - instructions: Cooking steps
+/// - ingredients: List of ingredients with amounts
+/// 
+/// ============================================
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Model class representing a recipe in a household
 class HouseholdRecipe {
   final String? localRecipeId;
   final String? householdId;
@@ -9,33 +31,34 @@ class HouseholdRecipe {
   final int readyInMinutes;
   final int? servings;
   final double? calories;
-  final String? difficulty; // Lưu trữ chuỗi "Easy", "Medium", "Hard"
+  final String? difficulty;
   final String? instructions;
-  final List<Map<String, dynamic>>? ingredients; // ✅ Add ingredients field
+  final List<Map<String, dynamic>>? ingredients;
   final String? addedByUid;
   final DateTime? addedAt;
   final int usedIngredientCount;
   final int missedIngredientCount;
 
+  /// Constructor for HouseholdRecipe
   HouseholdRecipe({
     this.localRecipeId,
     this.householdId,
     required this.apiRecipeId,
     required this.title,
     this.imageUrl,
-    this.readyInMinutes = 0, // Mặc định là 0 nếu không có dữ liệu
+    this.readyInMinutes = 0,
     this.servings,
     this.calories,
     this.difficulty,
     this.instructions,
-    this.ingredients, // ✅ Add ingredients parameter
+    this.ingredients,
     this.addedByUid,
     this.addedAt,
     this.usedIngredientCount = 0,
     this.missedIngredientCount = 0,
   });
 
-  // [CẬP NHẬT] Getter tiện ích: Nếu field difficulty null thì tự tính lại để hiển thị UI
+  /// Getter for difficulty label with fallback calculation
   String get difficultyLabel {
     if (difficulty != null && difficulty!.isNotEmpty) {
       return difficulty!;

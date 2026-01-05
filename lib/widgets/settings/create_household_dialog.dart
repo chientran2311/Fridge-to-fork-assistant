@@ -1,7 +1,27 @@
+/// ============================================
+/// CREATE HOUSEHOLD DIALOG WIDGET
+/// ============================================
+/// 
+/// Dialog for creating a new household:
+/// - Text input for household name
+/// - Form validation
+/// - Loading state during creation
+/// - Styled with app theme colors
+/// 
+/// Features:
+/// - Name validation (required field)
+/// - Async creation callback
+/// - Auto-dismiss on success
+/// - Custom styled AlertDialog
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Dialog widget for creating new households
 class CreateHouseholdDialog extends StatefulWidget {
+  /// Callback function when household is created
   final Function(String name) onCreateHousehold;
 
   const CreateHouseholdDialog({
@@ -13,6 +33,7 @@ class CreateHouseholdDialog extends StatefulWidget {
   State<CreateHouseholdDialog> createState() => _CreateHouseholdDialogState();
 }
 
+/// State for CreateHouseholdDialog with form management
 class _CreateHouseholdDialogState extends State<CreateHouseholdDialog> {
   final TextEditingController _nameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -24,6 +45,7 @@ class _CreateHouseholdDialogState extends State<CreateHouseholdDialog> {
     super.dispose();
   }
 
+  /// Handle household creation with validation
   void _handleCreate() async {
     if (_formKey.currentState?.validate() ?? false) {
       setState(() => _isLoading = true);
@@ -42,6 +64,7 @@ class _CreateHouseholdDialogState extends State<CreateHouseholdDialog> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
       ),
+      // Dialog title with icon
       title: Row(
         children: [
           Container(

@@ -1,7 +1,28 @@
+/// ============================================
+/// RECIPE TAGS SECTION WIDGET
+/// ============================================
+/// 
+/// Displays recipe metadata tags including:
+/// - Cooking time in minutes
+/// - Number of servings
+/// - Pill-shaped tag containers
+/// 
+/// UI Components:
+/// - Timer icon with duration text
+/// - People icon with servings count
+/// - Rounded pill-style containers
+/// - Consistent spacing and styling
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 
+/// Widget displaying recipe metadata as tag pills
 class RecipeTagsSection extends StatelessWidget {
+  /// Total cooking time in minutes
   final int readyInMinutes;
+  
+  /// Number of servings the recipe yields
   final int servings;
 
   const RecipeTagsSection({
@@ -14,14 +35,17 @@ class RecipeTagsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
+        // Time tag
         _buildTag(Icons.timer_outlined, "$readyInMinutes mins"),
         const SizedBox(width: 16),
+        // Servings tag
         _buildTag(Icons.people_outline, "$servings servings"),
-        // Có thể thêm HealthScore hoặc Price nếu muốn
+        // Can add HealthScore or Price tags if needed
       ],
     );
   }
 
+  /// Builds a pill-shaped tag with icon and text
   Widget _buildTag(IconData icon, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

@@ -1,12 +1,31 @@
+/// ============================================
+/// AI RECIPE HEADER WIDGET
+/// ============================================
+/// 
+/// Header component for AI Recipe screen with search and filter.
+/// 
+/// Features:
+/// - Title and subtitle display
+/// - Filter button to open FilterModal
+/// - Active filter indicator
+/// - Search trigger functionality
+/// 
+/// Interactions:
+/// - Tap filter icon: Opens FilterModal
+/// - Apply filter: Updates RecipeProvider and triggers search
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../screens/recipe/filter_modal.dart';
-import '../../../models/RecipeFilter.dart'; // Đảm bảo đường dẫn đúng
+import '../../../models/RecipeFilter.dart';
 import '../../../providers/recipe_provider.dart';
 import '../../../providers/inventory_provider.dart';
 import '../../../l10n/app_localizations.dart';
 
+/// Header widget with filter functionality for AI Recipe screen
 class AIRecipeHeader extends StatelessWidget {
   const AIRecipeHeader({super.key});
 
@@ -14,22 +33,23 @@ class AIRecipeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color mainColor = const Color(0xFF1B3B36);
     final s = AppLocalizations.of(context)!;
+    
+    /// Open filter modal and apply selected filters
     Future<void> _openFilterModal() async {
       final recipeProvider =
           Provider.of<RecipeProvider>(context, listen: false);
 
-      // 1. Mở Modal và truyền filter hiện tại vào
+      // Open modal with current filter state
       final RecipeFilter? result =
           await FilterModal.show(context, recipeProvider.currentFilter);
 
-      // 2. Nếu user nhấn Apply (result != null)
+      // Apply filter if user confirmed
       if (result != null) {
-        // Cập nhật Provider -> Provider sẽ tự gọi searchRecipes() như logic đã viết
         recipeProvider.updateFilter(result);
       }
     }
 
-    // Lấy Filter hiện tại từ Provider để truyền vào Modal
+    // Get current filter from Provider
     final currentFilter =
         context.select<RecipeProvider, RecipeFilter>((p) => p.currentFilter);
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../data/services/auth_service.dart';
-
+// new provider for auth management
 class AuthProvider extends ChangeNotifier {
   // Khởi tạo Service
   final AuthService _authService = AuthService();

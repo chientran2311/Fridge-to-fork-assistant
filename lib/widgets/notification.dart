@@ -1,7 +1,29 @@
+/// ============================================
+/// CUSTOM TOAST - NOTIFICATION WIDGET
+/// ============================================
+/// 
+/// A customizable toast/snackbar widget for displaying feedback messages.
+/// 
+/// Features:
+/// - Success and error states with distinct colors
+/// - Responsive design (mobile/desktop width constraints)
+/// - Animated appearance with overlay support
+/// - Consistent styling with app theme
+/// 
+/// Usage:
+///   CustomToast.show(context, message: 'Success!', isError: false);
+/// 
+/// Colors:
+/// - Success: #1B3B36 (Forest Green)
+/// - Error: #D32F2F (Material Red)
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 // 1. Import file responsive của bạn (Sửa đường dẫn nếu cần)
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
-///new notification file
+
+/// Custom toast notification widget for user feedback
 class CustomToast extends StatelessWidget {
   final String message;
   final bool isError;

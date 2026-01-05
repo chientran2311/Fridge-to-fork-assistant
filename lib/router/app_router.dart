@@ -2,14 +2,14 @@
 /// APP ROUTER - NAVIGATION CONFIGURATION
 /// ============================================
 /// 
-/// GoRouter configuration for AI Recipe Screen feature.
+/// GoRouter configuration for Recipe Detail Screen feature.
 /// 
 /// Routes:
-/// - /recipes: Main AI recipe search screen
+/// - /recipe/detail: Recipe detail screen with full information
 /// 
 /// Features:
 /// - Firebase Auth state listening
-/// - Deep link support for recipe search
+/// - Recipe data passed via extra parameter
 /// - Stream-based route refresh
 /// 
 /// ============================================
@@ -19,8 +19,9 @@ import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 
-// Import screens
-import '../screens/recipe/ai_recipe.dart';
+// Import screens and models
+import '../screens/recipe/detail_recipe.dart';
+import '../models/household_recipe.dart';
 
 // Global navigator key for external navigation
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -28,20 +29,24 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 /// Main router configuration
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
-  initialLocation: '/recipes',
+  initialLocation: '/recipe/detail',
 
   // Listen to auth state changes
   refreshListenable:
       GoRouterRefreshStream(FirebaseAuth.instance.authStateChanges()),
 
   routes: [
-    // AI Recipe search route with deep link support
+    // Recipe detail route - displays full recipe information
     GoRoute(
-      path: '/recipes',
+      path: '/recipe/detail',
       builder: (context, state) {
-        // Support search query from deep link or notification
-        final searchQuery = state.uri.queryParameters['search'];
-        return AIRecipeScreen(initialQuery: searchQuery);
+        // Get recipe from extra parameter or create sample
+        final recipe = state.extra as HouseholdRecipe? ?? 
+          HouseholdRecipe(
+            apiRecipeId: 716429,
+            title: 'Sample Recipe',
+          );
+        return RecipeDetailScreen(recipe: recipe);
       },
     ),
   ],

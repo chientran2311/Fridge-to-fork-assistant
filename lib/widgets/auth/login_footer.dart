@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// import '../../screens/auth/register.dart';
+import '../../screens/auth/register.dart';
 
 class SignupFooter extends StatelessWidget {
   const SignupFooter({super.key});
@@ -15,11 +15,10 @@ class SignupFooter extends StatelessWidget {
         ),
         GestureDetector(
           onTap: () {
-            // Điều hướng sang trang đăng ký
-            // Navigator.push(
-            //   context,
-            //   // MaterialPageRoute(builder: (context) => const RegisterScreen()),
-            // );
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const RegisterScreen()),
+            );
           },
           child: const Text(
             "Create an account",

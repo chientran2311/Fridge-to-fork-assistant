@@ -1,19 +1,37 @@
+/// ============================================
+/// RECIPE PROVIDER - STATE MANAGEMENT FOR RECIPES
+/// ============================================
+/// 
+/// Manages recipe-related state for AI Recipe feature:
+/// - Recipe search results
+/// - Favorite recipes list
+/// - Filter configuration
+/// - Loading and error states
+/// 
+/// Data Sources:
+/// - SpoonacularService: External recipe API
+/// - RecipeRepository: Data access layer
+/// - Firestore: Favorite recipes storage
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/household_recipe.dart';
-import '../data/repositories/recipe_repository.dart'; // [Thay đổi] Dùng Repo
-import '../data/services/spoonacular_service.dart'; // ✅ Add for direct API call
+import '../data/repositories/recipe_repository.dart';
+import '../data/services/spoonacular_service.dart';
 import '../models/RecipeFilter.dart';
 
+/// Provider class for recipe state management
 class RecipeProvider extends ChangeNotifier {
-  // [Thay đổi] Sử dụng Repository thay vì Service trực tiếp
+  // Repository for recipe operations
   final RecipeRepository _recipeRepository = RecipeRepository();
 
   // --- STATE ---
   List<HouseholdRecipe> _recipes = [];
   List<HouseholdRecipe> _favoriteRecipes = [];
-  List<HouseholdRecipe> _recommendedRecipes = []; // [Mới] List gợi ý thông minh
+  List<HouseholdRecipe> _recommendedRecipes = [];
 
   RecipeFilter _currentFilter = RecipeFilter();
   List<String> _currentIngredients = [];
@@ -25,14 +43,15 @@ class RecipeProvider extends ChangeNotifier {
   // --- GETTERS ---
   List<HouseholdRecipe> get recipes => _recipes;
   List<HouseholdRecipe> get favoriteRecipes => _favoriteRecipes;
-  List<HouseholdRecipe> get recommendedRecipes => _recommendedRecipes; // [Mới]
+  List<HouseholdRecipe> get recommendedRecipes => _recommendedRecipes;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage.isNotEmpty ? _errorMessage : null;
   RecipeFilter get currentFilter => _currentFilter;
 
-  // --- 1. LOGIC TÌM KIẾM (Search & Filter) ---
+  // --- 1. SEARCH RECIPES ---
 
+  /// Search recipes by ingredients or text query
   Future<void> searchRecipes({List<String>? ingredients, String? query}) async {
     if (ingredients != null) _currentIngredients = ingredients;
     if (query != null) _currentQuery = query;
@@ -46,7 +65,7 @@ class RecipeProvider extends ChangeNotifier {
     try {
       print("🔍 Provider: Searching via Repository...");
 
-      // Gọi qua Repository
+      // Call through Repository
       final results = await _recipeRepository.searchRecipes(
         query: _currentQuery.isNotEmpty ? _currentQuery : null,
         ingredients:

@@ -1,4 +1,7 @@
 {
+  "@@locale": "en",
+  "@@last_modified": "2025-01-15",
+  
   "appTitle": "Kitchen Assistant",
   "fridgeTab": "Fridge",
   "recipeTab": "Recipes",

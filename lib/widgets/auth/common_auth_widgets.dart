@@ -1,5 +1,27 @@
+/// ============================================
+/// COMMON AUTH WIDGETS - REUSABLE UI COMPONENTS
+/// ============================================
+/// 
+/// This file contains reusable widgets for authentication screens:
+/// - CustomAuthField: Styled text input with label and validation
+/// - PrimaryButton: Main action button with loading state
+/// - AvatarDisplay: User avatar with edit functionality
+/// 
+/// Design Principles:
+/// - Consistent styling across auth flows
+/// - Responsive design support
+/// - Easy customization via parameters
+/// - Accessibility considerations
+/// 
+/// Color Theme: Primary color #1B3B36 (Forest Green)
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
-////  Common Authentication Widgets used in Login and Register Screens
+
+/// Common Authentication Widgets used in Login and Register Screens
+/// Provides consistent UI components for auth flows
+
 // 1. Widget TextField kèm Label (Dùng chung cho cả form)
 class CustomAuthField extends StatelessWidget {
   final String label;

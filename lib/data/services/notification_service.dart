@@ -1,3 +1,26 @@
+/// ============================================
+/// NOTIFICATION SERVICE - FCM & LOCAL NOTIFICATIONS
+/// ============================================
+/// 
+/// This service handles all push notification functionality:
+/// - Firebase Cloud Messaging (FCM) setup and token management
+/// - Local notifications for foreground display
+/// - Background message handling
+/// - FCM token storage in Firestore for server-side messaging
+/// 
+/// Features:
+/// - Permission request handling (iOS/Android 13+)
+/// - Foreground notification display via local notifications
+/// - Background/terminated state message handling
+/// - Deep linking support via notification taps
+/// - Token refresh management
+/// 
+/// Usage:
+///   await NotificationService().init(navigatorKey);
+///   await NotificationService().saveTokenToFirestore();
+/// 
+/// ============================================
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

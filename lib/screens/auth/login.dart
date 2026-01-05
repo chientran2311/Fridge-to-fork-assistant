@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import 'package:go_router/go_router.dart';
-import '../../l10n/app_localizations.dart';
+
 
 // Widgets
 import 'package:fridge_to_fork_assistant/widgets/auth/common_auth_widgets.dart';
@@ -42,12 +42,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
-    final s = AppLocalizations.of(context)!;
+    // final s = AppLocalizations.of(context)!;
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      CustomToast.show(context, s.loginErrorMissing, isError: true);
+      CustomToast.show(context, "s.loginErrorMissing", isError: true);
       return;
     }
 
@@ -62,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (errorMessage == null) {
-      CustomToast.show(context, s.loginSuccess);
+      // CustomToast.show(context, s.loginSuccess);
       
       // [NEW] LƯU FCM TOKEN VÀO FIRESTORE NGAY KHI LOGIN THÀNH CÔNG
       // Backend cần cái này để gửi thông báo hết hạn
@@ -120,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildLoginForm(BuildContext context) {
-    final s = AppLocalizations.of(context)!;
+    // final s = AppLocalizations.of(context)!;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -130,16 +130,16 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 32),
 
         CustomAuthField(
-          label: s.emailLabel,
-          hintText: s.emailHint,
+          label: "s.emailLabel",
+          hintText: "s.emailHint",
           mainColor: mainColor,
           controller: _emailController,
         ),
         const SizedBox(height: 20),
 
         CustomAuthField(
-          label: s.passwordLabel,
-          hintText: s.passwordHint,
+          label: "s.passwordLabel",
+          hintText: "s.passwordHint",
           isPassword: true,
           isObscure: _isObscure,
           onIconTap: () => setState(() => _isObscure = !_isObscure),
@@ -154,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // TODO: Logic quên mật khẩu
             },
             child: Text(
-              s.forgotPassword,
+              "s.forgotPassword",
               style: TextStyle(
                 color: Colors.grey[600],
                 fontWeight: FontWeight.w600,
@@ -170,7 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
           child: _isLoading 
             ? Center(child: CircularProgressIndicator(color: mainColor))
             : PrimaryButton(
-                text: s.loginButton,
+                text: "s.loginButton",
                 onPressed: _handleLogin,
               ),
         ),

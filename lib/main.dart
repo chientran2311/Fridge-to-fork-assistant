@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
 // Import Localization
-import 'l10n/app_localizations.dart';
+// import 'l10n/app_localizations.dart';
 
 // Import Providers
 // import 'providers/locale_provider.dart';
@@ -49,7 +49,7 @@ class MyApp extends StatelessWidget {
         // ChangeNotifierProvider(create: (_) => InventoryProvider()..listenToInventory(), lazy: false),
         // ChangeNotifierProvider(create: (_) => RecipeProvider()),
         // ChangeNotifierProvider(create: (_) => LocaleProvider()),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        // ChangeNotifierProvider(create: (_) => AuthProvider()),
         // ChangeNotifierProvider(create: (_) => HouseholdProvider()), // [MỚI] Thêm HouseholdProvider
       ],
       // child: Consumer<LocaleProvider>(

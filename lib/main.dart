@@ -10,9 +10,7 @@ import 'l10n/app_localizations.dart';
 // Import Providers
 import 'providers/locale_provider.dart';
 import 'package:fridge_to_fork_assistant/providers/inventory_provider.dart';
-import 'package:fridge_to_fork_assistant/providers/recipe_provider.dart';
 import 'providers/auth_provider.dart';
-import 'providers/household_provider.dart';
 import 'providers/profile_image_provider.dart';
 
 // Import Router (Để lấy biến rootNavigatorKey và appRouter)
@@ -54,10 +52,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
             create: (_) => InventoryProvider()..listenToInventory(),
             lazy: false),
-        ChangeNotifierProvider(create: (_) => RecipeProvider()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => HouseholdProvider()),
         ChangeNotifierProvider(create: (_) => ProfileImageProvider()),
       ],
       child: const _AuthProfileImageSync(

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fridge_to_fork_assistant/screens/fridge/fridge_barcode_scan.dart';
-import '../../models/ingredient.dart';
-import '../../services/firebase_service.dart';
 import '../../providers/inventory_provider.dart';
 
 class AddItemBottomSheet extends StatefulWidget {
@@ -15,8 +13,6 @@ class AddItemBottomSheet extends StatefulWidget {
 }
 
 class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
-  final FirebaseService _firebaseService = FirebaseService();
-  
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController(text: '1');
   
@@ -24,9 +20,6 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
   DateTime? _selectedExpiryDate;
   String _selectedCategory = 'Rau củ';
   bool _isLoading = false;
-  
-  // Store scanned ingredient data
-  Ingredient? _scannedIngredient;
 
   final List<String> _units = ['cái', 'g', 'kg', 'ml', 'L', 'hộp', 'gói'];
   final List<String> _categories = ['Rau củ', 'Sữa/Trứng', 'Thịt', 'Trái cây', 'Khác'];
@@ -120,47 +113,18 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
       ),
     );
     
-    if (barcode != null) {
-      // Fetch ingredient from Firebase
-      final ingredient = await _firebaseService.getIngredientByBarcode(barcode);
+    if (barcode != null && mounted) {
+      // TODO: Implement barcode lookup service
+      setState(() {
+        _nameController.text = 'Sản phẩm $barcode';
+      });
       
-      if (ingredient != null && mounted) {
-        setState(() {
-          _scannedIngredient = ingredient;
-          _nameController.text = ingredient.name;
-          _selectedUnit = ingredient.defaultUnit;
-          _selectedCategory = _mapCategoryToUI(ingredient.category);
-        });
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đã tìm thấy: ${ingredient.name}'),
-            backgroundColor: const Color(0xFF28A745),
-          ),
-        );
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Không tìm thấy sản phẩm: $barcode'),
-            backgroundColor: const Color(0xFFDC3545),
-          ),
-        );
-      }
-    }
-  }
-
-  String _mapCategoryToUI(String category) {
-    switch (category.toLowerCase()) {
-      case 'vegetable':
-        return 'Rau củ';
-      case 'dairy':
-        return 'Sữa/Trứng';
-      case 'meat':
-        return 'Thịt';
-      case 'fruit':
-        return 'Trái cây';
-      default:
-        return 'Khác';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Mã vạch: $barcode'),
+          backgroundColor: const Color(0xFF28A745),
+        ),
+      );
     }
   }
 

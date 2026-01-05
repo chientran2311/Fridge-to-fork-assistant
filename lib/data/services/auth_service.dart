@@ -1,11 +1,19 @@
+/// ============================================
+/// AUTH SERVICE - Xử lý xác thực người dùng
+/// Tích hợp Firebase Auth + Firestore
+/// ============================================
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Service class quản lý authentication
 class AuthService {
+  /// Firebase Auth instance
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  
+  /// Firestore instance để đồng bộ user data
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // --- HÀM PHỤ: ĐỒNG BỘ USER SANG FIRESTORE ---
+  /// Đồng bộ thông tin user sang Firestore khi đăng nhập/đăng ký
   Future<void> _syncUserToFirestore(User user) async {
     try {
       final userRef = _firestore.collection('users').doc(user.uid);

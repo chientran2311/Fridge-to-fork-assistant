@@ -3,7 +3,7 @@ import '../../screens/auth/register.dart';
 
 class SignupFooter extends StatelessWidget {
   const SignupFooter({super.key});
-
+/////
   @override
   Widget build(BuildContext context) {
     return Row(

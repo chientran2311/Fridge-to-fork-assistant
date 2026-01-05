@@ -1,10 +1,31 @@
+/// ============================================
+/// RECIPE CARD WIDGET - RECIPE DISPLAY COMPONENT
+/// ============================================
+/// 
+/// Displays a single recipe in card format for AI Recipe screen.
+/// 
+/// Features:
+/// - Recipe image with gradient overlay
+/// - Title and cooking time display
+/// - Ingredient match indicator (full match badge)
+/// - Favorite toggle button
+/// - Tap to view recipe details
+/// 
+/// Visual States:
+/// - Full match: Green "Full Match" badge
+/// - Partial match: Shows missing ingredient count
+/// - Favorite: Filled heart icon
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart'; // Import Provider
+import 'package:provider/provider.dart';
 import '../../../models/household_recipe.dart';
-import '../../../providers/recipe_provider.dart'; // Import RecipeProvider
+import '../../../providers/recipe_provider.dart';
 
+/// Card widget displaying recipe information
 class RecipeCard extends StatelessWidget {
   final HouseholdRecipe recipe;
 
@@ -12,14 +33,16 @@ class RecipeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Check if all ingredients are available
     final bool isFullMatch = recipe.missedIngredientCount == 0;
 
-    // Sử dụng Consumer hoặc context.watch để lắng nghe thay đổi trạng thái yêu thích
+    // Listen to favorite state changes
     final recipeProvider = Provider.of<RecipeProvider>(context);
     final isFavorite = recipeProvider.isFavorite(recipe.apiRecipeId);
 
     return GestureDetector(
       onTap: () {
+        // Navigate to recipe detail screen
         context.go('/recipes/detail', extra: recipe);
       },
       child: Container(

@@ -1,7 +1,28 @@
+/// ============================================
+/// RECIPE DETAIL APP BAR WIDGET
+/// ============================================
+/// 
+/// Custom SliverAppBar for recipe detail screen with:
+/// - Expandable hero image header
+/// - Back navigation button
+/// - Options menu button
+/// - Collapsing behavior on scroll
+/// 
+/// Features:
+/// - 300px expandable height for recipe image
+/// - Pinned app bar on scroll
+/// - Circular icon buttons with semi-transparent background
+/// - Network image with error fallback
+/// - Options modal integration
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/screens/recipe/option_modal.dart';
 
+/// SliverAppBar with hero image for recipe details
 class RecipeDetailAppBar extends StatelessWidget {
+  /// URL of the recipe hero image
   final String imageUrl;
 
   const RecipeDetailAppBar({super.key, required this.imageUrl});
@@ -13,6 +34,7 @@ class RecipeDetailAppBar extends StatelessWidget {
       pinned: true,
       backgroundColor: Colors.white,
       elevation: 0,
+      // Back navigation button
       leading: Padding(
         padding: const EdgeInsets.all(8.0),
         child: CircleAvatar(
@@ -23,6 +45,7 @@ class RecipeDetailAppBar extends StatelessWidget {
           ),
         ),
       ),
+      // Options menu button
       actions: [
         Padding(
           padding: const EdgeInsets.all(8.0),
@@ -37,6 +60,7 @@ class RecipeDetailAppBar extends StatelessWidget {
           ),
         ),
       ],
+      // Hero image area
       flexibleSpace: FlexibleSpaceBar(
         background: Image.network(
           imageUrl,

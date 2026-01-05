@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+/// A reusable primary button widget
 class PrimaryButton extends StatelessWidget {
   final String text;
   final IconData? icon;

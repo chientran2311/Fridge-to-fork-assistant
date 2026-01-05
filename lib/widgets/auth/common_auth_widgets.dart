@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+////  Common Authentication Widgets used in Login and Register Screens
 // 1. Widget TextField kèm Label (Dùng chung cho cả form)
 class CustomAuthField extends StatelessWidget {
   final String label;

@@ -1,7 +1,27 @@
+/// ============================================
+/// JOIN HOUSEHOLD DIALOG WIDGET
+/// ============================================
+/// 
+/// Dialog for joining an existing household:
+/// - Text input for invite code
+/// - Code validation
+/// - Loading state during join process
+/// - Styled with app theme colors
+/// 
+/// Features:
+/// - Invite code validation (required, format check)
+/// - Async join callback
+/// - Auto-dismiss on success
+/// - Custom styled AlertDialog
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Dialog widget for joining households via invite code
 class JoinHouseholdDialog extends StatefulWidget {
+  /// Callback function when user submits invite code
   final Function(String code) onJoinHousehold;
 
   const JoinHouseholdDialog({
@@ -13,6 +33,7 @@ class JoinHouseholdDialog extends StatefulWidget {
   State<JoinHouseholdDialog> createState() => _JoinHouseholdDialogState();
 }
 
+/// State for JoinHouseholdDialog with form management
 class _JoinHouseholdDialogState extends State<JoinHouseholdDialog> {
   final TextEditingController _codeController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -24,6 +45,7 @@ class _JoinHouseholdDialogState extends State<JoinHouseholdDialog> {
     super.dispose();
   }
 
+  /// Handle join request with validation
   void _handleJoin() async {
     if (_formKey.currentState?.validate() ?? false) {
       setState(() => _isLoading = true);
@@ -42,6 +64,7 @@ class _JoinHouseholdDialogState extends State<JoinHouseholdDialog> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
       ),
+      // Dialog title with icon
       title: Row(
         children: [
           Container(

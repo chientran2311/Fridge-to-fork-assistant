@@ -1,30 +1,52 @@
+/// ============================================
+/// LOCALE PROVIDER - LANGUAGE MANAGEMENT
+/// ============================================
+/// 
+/// State management for app localization:
+/// - Vietnamese (vi) - Default language
+/// - English (en) - Alternative language
+/// 
+/// Features:
+/// - Persistent language preference via SharedPreferences
+/// - Real-time UI language switching
+/// - Auto-load saved preference on startup
+/// 
+/// Usage in Settings:
+/// - Language selector dropdown
+/// - Immediate UI refresh on change
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Provider for locale/language state management
 class LocaleProvider extends ChangeNotifier {
-  // Mặc định là tiếng Việt
+  // Default to Vietnamese
   Locale _locale = const Locale('vi');
 
+  /// Current locale getter
   Locale get locale => _locale;
 
+  /// Constructor - loads saved locale on init
   LocaleProvider() {
-    _loadLocale(); // Load từ bộ nhớ khi khởi tạo
+    _loadLocale();
   }
 
-  // Hàm gọi từ UI để đổi ngôn ngữ
+  /// Set locale from UI and persist to storage
   void setLocale(Locale locale) async {
-    // Chỉ chấp nhận 'vi' hoặc 'en'
+    // Only accept supported locales
     if (!['vi', 'en'].contains(locale.languageCode)) return;
 
     _locale = locale;
-    notifyListeners(); // <--- Quan trọng: Báo Main vẽ lại UI
+    notifyListeners(); // Trigger UI rebuild
 
-    // Lưu vào SharedPreferences
+    // Save to SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('language_code', locale.languageCode);
   }
 
-  // Hàm load nội bộ
+  /// Load saved locale from SharedPreferences
   void _loadLocale() async {
     final prefs = await SharedPreferences.getInstance();
     final String? languageCode = prefs.getString('language_code');

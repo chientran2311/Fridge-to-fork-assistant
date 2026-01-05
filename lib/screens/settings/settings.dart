@@ -1,3 +1,31 @@
+/// ============================================
+/// SETTINGS SCREEN - USER PREFERENCES & ACCOUNT
+/// ============================================
+/// 
+/// Comprehensive settings screen for user customization:
+/// - Profile management and display
+/// - Notification preferences (push notifications)
+/// - Language selection (Vietnamese/English)
+/// - Household management (create/join/switch)
+/// - Debug tools (development only)
+/// - Account actions (logout)
+/// 
+/// Dependencies:
+/// - AuthProvider: User authentication state
+/// - LocaleProvider: Language/locale management
+/// - HouseholdProvider: Multi-household switching
+/// - SharedPreferences: Local preference storage
+/// - FirebaseMessaging: Push notification control
+/// 
+/// Features:
+/// - Real-time notification toggle
+/// - Dynamic locale switching
+/// - Household creation and joining
+/// - FCM token management
+/// - Database seeding tools (debug)
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,17 +36,17 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 
-// Import Providers & Localization
+// Provider and Localization imports
 import '../../providers/auth_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/household_provider.dart';
 import '../../l10n/app_localizations.dart';
 
-// [MỚI] Import Database Seeder để gọi hàm tạo dữ liệu
+// Utility imports for debug features
 import '../../utils/database_seeder.dart';
-// [MỚI] Import Recipe Migration để fix recipes
 import '../../utils/fix_recipes_migration.dart';
 
+/// Main settings screen widget
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -26,25 +54,27 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
+/// State class for SettingsScreen with notification and preference management
 class _SettingsScreenState extends State<SettingsScreen> {
-  // --- MÀU SẮC UI ---
+  // Theme colors
   final Color bgCream = const Color(0xFFF9F9F7);
   final Color mainColor = const Color(0xFF1B3B36);
   final Color redColor = const Color(0xFFE53935);
 
+  // Notification state
   bool _notificationsEnabled = true;
-  bool _isTogglingNotification = false; // Loading state cho switch
+  bool _isTogglingNotification = false;
 
   @override
   void initState() {
     super.initState();
-    // Load household data when screen opens
+    // Load household data on screen open
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('🏠 Settings: Loading household data...');
       context.read<HouseholdProvider>().loadCurrentHousehold();
       context.read<HouseholdProvider>().loadUserHouseholds();
     });
-    // Load notification setting
+    // Load notification preference
     _loadNotificationSetting();
   }
 

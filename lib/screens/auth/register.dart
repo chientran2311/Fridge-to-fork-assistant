@@ -8,7 +8,6 @@ import '../../l10n/app_localizations.dart';
 import '../../widgets/auth/common_auth_widgets.dart';
 import '../../data/services/auth_service.dart';
 import '../../widgets/notification.dart';
-import '../../data/services/notification_service.dart';
 import '../../widgets/profile_avatar.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -78,14 +77,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = false);
 
     if (errorMessage == null) {
-      // 2. [SỬA] Đăng ký thành công -> Lưu FCM Token ngay lập tức
-      // Vì Firebase tự login sau khi register nên ta lấy được user hiện tại
-      try {
-        await NotificationService().saveTokenToDatabase();
-        print("✅ Đã tạo FCM Token cho tài khoản mới");
-      } catch (e) {
-        print("⚠️ Lỗi lưu token: $e");
-      }
+      // [DISABLED] Notification service removed for planner-only feature
+      // try {
+      //   await NotificationService().saveTokenToDatabase();
+      // } catch (e) {
+      //   print("⚠️ Lỗi lưu token: $e");
+      // }
 
       setState(() => _isLoading = false);
       CustomToast.show(context, s.registerSuccess);
@@ -155,12 +152,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
         // Profile Avatar - Có thể chọn ảnh từ gallery/camera
         // isRegisterMode: true để reset về mặc định, không load ảnh user cũ
-        const ProfileAvatar(
-          size: 100,
-          showEditIcon: true,
-          isRegisterMode: true,
-        ),
-        const SizedBox(height: 24),
+        // const ProfileAvatar(
+        //   size: 100,
+        //   showEditIcon: true,
+        //   isRegisterMode: true,
+        // ),
+        // const SizedBox(height: 24),
 
         // Title Text
         Text(

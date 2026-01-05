@@ -11,9 +11,6 @@ import 'package:fridge_to_fork_assistant/widgets/auth/social_buttons.dart';
 import '../../data/services/auth_service.dart';
 import '../../widgets/notification.dart';
 
-// [NEW] Import Notification Service
-import '../../data/services/notification_service.dart';
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -64,17 +61,15 @@ class _LoginScreenState extends State<LoginScreen> {
     if (errorMessage == null) {
       CustomToast.show(context, s.loginSuccess);
       
-      // [NEW] LƯU FCM TOKEN VÀO FIRESTORE NGAY KHI LOGIN THÀNH CÔNG
-      // Backend cần cái này để gửi thông báo hết hạn
-      try {
-        await NotificationService().saveTokenToDatabase();
-        print("✅ Đã lưu FCM Token sau khi login");
-      } catch (e) {
-        print("⚠️ Lỗi lưu token: $e");
-      }
+      // [DISABLED] Notification service removed for planner-only feature
+      // try {
+      //   await NotificationService().saveTokenToDatabase();
+      // } catch (e) {
+      //   print("⚠️ Lỗi lưu token: $e");
+      // }
 
       if (mounted) {
-        context.go('/fridge'); 
+        context.go('/planner'); 
       }
     } else {
       CustomToast.show(context, errorMessage, isError: true);

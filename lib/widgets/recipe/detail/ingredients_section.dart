@@ -1,13 +1,39 @@
+/// ============================================
+/// INGREDIENTS SECTION WIDGET
+/// ============================================
+/// 
+/// Displays the list of recipe ingredients with:
+/// - Checkbox for tracking ingredient availability
+/// - Quantity scaling based on servings
+/// - Ingredient name and amount display
+/// - Visual indicator for items in fridge
+/// 
+/// Features:
+/// - Dynamic quantity recalculation
+/// - Servings adjustment controls
+/// - Checkbox state management
+/// - Responsive layout for different screen sizes
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Widget displaying the ingredients list with serving adjustment
 class IngredientsSection extends StatefulWidget {
+  /// List of ingredient data maps
   final List<Map<String, dynamic>> ingredients;
+  
+  /// Primary theme color
   final Color mainColor;
   
-  // Nhận dữ liệu từ cha
+  /// Current serving count for scaling
   final int currentServings;
+  
+  /// Original recipe serving count
   final int originalServings;
+  
+  /// Callback when servings change
   final Function(int) onServingsChanged;
 
   const IngredientsSection({
@@ -23,7 +49,9 @@ class IngredientsSection extends StatefulWidget {
   State<IngredientsSection> createState() => _IngredientsSectionState();
 }
 
+/// State class managing ingredient checkbox states
 class _IngredientsSectionState extends State<IngredientsSection> {
+  /// Track checkbox state for each ingredient
   late List<bool> _ingredientChecks;
 
   @override
@@ -32,7 +60,7 @@ class _IngredientsSectionState extends State<IngredientsSection> {
     _initChecks();
   }
 
-  // Cập nhật lại checkbox khi danh sách nguyên liệu thay đổi
+  /// Update checkboxes when ingredient list changes
   @override
   void didUpdateWidget(covariant IngredientsSection oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -41,23 +69,23 @@ class _IngredientsSectionState extends State<IngredientsSection> {
     }
   }
 
+  /// Initialize checkbox states from fridge availability
   void _initChecks() {
     _ingredientChecks = widget.ingredients.map((ing) {
       return ing['inFridge'] == true;
     }).toList();
   }
 
-  // [HÀM TÍNH TOÁN MỚI - KHÔNG LÀM TRÒN]
+  /// Calculate scaled ingredient amount without rounding
   String _calculateAmount(double baseAmount, String unit, String name) {
     if (baseAmount == 0) return "$unit $name";
 
-    // 1. Tính toán tỉ lệ chính xác
+    // Calculate exact ratio
     double baseServing = widget.originalServings > 0 ? widget.originalServings.toDouble() : 1.0;
     double calculated = (baseAmount / baseServing) * widget.currentServings;
 
-    // 2. Định dạng hiển thị (Format String)
-    // Sử dụng toStringAsFixed(2) để giới hạn tối đa 2 số thập phân cho gọn
-    // Sau đó dùng RegExp để xóa các số 0 vô nghĩa ở cuối
+    // Format display string with max 2 decimal places
+    // Use RegExp to remove trailing zeros
     
     // Ví dụ:
     // 5.00 -> "5"

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fridge_to_fork_assistant/screens/fridge/fridge_barcode_scan.dart';
-import '../../models/ingredient.dart';
-import '../../services/firebase_service.dart';
 import '../../providers/inventory_provider.dart';
 
 class AddItemBottomSheet extends StatefulWidget {
@@ -15,8 +13,6 @@ class AddItemBottomSheet extends StatefulWidget {
 }
 
 class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
-  final FirebaseService _firebaseService = FirebaseService();
-  
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController(text: '1');
   
@@ -24,9 +20,6 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
   DateTime? _selectedExpiryDate;
   String _selectedCategory = 'Rau củ';
   bool _isLoading = false;
-  
-  // Store scanned ingredient data
-  Ingredient? _scannedIngredient;
 
   final List<String> _units = ['cái', 'g', 'kg', 'ml', 'L', 'hộp', 'gói'];
   final List<String> _categories = ['Rau củ', 'Sữa/Trứng', 'Thịt', 'Trái cây', 'Khác'];
@@ -120,32 +113,14 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
       ),
     );
     
-    if (barcode != null) {
-      // Fetch ingredient from Firebase
-      final ingredient = await _firebaseService.getIngredientByBarcode(barcode);
-      
-      if (ingredient != null && mounted) {
-        setState(() {
-          _scannedIngredient = ingredient;
-          _nameController.text = ingredient.name;
-          _selectedUnit = ingredient.defaultUnit;
-          _selectedCategory = _mapCategoryToUI(ingredient.category);
-        });
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đã tìm thấy: ${ingredient.name}'),
-            backgroundColor: const Color(0xFF28A745),
-          ),
-        );
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Không tìm thấy sản phẩm: $barcode'),
-            backgroundColor: const Color(0xFFDC3545),
-          ),
-        );
-      }
+    if (barcode != null && mounted) {
+      // TODO: Implement barcode lookup logic
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đã quét mã: $barcode'),
+          backgroundColor: const Color(0xFF28A745),
+        ),
+      );
     }
   }
 
@@ -384,35 +359,35 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                 const SizedBox(height: 28),
 
                 // ================= QUÉT MÃ VẠCH =================
-                GestureDetector(
-                  onTap: _scanBarcode,
-                  child: Container(
-                    height: 52,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28),
-                      border: Border.all(
-                        color: const Color(0xFF7AD39B),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.qr_code_scanner, color: Color(0xFF1B5E20)),
-                        SizedBox(width: 8),
-                        Text(
-                          'Quét mã vạch',
-                          style: TextStyle(
-                            color: Color(0xFF1B5E20),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                // GestureDetector(
+                //   onTap: _scanBarcode,
+                //   child: Container(
+                //     height: 52,
+                //     decoration: BoxDecoration(
+                //       borderRadius: BorderRadius.circular(28),
+                //       border: Border.all(
+                //         color: const Color(0xFF7AD39B),
+                //         width: 1.5,
+                //       ),
+                //     ),
+                //     child: const Row(
+                //       mainAxisAlignment: MainAxisAlignment.center,
+                //       children: [
+                //         Icon(Icons.qr_code_scanner, color: Color(0xFF1B5E20)),
+                //         SizedBox(width: 8),
+                //         Text(
+                //           'Quét mã vạch',
+                //           style: TextStyle(
+                //             color: Color(0xFF1B5E20),
+                //             fontWeight: FontWeight.w600,
+                //           ),
+                //         ),
+                //       ],
+                //     ),
+                //   ),
+                // ),
 
-                const SizedBox(height: 16),
+                // const SizedBox(height: 16),
 
                 // ================= NÚT THÊM =================
                 SizedBox(

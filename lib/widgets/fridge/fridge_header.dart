@@ -106,28 +106,28 @@ class FridgeHeader extends StatelessWidget {
                 ),
               ),
             )
-          else
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.settings_outlined, size: 20),
-                onPressed: onSettings,
-                color: const Color(0xFF1A1A1A),
-                padding: EdgeInsets.zero,
-              ),
-            ),
+          // else
+          //   Container(
+          //     width: 40,
+          //     height: 40,
+          //     decoration: BoxDecoration(
+          //       color: Colors.white,
+          //       borderRadius: BorderRadius.circular(12),
+          //       boxShadow: [
+          //         BoxShadow(
+          //           color: Colors.black.withOpacity(0.05),
+          //           blurRadius: 8,
+          //           offset: const Offset(0, 2),
+          //         ),
+          //       ],
+          //     ),
+          //     child: IconButton(
+          //       icon: const Icon(Icons.settings_outlined, size: 20),
+          //       onPressed: onSettings,
+          //       color: const Color(0xFF1A1A1A),
+          //       padding: EdgeInsets.zero,
+          //     ),
+          //   ),
         ],
       ),
     );

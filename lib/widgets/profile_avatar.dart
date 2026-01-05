@@ -202,7 +202,7 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
                         title: s?.chooseFromGallery ?? 'Chọn từ thư viện',
                         onTap: () async {
                           Navigator.pop(ctx);
-                          await provider.pickAndSaveFromGallery();
+                          // TODO: Implement pick from gallery
                         },
                       ),
 
@@ -214,7 +214,7 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
                         title: s?.takePhoto ?? 'Chụp ảnh mới',
                         onTap: () async {
                           Navigator.pop(ctx);
-                          await provider.pickAndSaveFromCamera();
+                          // TODO: Implement take photo
                         },
                       ),
 
@@ -227,7 +227,7 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
                           color: Colors.red,
                           onTap: () async {
                             Navigator.pop(ctx);
-                            await provider.removeProfileImage();
+                            // TODO: Implement remove image
                           },
                         ),
                       ],

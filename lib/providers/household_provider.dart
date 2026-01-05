@@ -1,42 +1,65 @@
+/// ============================================
+/// HOUSEHOLD PROVIDER - MULTI-HOUSEHOLD STATE
+/// ============================================
+/// 
+/// State management for household features:
+/// - Current household tracking
+/// - User's household list management
+/// - Create/Join/Switch household operations
+/// - Invite code generation and sharing
+/// 
+/// MVVM Pattern:
+/// - Wraps HouseholdService for reactive UI updates
+/// - Listens to Firebase auth state changes
+/// - Provides getters for household information
+/// 
+/// Features:
+/// - Real-time household sync
+/// - Owner vs member role detection
+/// - Multi-household switching
+/// - Error handling and loading states
+/// 
+/// ============================================
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/household_service.dart';
 
-/// HouseholdProvider - MVVM Pattern
-/// Wrap HouseholdService để UI có thể reactive update
+/// Provider for household state management following MVVM pattern
 class HouseholdProvider extends ChangeNotifier {
   final HouseholdService _householdService = HouseholdService();
 
-  // State
+  // State variables
   Map<String, dynamic>? _currentHousehold;
   List<Map<String, dynamic>> _userHouseholds = [];
   bool _isLoading = false;
   String? _errorMessage;
   StreamSubscription<User?>? _authSubscription;
 
-  // Getters
+  // Getters for UI binding
   Map<String, dynamic>? get currentHousehold => _currentHousehold;
   List<Map<String, dynamic>> get userHouseholds => _userHouseholds;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
+  // Convenience getters for household details
   String? get currentHouseholdId => _currentHousehold?['household_id'];
   String? get currentHouseholdName => _currentHousehold?['name'];
   String? get inviteCode => _currentHousehold?['invite_code']?.toString();
   bool get isOwner =>
       _currentHousehold?['owner_id'] == FirebaseAuth.instance.currentUser?.uid;
 
+  /// Constructor - does not auto-initialize
   HouseholdProvider() {
-    // ✅ Không tự động khởi tạo trong constructor
-    // Listener sẽ được khởi tạo khi có user đăng nhập
+    // Listener initialized when user logs in
   }
 
-  /// Khởi tạo: Lắng nghe auth state và load household
+  /// Initialize auth state listener and load household data
   void _init() {
-    if (_authSubscription != null) return; // Đã init rồi
+    if (_authSubscription != null) return;
 
-    // Lắng nghe auth state changes
+    // Listen to auth state changes
     _authSubscription =
         FirebaseAuth.instance.authStateChanges().listen((user) async {
       if (user != null) {
@@ -56,7 +79,7 @@ class HouseholdProvider extends ChangeNotifier {
     super.dispose();
   }
 
-  /// Load thông tin household hiện tại
+  /// Load current household information
   Future<void> loadCurrentHousehold() async {
     // Khởi tạo listener nếu chưa có (safe vì đây được gọi từ UI)
     _init();

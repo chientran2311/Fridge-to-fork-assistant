@@ -1,116 +1,72 @@
+/// ============================================
+/// MAIN ENTRY POINT - SETTINGS FEATURE FOCUS
+/// ============================================
+/// 
+/// Application entry point configured for Settings feature:
+/// - Firebase initialization
+/// - Provider setup (Auth, Household, Locale)
+/// - Localization support (Vietnamese/English)
+/// - Theme configuration
+/// 
+/// Providers for Settings:
+/// - LocaleProvider: Language switching
+/// - AuthProvider: User authentication state
+/// - HouseholdProvider: Multi-household management
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
-// Import Localization
+// Localization imports
 import 'l10n/app_localizations.dart';
 
-// Import Providers
+// Provider imports for Settings feature
 import 'providers/locale_provider.dart';
-import 'package:fridge_to_fork_assistant/providers/inventory_provider.dart';
-import 'package:fridge_to_fork_assistant/providers/recipe_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/household_provider.dart';
-import 'providers/profile_image_provider.dart';
 
-// Import Router (Để lấy biến rootNavigatorKey và appRouter)
+// Router configuration
 import 'package:fridge_to_fork_assistant/router/app_router.dart';
 
-// Import Notification Service
-import 'data/services/notification_service.dart';
-
+/// Main entry point
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Firebase for authentication and Firestore
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  try {
-    await dotenv.load(fileName: ".env");
-  } catch (e) {
-    debugPrint("⚠️ config: $e");
-  }
-
-  // [QUAN TRỌNG] Load trạng thái onboarding TRƯỚC khi khởi tạo router
+  // Initialize router before app starts
   await initializeRouter();
-
-  // [QUAN TRỌNG] Truyền key (lấy từ app_router.dart) vào Service
-  await NotificationService().init(rootNavigatorKey);
 
   runApp(const MyApp());
 }
 
+/// Root application widget
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-            create: (_) => InventoryProvider()..listenToInventory(),
-            lazy: false),
-        ChangeNotifierProvider(create: (_) => RecipeProvider()),
+        // Language/locale provider
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        // User authentication provider
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        // Household management provider
         ChangeNotifierProvider(create: (_) => HouseholdProvider()),
-        ChangeNotifierProvider(create: (_) => ProfileImageProvider()),
       ],
-      child: const _AuthProfileImageSync(
-        child: _AppWithLocale(),
-      ),
+      child: const _AppWithLocale(),
     );
   }
 }
 
-/// Widget lắng nghe thay đổi auth state và sync với ProfileImageProvider
-/// Khi user đăng nhập: load ảnh của user đó
-/// Khi user đăng xuất: reset về mặc định
-class _AuthProfileImageSync extends StatefulWidget {
-  final Widget child;
-  
-  const _AuthProfileImageSync({required this.child});
-  
-  @override
-  State<_AuthProfileImageSync> createState() => _AuthProfileImageSyncState();
-}
-
-class _AuthProfileImageSyncState extends State<_AuthProfileImageSync> {
-  String? _lastUserId;
-  
-  @override
-  Widget build(BuildContext context) {
-    // ✅ Lắng nghe AuthProvider trong build
-    final authProvider = context.watch<AuthProvider>();
-    final currentUserId = authProvider.user?.uid;
-    
-    // ✅ Sử dụng addPostFrameCallback để tránh gọi notifyListeners() trong build
-    if (currentUserId != _lastUserId) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        
-        _lastUserId = currentUserId;
-        final profileProvider = context.read<ProfileImageProvider>();
-        
-        if (currentUserId != null) {
-          // User đăng nhập -> load ảnh của user đó
-          profileProvider.loadProfileImageForUser(currentUserId);
-        } else {
-          // User đăng xuất -> reset về mặc định
-          profileProvider.resetToDefault();
-        }
-      });
-    }
-    
-    return widget.child;
-  }
-}
-
-/// Widget con có locale
+/// Widget with locale support
 class _AppWithLocale extends StatelessWidget {
   const _AppWithLocale();
   
@@ -120,14 +76,14 @@ class _AppWithLocale extends StatelessWidget {
       builder: (context, localeProvider, child) {
         return MaterialApp.router(
           debugShowCheckedModeBanner: false,
-          title: 'Bếp Trợ Lý',
+          title: 'Fridge to Fork - Settings',
 
-          // Localization
+          // Localization configuration
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           locale: localeProvider.locale,
 
-          // Theme
+          // Theme configuration
           theme: ThemeData(
             useMaterial3: true,
             colorScheme: ColorScheme.fromSeed(
@@ -148,7 +104,7 @@ class _AppWithLocale extends StatelessWidget {
             ),
           ),
 
-          // [QUAN TRỌNG] Gắn router đã cấu hình key
+          // GoRouter configuration
           routerConfig: appRouter,
         );
       },

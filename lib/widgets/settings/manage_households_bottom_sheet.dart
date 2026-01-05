@@ -1,12 +1,41 @@
+/// ============================================
+/// MANAGE HOUSEHOLDS BOTTOM SHEET WIDGET
+/// ============================================
+/// 
+/// Bottom sheet for managing multiple households:
+/// - List all user's households
+/// - Switch between households
+/// - Leave household functionality
+/// - Regenerate invite code (for owners)
+/// 
+/// Features:
+/// - Current household indicator
+/// - Owner vs member role display
+/// - Swipe to leave action
+/// - Copy invite code to clipboard
+/// - Confirmation dialogs for actions
+/// 
+/// ============================================
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Bottom sheet for household management actions
 class ManageHouseholdsBottomSheet extends StatelessWidget {
+  /// List of user's households
   final List<Map<String, dynamic>> households;
+  
+  /// Currently active household ID
   final String? currentHouseholdId;
+  
+  /// Callback for switching households
   final Function(String householdId) onSwitchHousehold;
+  
+  /// Callback for leaving a household
   final Function(String householdId) onLeaveHousehold;
+  
+  /// Callback for regenerating invite code
   final Function(String householdId) onRegenerateCode;
 
   const ManageHouseholdsBottomSheet({
@@ -31,7 +60,7 @@ class ManageHouseholdsBottomSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle bar
+          // Drag handle bar
           Container(
             margin: const EdgeInsets.only(top: 12, bottom: 8),
             width: 40,
@@ -42,7 +71,7 @@ class ManageHouseholdsBottomSheet extends StatelessWidget {
             ),
           ),
 
-          // Header
+          // Sheet header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             child: Row(

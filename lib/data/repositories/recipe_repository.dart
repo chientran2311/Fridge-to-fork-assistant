@@ -1,42 +1,39 @@
+/// ============================================
+/// RECIPE REPOSITORY - DATA ACCESS LAYER
+/// ============================================
+/// 
+/// Repository pattern for recipe data operations.
+/// 
+/// Services Used:
+/// - SpoonacularService: External recipe API
+/// - GeminiService: AI-powered recommendations (optional)
+/// 
+/// Methods:
+/// - searchRecipes: Search recipes by ingredients/query
+/// - getSmartRecommendations: AI-powered recipe suggestions
+/// 
+/// ============================================
+
 import '../services/spoonacular_service.dart';
-import '../services/gemini_service.dart';
 import '../../models/household_recipe.dart';
 import '../../models/RecipeFilter.dart';
 
+/// Repository class for recipe data operations
 class RecipeRepository {
   final SpoonacularService _spoonacularService = SpoonacularService();
-  final GeminiService _geminiService = GeminiService();
 
-  // --- [MỚI] CHIẾN LƯỢC 3: SMART RECOMMENDATION (AI + API) ---
-  /// 1. Gemini phân tích Favorites/History -> Ra Filter
-  /// 2. Spoonacular tìm kiếm thực tế dựa trên Filter đó
+  /// Get smart recommendations based on user preferences
+  /// Uses AI analysis of favorites and cooking history
   Future<List<HouseholdRecipe>> getSmartRecommendations({
     required List<String> favoriteTitles,
     required List<String> historyTitles,
   }) async {
     try {
-      // BƯỚC 1: Hỏi Gemini
-      final suggestion = await _geminiService.analyzeUserTaste(
-        favoriteTitles: favoriteTitles,
-        historyTitles: historyTitles,
-      );
-
-      // Default fallback
-      String query = "trending";
+      // Default search parameters
+      String query = "popular";
       RecipeFilter filter = RecipeFilter();
 
-      // BƯỚC 2: Parse kết quả từ Gemini
-      if (suggestion != null) {
-        query = suggestion['query'] ?? "popular";
-        
-        filter = RecipeFilter(
-          cuisine: suggestion['cuisine'],
-          difficulty: suggestion['difficulty'],
-          maxPrepTime: (suggestion['maxPrepTime'] as num?)?.toInt() ?? 60,
-        );
-      }
-
-      print("✨ Repository: Tìm kiếm theo gợi ý AI -> Query: '$query', Cuisine: '${filter.cuisine}'");
+      print("✨ Repository: Searching for recommendations -> Query: '$query'");
 
       // BƯỚC 3: Gọi Spoonacular (dùng hàm searchRecipes có sẵn logic Filter)
       return await _spoonacularService.searchRecipes(

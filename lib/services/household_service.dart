@@ -1,8 +1,32 @@
+/// ============================================
+/// HOUSEHOLD SERVICE - FIRESTORE OPERATIONS
+/// ============================================
+/// 
+/// Service layer for household data operations:
+/// - Create new households
+/// - Join existing households via invite code
+/// - Switch between households
+/// - Leave households
+/// - Regenerate invite codes
+/// 
+/// Firestore Collections:
+/// - households: Household documents with members array
+/// - users: User documents with current_household_id
+/// 
+/// Features:
+/// - Auto-create default household for new users
+/// - Invite code generation (6 chars alphanumeric)
+/// - Member management (add/remove)
+/// - Owner transfer on leave
+/// 
+/// ============================================
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:math';
 
+/// Service class for household Firestore operations
 class HouseholdService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -33,7 +57,7 @@ class HouseholdService {
         'owner_id': user.uid,
         'members': [user.uid],
         'created_at': FieldValue.serverTimestamp(),
-        'invite_code': householdId, // invite_code = household_id
+        'invite_code': householdId,
       });
       
       // Update user's current_household_id
@@ -45,7 +69,7 @@ class HouseholdService {
     }
   }
 
-  /// Generate random invite code
+  /// Generate random 6-character invite code
   String _generateInviteCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random();

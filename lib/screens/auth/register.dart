@@ -39,6 +39,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   void dispose() {
+    // Clean up controllers to prevent memory leaks
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -46,6 +47,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  /// Handles user registration process
+  /// - Validates input fields
+  /// - Calls AuthService for Firebase registration
+  /// - Saves FCM token on success
+  /// - Navigates to home screen
   Future<void> _handleRegister() async {
     final s = AppLocalizations.of(context)!; // ✅ Lấy ngôn ngữ
 
@@ -54,7 +60,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final password = _passwordController.text.trim();
     final confirmPass = _confirmPasswordController.text.trim();
 
-    // Validate
+    // Validate - Check all required fields are filled
     if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPass.isEmpty) {
       CustomToast.show(context, s.registerErrorMissing, isError: true); // ✅ Updated
       return;

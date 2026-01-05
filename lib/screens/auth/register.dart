@@ -1,8 +1,12 @@
+/// ============================================
+/// REGISTER SCREEN - Màn hình đăng ký tài khoản
+/// Author: Fridge to Fork Team
+/// Version: 1.0.0
+/// ============================================
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 
-/////////new file
 // Import Localization
 import '../../l10n/app_localizations.dart';
 
@@ -85,9 +89,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       CustomToast.show(context, s.registerSuccess);
 
       if (mounted) {
-        // 3. Chuyển thẳng vào App hoặc về Login tùy luồng của bạn
-        // Ở đây giữ logic cũ là pop về Login để người dùng tự đăng nhập lại (hoặc login auto)
-        Navigator.pop(context); 
+        // Chuyển thẳng vào Home (GoRouter sẽ tự redirect vì user đã đăng nhập)
+        context.go('/home'); 
       }
     } else {
       setState(() => _isLoading = false);
@@ -138,15 +141,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return Column(
       children: [
-        // Back Button
-        Align(
-          alignment: Alignment.centerLeft,
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, size: 28),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-
         const AvatarDisplay(
           imageUrl: "https://i.pravatar.cc/300",
           size: 100,
@@ -231,27 +225,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         
         const SizedBox(height: 24),
 
-        // Footer Text
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              s.alreadyHaveAccount, // ✅ Updated
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
-            ),
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Text(
-                s.loginLink, // ✅ Updated
-                style: TextStyle(
-                  color: mainColor,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
         const SizedBox(height: 20),
       ],
     );

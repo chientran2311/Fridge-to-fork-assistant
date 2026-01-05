@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 // 1. Import file responsive của bạn (Sửa đường dẫn nếu cần)
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
-
+///new notification file
 class CustomToast extends StatelessWidget {
   final String message;
   final bool isError;

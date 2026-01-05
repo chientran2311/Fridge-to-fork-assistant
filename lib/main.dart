@@ -3,12 +3,12 @@
 /// ============================================
 /// 
 /// Entry point for Fridge to Fork Assistant app.
-/// Focused on AI Recipe Search feature.
+/// Focused on Recipe Detail Screen feature.
 /// 
 /// Initialization:
 /// - Firebase Core setup
 /// - Environment variables (.env) for API keys
-/// - Provider setup (RecipeProvider, InventoryProvider)
+/// - Provider setup (InventoryProvider for ingredient matching)
 /// 
 /// ============================================
 
@@ -23,7 +23,6 @@ import 'l10n/app_localizations.dart';
 
 // Import Providers
 import 'package:fridge_to_fork_assistant/providers/inventory_provider.dart';
-import 'package:fridge_to_fork_assistant/providers/recipe_provider.dart';
 
 // Import Router
 import 'package:fridge_to_fork_assistant/router/app_router.dart';
@@ -54,18 +53,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Inventory provider for ingredient data
+        // Inventory provider for ingredient matching in recipe detail
         ChangeNotifierProvider(
           create: (_) => InventoryProvider()..listenToInventory(),
           lazy: false,
         ),
-        // Recipe provider for AI recipe search
-        ChangeNotifierProvider(
-          create: (_) => RecipeProvider(),
-        ),
       ],
       child: MaterialApp.router(
-        title: 'Fridge to Fork - AI Recipe',
+        title: 'Fridge to Fork - Recipe Detail',
         debugShowCheckedModeBanner: false,
         
         // Theme configuration

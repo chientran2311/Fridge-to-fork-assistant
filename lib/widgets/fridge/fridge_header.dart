@@ -7,6 +7,7 @@ import '../profile_avatar.dart';
 
 class FridgeHeader extends StatelessWidget {
   final bool isMultiSelectMode;
+  final int selectedCount;
   final VoidCallback onCancel;
   final VoidCallback onSave;
   final VoidCallback onSettings;
@@ -14,6 +15,7 @@ class FridgeHeader extends StatelessWidget {
   const FridgeHeader({
     super.key,
     required this.isMultiSelectMode,
+    this.selectedCount = 0,
     required this.onCancel,
     required this.onSave,
     required this.onSettings,
@@ -51,12 +53,12 @@ class FridgeHeader extends StatelessWidget {
 
           // Tiêu đề hoặc Avatar + Greeting
           if (isMultiSelectMode)
-            // Khi đang chọn nhiều: Hiện text "Đã chọn/Selected"
+            // Khi đang chọn nhiều: Hiện số lượng items đã chọn
             Text(
-              s?.language == 'vi' ? 'Đã chọn' : 'Selected',
+              s?.language == 'vi' ? '$selectedCount đã chọn' : '$selectedCount selected',
               style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
                 color: Color(0xFF1A1A1A),
               ),
             )

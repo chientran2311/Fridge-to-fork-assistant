@@ -45,24 +45,49 @@ class _CreateHouseholdDialogState extends State<CreateHouseholdDialog> {
       title: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFE8F0EE),
+              gradient: LinearGradient(
+                colors: [mainColor, mainColor.withOpacity(0.8)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: mainColor.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: Icon(
+            child: const Icon(
               Icons.kitchen,
-              color: mainColor,
+              color: Colors.white,
               size: 24,
             ),
           ),
           const SizedBox(width: 12),
-          Text(
-            'Create New Fridge',
-            style: GoogleFonts.merriweather(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: mainColor,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tạo tủ lạnh mới',
+                  style: GoogleFonts.merriweather(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: mainColor,
+                  ),
+                ),
+                Text(
+                  'Tạo một không gian mới',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -73,21 +98,19 @@ class _CreateHouseholdDialogState extends State<CreateHouseholdDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Enter a name for your new fridge',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             TextFormField(
               controller: _nameController,
               autofocus: true,
               enabled: !_isLoading,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
               decoration: InputDecoration(
-                labelText: 'Fridge Name',
-                hintText: 'e.g., Family Kitchen',
+                labelText: 'Tên tủ lạnh',
+                hintText: 'VD: Bếp gia đình',
+                hintStyle: TextStyle(color: Colors.grey[400]),
                 prefixIcon: Icon(Icons.label_outline, color: mainColor),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -106,10 +129,10 @@ class _CreateHouseholdDialogState extends State<CreateHouseholdDialog> {
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Please enter a name';
+                  return 'Vui lòng nhập tên tủ lạnh';
                 }
                 if (value.trim().length < 3) {
-                  return 'Name must be at least 3 characters';
+                  return 'Tên phải có ít nhất 3 ký tự';
                 }
                 return null;
               },
@@ -117,34 +140,54 @@ class _CreateHouseholdDialogState extends State<CreateHouseholdDialog> {
           ],
         ),
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.of(context).pop(),
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
           child: Text(
-            'Cancel',
-            style: TextStyle(color: Colors.grey[600]),
+            'Hủy',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
+        const SizedBox(width: 8),
         ElevatedButton(
           onPressed: _isLoading ? null : _handleCreate,
           style: ElevatedButton.styleFrom(
             backgroundColor: mainColor,
             foregroundColor: Colors.white,
+            elevation: 2,
+            shadowColor: mainColor.withOpacity(0.4),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
           ),
           child: _isLoading
               ? const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2,
+                    strokeWidth: 2.5,
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 )
-              : const Text('Create'),
+              : const Text(
+                  'Tạo',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
         ),
       ],
     );

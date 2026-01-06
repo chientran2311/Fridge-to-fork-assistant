@@ -1,21 +1,37 @@
+// =============================================================================
+// FILTER MODAL - RECIPE SEARCH FILTERS
+// =============================================================================
+// File: lib/screens/recipe/filter_modal.dart
+// Feature: Recipe Filter Options for Search
+// Description: Bottom sheet modal cho phép user filter recipes theo
+//              cuisine, difficulty, meal type và prep time.
+//
+// Filter Options:
+//   - Cuisine: Italian, Mexican, Asian, Mediterranean, Vegan
+//   - Difficulty: Easy, Medium, Hard
+//   - Meal Type: Breakfast, Lunch, Dinner, Snack
+//   - Max Prep Time: 15-120 minutes slider
+//
+// Author: Fridge to Fork Team
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../l10n/app_localizations.dart'; // Import localization
+import '../../l10n/app_localizations.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import '../../widgets/common/primary_button.dart';
 import '../../models/RecipeFilter.dart';
-// Import class model vừa tạo ở Bước 2
-// import 'package:fridge_to_fork_assistant/models/recipe_filter.dart'; 
 
-// --- ĐỊNH NGHĨA MODEL TẠI CHỖ (Nếu bạn chưa tạo file riêng) --
-
+// =============================================================================
+// FILTER MODAL WIDGET
+// =============================================================================
 class FilterModal extends StatefulWidget {
   final RecipeFilter currentFilter;
 
   const FilterModal({super.key, required this.currentFilter});
 
+  /// Show filter modal and return updated filter
   static Future<RecipeFilter?> show(BuildContext context, RecipeFilter currentFilter) async {
-    // Logic check Desktop/Mobile giữ nguyên
     return showModalBottomSheet<RecipeFilter>(
       context: context,
       isScrollControlled: true,

@@ -145,6 +145,37 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
           ],
         ),
       ),
+      const Divider(height: 1),
+      Expanded(
+        child: widget.recipes.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.restaurant_menu,
+                        size: 48, color: Colors.grey[300]),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Không có công thức nào',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ],
+                ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: widget.recipes.length,
+                itemBuilder: (context, index) {
+                  final recipe = widget.recipes[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _buildRecipeCard(recipe),
+                  );
+                },
+              ),
+      ),
+    ],
+      ),
     );
   }
 
@@ -167,6 +198,75 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
             color: isSelected ? Colors.white : Colors.black,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildRecipeCard(Map<String, dynamic> recipe) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!, width: 1),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              width: 60,
+              height: 60,
+              color: Colors.grey[100],
+              child: (recipe['image'] as String).isNotEmpty
+                  ? Image.network(
+                      recipe['image'],
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Center(
+                        child: Icon(Icons.restaurant,
+                            color: Colors.grey[300], size: 28),
+                      ),
+                    )
+                  : Center(
+                      child: Icon(Icons.restaurant,
+                          color: Colors.grey[300], size: 28),
+                    ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  recipe['title'],
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(Icons.local_fire_department,
+                        size: 12, color: Colors.orange[700]),
+                    const SizedBox(width: 3),
+                    Text(
+                      '${recipe['calories']} kcal',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

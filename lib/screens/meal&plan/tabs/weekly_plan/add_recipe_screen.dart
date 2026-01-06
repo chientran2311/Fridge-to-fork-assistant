@@ -60,40 +60,73 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
           ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TableCalendar(
-              focusedDay: pickedDate,
-              firstDay: DateTime(2025, 1, 1),
-              lastDay: DateTime(2027, 12, 31),
-              selectedDayPredicate: (day) => isSameDay(pickedDate, day),
-              onDaySelected: (selectedDay, focusedDay) {
-                setState(() {
-                  pickedDate = selectedDay;
-                });
-              },
-              calendarStyle: CalendarStyle(
-                selectedDecoration: BoxDecoration(
-                  color: const Color(0xFF214130),
-                  shape: BoxShape.circle,
-                ),
-                todayDecoration: BoxDecoration(
-                  color: const Color(0xFF214130).withOpacity(0.3),
-                  shape: BoxShape.circle,
-                ),
-                selectedTextStyle: const TextStyle(color: Colors.white),
-              ),
-              headerStyle: HeaderStyle(
-                formatButtonVisible: false,
-                titleCentered: true,
-                titleTextStyle: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+      body: Column(
+        children: [
+          SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  DragTarget<Map<String, dynamic>>(
+                    onWillAccept: (data) => true,
+                    onAccept: (dragData) async {
+                      final recipe = dragData['recipe'] as Map<String, dynamic>;
+                      await widget.onAddMealPlan(
+                        pickedDate,
+                        recipe['id'],
+                        selectedMealType,
+                        servings,
+                      );
+                      if (mounted) {
+                        Navigator.pop(context);
+                      }
+                    },
+                    builder: (context, candidateData, rejectedData) {
+                      final isHovering = candidateData.isNotEmpty;
+                      return Container(
+                        decoration: BoxDecoration(
+                          border: isHovering
+                              ? Border.all(
+                                  color: const Color(0xFF214130), width: 2)
+                              : Border.all(color: Colors.transparent, width: 2),
+                          borderRadius: BorderRadius.circular(12),
+                          color: isHovering
+                              ? const Color(0xFF214130).withOpacity(0.05)
+                              : null,
+                        ),
+                        child: TableCalendar(
+                          focusedDay: pickedDate,
+                          firstDay: DateTime(2025, 1, 1),
+                          lastDay: DateTime(2027, 12, 31),
+                          selectedDayPredicate: (day) => isSameDay(pickedDate, day),
+                          onDaySelected: (selectedDay, focusedDay) {
+                            setState(() {
+                              pickedDate = selectedDay;
+                            });
+                          },
+                          calendarStyle: CalendarStyle(
+                            selectedDecoration: BoxDecoration(
+                              color: const Color(0xFF214130),
+                              shape: BoxShape.circle,
+                            ),
+                            todayDecoration: BoxDecoration(
+                              color: const Color(0xFF214130).withOpacity(0.3),
+                              shape: BoxShape.circle,
+                            ),
+                            selectedTextStyle: const TextStyle(color: Colors.white),
+                          ),
+                          headerStyle: HeaderStyle(
+                            formatButtonVisible: false,
+                            titleCentered: true,
+                            titleTextStyle: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
             const SizedBox(height: 16),
             Row(
               children: [
@@ -263,7 +296,87 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   }
 
   Widget _buildRecipeCard(Map<String, dynamic> recipe) {
-    return Container(
+    return LongPressDraggable<Map<String, dynamic>>(
+      data: {
+        'recipe': recipe,
+        'date': pickedDate,
+        'mealType': selectedMealType,
+      },
+      delay: const Duration(milliseconds: 500),
+      feedback: Material(
+        color: Colors.transparent,
+        child: Container(
+          width: 340,
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  color: Colors.grey[200],
+                  child: (recipe['image'] as String).isNotEmpty
+                      ? Image.network(
+                          recipe['image'],
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.restaurant,
+                              color: Colors.grey[400],
+                              size: 28),
+                        )
+                      : Icon(Icons.restaurant,
+                          color: Colors.grey[400], size: 28),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      recipe['title'],
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Icon(Icons.local_fire_department,
+                            size: 12, color: Colors.orange[700]),
+                        const SizedBox(width: 3),
+                        Text(
+                          '${recipe['calories']} kcal',
+                          style:
+                              TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      child: Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -327,8 +440,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
             ),
           ),
         ],
-      ),
-    );
+      ),      ),    );
   }
 }
       body: const Center(

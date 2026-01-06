@@ -1,19 +1,43 @@
+// =============================================================================
+// SPOONACULAR SERVICE - RECIPE API INTEGRATION
+// =============================================================================
+// File: lib/data/services/spoonacular_service.dart
+// Feature: Recipe Search & Details for Expiry Alert
+// Description: Spoonacular API client cho recipe search, filter và details.
+//              Data source chính cho tất cả recipe data trong app.
+//
+// API Endpoints:
+//   1. /recipes/complexSearch - Search với filters
+//   2. /recipes/findByIngredients - Search by expiring ingredients
+//   3. /recipes/{id}/information - Get full recipe details
+//
+// Expiry Alert Flow:
+//   1. Notification tap với ingredient list
+//   2. searchRecipes() với includeIngredients param
+//   3. Return recipes sử dụng nguyên liệu sắp hết hạn
+//
+// Author: Fridge to Fork Team
+// =============================================================================
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-// Đảm bảo import đúng đường dẫn Model
 import '../../models/household_recipe.dart';
 import '../../models/RecipeFilter.dart';
 
+// =============================================================================
+// SPOONACULAR SERVICE CLASS
+// =============================================================================
 class SpoonacularService {
-  // Lấy API Key từ file .env
+  // API Configuration
   static String get _apiKey => dotenv.env['SPOONACULAR_API_KEY'] ?? '';
   static const String _baseUrl = 'https://api.spoonacular.com/recipes';
   static const String _authority = 'api.spoonacular.com';
   static const String _path = '/recipes/complexSearch';
-  // --- 1. Tìm kiếm món ăn theo tên (Search) ---
-  // Trong file spoonacular_service.dart
 
+  // ===========================================================================
+  // 1. COMPLEX SEARCH - Tìm kiếm với filters
+  // ===========================================================================
   Future<List<HouseholdRecipe>> searchRecipes({
     String? query,
     List<String>? ingredients,
@@ -26,7 +50,7 @@ class SpoonacularService {
       'apiKey': _apiKey,
       'number': '10',
       'addRecipeInformation': 'true',
-      'addRecipeNutrition': 'true', // ✅ Add nutrition data
+      'addRecipeNutrition': 'true', // Add nutrition data for display
       'fillIngredients': 'true',
       'instructionsRequired': 'true',
     };

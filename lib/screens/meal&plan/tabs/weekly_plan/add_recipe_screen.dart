@@ -22,6 +22,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   late DateTime pickedDate;
   String selectedMealType = 'breakfast';
   int servings = 1;
+  String recipeFilter = 'all';
 
   @override
   void initState() {
@@ -31,6 +32,16 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    List<Map<String, dynamic>> filteredRecipes = widget.recipes;
+    if (recipeFilter == 'favorite') {
+      filteredRecipes =
+          widget.recipes.where((r) => r['isFavorite'] == true).toList();
+    } else if (recipeFilter == 'api') {
+      filteredRecipes = widget.recipes
+          .where((r) => r['isFromApi'] == true && r['isFavorite'] != true)
+          .toList();
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -146,8 +157,27 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         ),
       ),
       const Divider(height: 1),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          children: [
+            Expanded(
+              child: _recipeFilterButton('Tất cả', 'all'),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _recipeFilterButton('Yêu thích', 'favorite'),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _recipeFilterButton('Từ API', 'api'),
+            ),
+          ],
+        ),
+      ),
+      const Divider(height: 1),
       Expanded(
-        child: widget.recipes.isEmpty
+        child: filteredRecipes.isEmpty
             ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -156,7 +186,11 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                         size: 48, color: Colors.grey[300]),
                     const SizedBox(height: 12),
                     Text(
-                      'Không có công thức nào',
+                      recipeFilter == 'favorite'
+                          ? 'Không có công thức yêu thích'
+                          : recipeFilter == 'api'
+                              ? 'Không có công thức từ API'
+                              : 'Không có công thức nào',
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                   ],
@@ -164,9 +198,9 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
               )
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: widget.recipes.length,
+                itemCount: filteredRecipes.length,
                 itemBuilder: (context, index) {
-                  final recipe = widget.recipes[index];
+                  final recipe = filteredRecipes[index];
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 10),
                     child: _buildRecipeCard(recipe),
@@ -196,6 +230,32 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
             fontSize: 12,
             fontWeight: FontWeight.w500,
             color: isSelected ? Colors.white : Colors.black,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _recipeFilterButton(String label, String type) {
+    final isSelected = type == recipeFilter;
+    return GestureDetector(
+      onTap: () => setState(() => recipeFilter = type),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF214130) : Colors.grey[100],
+          borderRadius: BorderRadius.circular(8),
+          border: isSelected
+              ? Border.all(color: const Color(0xFF214130), width: 2)
+              : null,
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : Colors.black87,
           ),
         ),
       ),

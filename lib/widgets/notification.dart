@@ -77,7 +77,7 @@ class CustomToast extends StatelessWidget {
   }
 
   // --- HÀM TĨNH HIỂN THỊ TOAST ---
-  /// Hiển thị thông báo toast floating
+  /// Hiển thị thông báo toast floating ở góc trái dưới màn hình
   /// [context] - BuildContext hiện tại
   /// [message] - Nội dung thông báo
   /// [isError] - true nếu là thông báo lỗi (màu đỏ)
@@ -85,16 +85,21 @@ class CustomToast extends StatelessWidget {
     // Ẩn snackbar cũ nếu có
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
+    final screenWidth = MediaQuery.of(context).size.width;
     final bool isDesktopOrTablet = context.isDesktop || context.isTablet;
     
-    // Bottom margin: Ngay trên BottomNavigationBar (~56px) + padding 10px = ~66px
-    // Vị trí này sẽ cùng hàng với FAB
-    const double mobileBottom = 70.0;
-    const double desktopBottom = 50.0;
+    // Bottom margin: Thẳng hàng với FAB, sát BottomNav
+    const double mobileBottom = 5.0;
+    const double desktopBottom = 30.0;
 
-    // Tính toán margin horizontal để căn giữa cho desktop
-    final screenWidth = MediaQuery.of(context).size.width;
-    final desktopHorizontalMargin = (screenWidth - 400) / 2;
+    // Toast width cố định để không bị full width
+    const double toastMaxWidth = 300.0;
+    
+    // Margin phải = screen width - toast width - margin trái - padding FAB
+    // Để toast nằm bên trái, margin phải phải lớn
+    final double rightMargin = isDesktopOrTablet 
+        ? screenWidth - toastMaxWidth - 40  // Desktop: để toast bên trái
+        : screenWidth - toastMaxWidth - 12; // Mobile: để toast bên trái, chừa FAB
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -105,18 +110,12 @@ class CustomToast extends StatelessWidget {
         duration: const Duration(seconds: 3),
         dismissDirection: DismissDirection.horizontal,
         
-        // CHỈ dùng margin (không dùng width vì Flutter không cho dùng cả 2)
-        margin: isDesktopOrTablet
-            ? EdgeInsets.only(
-                bottom: desktopBottom,
-                left: desktopHorizontalMargin.clamp(20.0, double.infinity),
-                right: desktopHorizontalMargin.clamp(20.0, double.infinity),
-              )
-            : const EdgeInsets.only(
-                bottom: mobileBottom,
-                left: 16,
-                right: 70, // Chừa chỗ cho FAB bên phải
-              ),
+        // Margin để đẩy toast sang góc trái dưới
+        margin: EdgeInsets.only(
+          bottom: isDesktopOrTablet ? desktopBottom : mobileBottom,
+          left: isDesktopOrTablet ? 40 : 12, // Mobile: 12px từ left
+          right: rightMargin.clamp(80.0, double.infinity), // Đảm bảo chừa chỗ FAB
+        ),
       ),
     );
   }

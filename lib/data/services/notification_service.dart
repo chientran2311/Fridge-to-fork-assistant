@@ -1,3 +1,25 @@
+// =============================================================================
+// NOTIFICATION SERVICE - FCM PUSH NOTIFICATION & DEEP LINK HANDLER
+// =============================================================================
+// File: lib/data/services/notification_service.dart
+// Feature: Expiry Alert Push Notifications
+// Description: Firebase Cloud Messaging integration với local notifications
+//              và deep link navigation để thông báo thực phẩm sắp hết hạn.
+//
+// Core Features:
+//   1. FCM Token Management - Lấy và lưu token lên Firestore
+//   2. Foreground Notifications - Hiện local notification khi app đang mở
+//   3. Background Handling - Xử lý notification khi app ở background
+//   4. Deep Link Navigation - Navigate đến recipe screen từ notification
+//
+// Integration Points:
+//   - main.dart: init() được gọi sau Firebase.initializeApp()
+//   - app_router.dart: Navigate đến /recipes?search=query
+//   - Firestore: Lưu FCM token vào users collection
+//
+// Author: Fridge to Fork Team
+// =============================================================================
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,6 +28,9 @@ import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/router/app_router.dart';
 import 'dart:convert'; // Để encode/decode JSON payload
 
+// =============================================================================
+// BACKGROUND MESSAGE HANDLER (Top-level function required by FCM)
+// =============================================================================
 // Hàm xử lý khi App đang tắt (Background/Terminated)
 // Bắt buộc phải là Top-level function (nằm ngoài class)
 @pragma('vm:entry-point') 
@@ -13,6 +38,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print("🌙 Nhận thông báo ngầm: ${message.messageId}");
 }
 
+// =============================================================================
+// NOTIFICATION SERVICE CLASS - SINGLETON PATTERN
+// =============================================================================
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
@@ -21,7 +49,9 @@ class NotificationService {
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
-  // 1. Khởi tạo Service (Gọi ở main.dart)
+  // ===========================================================================
+  // 1. INITIALIZATION - Khởi tạo Service (Gọi ở main.dart)
+  // ===========================================================================
   Future<void> init(GlobalKey<NavigatorState> navigatorKey) async {
     try {
       // Xin quyền thông báo (Quan trọng cho iOS/Android 13+)

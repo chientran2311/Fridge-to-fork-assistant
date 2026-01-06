@@ -1,11 +1,41 @@
+// =============================================================================
+// GEMINI SERVICE - AI RECIPE RECOMMENDATIONS & ANALYSIS
+// =============================================================================
+// File: lib/data/services/gemini_service.dart
+// Feature: AI-Powered Recipe Suggestions for Expiry Alert
+// Description: Google Gemini AI integration cho recipe recommendations,
+//              user taste analysis và recipe detail generation.
+//
+// Core Features:
+//   1. analyzeUserTaste() - Phân tích sở thích từ favorites & history
+//   2. recommendRecipes() - Gợi ý món ăn từ nguyên liệu sắp hết hạn
+//   3. getRecipeDetail() - Generate recipe details từ title
+//
+// Expiry Alert Integration:
+//   - Khi notification tap -> search recipes với expiring ingredients
+//   - Gemini analyze và suggest phù hợp nhất
+//
+// API Configuration:
+//   - Model: gemini-1.5-flash (fast & cost-effective)
+//   - API Key: Loaded từ .env file (GEMINI_API_KEY)
+//
+// Author: Fridge to Fork Team
+// =============================================================================
+
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../../models/household_recipe.dart';
 
+// =============================================================================
+// GEMINI SERVICE CLASS
+// =============================================================================
 class GeminiService {
   GenerativeModel? _model;
 
+  // ---------------------------------------------------------------------------
+  // MODEL INITIALIZATION
+  // ---------------------------------------------------------------------------
   void _initModel() {
     final apiKey = dotenv.env['GEMINI_API_KEY'];
     print("🔑 DEBUG: GEMINI_API_KEY = $apiKey");
@@ -21,7 +51,9 @@ class GeminiService {
     print("✅ Gemini Model initialized successfully");
   }
 
-  // --- [MỚI] HÀM 3: PHÂN TÍCH SỞ THÍCH NGƯỜI DÙNG ---
+  // ===========================================================================
+  // 1. USER TASTE ANALYSIS - Phân tích sở thích người dùng
+  // ===========================================================================
   /// Input: Danh sách tên món yêu thích & lịch sử nấu
   /// Output: Map JSON chứa tham số tìm kiếm (Query + Filter)
   Future<Map<String, dynamic>?> analyzeUserTaste({

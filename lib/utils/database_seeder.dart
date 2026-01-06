@@ -1,21 +1,51 @@
+// =============================================================================
+// DATABASE SEEDER - FIRESTORE TEST DATA GENERATOR
+// =============================================================================
+// File: lib/utils/database_seeder.dart
+// Feature: Test Data for Expiry Alert Testing
+// Description: Utility để seed dữ liệu mẫu vào Firestore cho testing
+//              expiry notifications và recipe suggestions.
+//
+// Test Scenarios Created:
+//   - Item expires TOMORROW -> Trigger urgent expiry alert
+//   - Item expires in 2 DAYS -> Trigger warning notification  
+//   - Favorite recipes -> Test AI recommendations
+//   - Cooking history -> Test taste analysis
+//
+// Data Structure:
+//   - users/{uid}: User với FCM token cho notifications
+//   - households/{id}/inventory: Items với expiry_date
+//   - households/{id}/favorite_recipes: For AI analysis
+//   - households/{id}/cooking_history: For recommendations
+//
+// Usage: await DatabaseSeeder().seedDatabase();
+// Author: Fridge to Fork Team
+// =============================================================================
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // [MỚI] Import Auth để lấy User thật
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
+// =============================================================================
+// DATABASE SEEDER CLASS
+// =============================================================================
 class DatabaseSeeder {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // IDs Nguyên liệu gốc (Master Data) - Giữ nguyên vì dùng chung
+  // Master Data IDs (shared across households)
   final String _beefId = 'ing_beef_01';
   final String _eggId = 'ing_egg_01';
   final String _milkId = 'ing_milk_01';
   final String _recipeId = 'recipe_seed_01';
 
+  // ===========================================================================
+  // MAIN SEED METHOD
+  // ===========================================================================
   Future<void> seedDatabase() async {
     try {
       debugPrint("🚀 Bắt đầu tạo dữ liệu mẫu...");
 
-      // [BƯỚC QUAN TRỌNG NHẤT] Lấy User đang đăng nhập
+      // Verify user logged in
       final User? currentUser = FirebaseAuth.instance.currentUser;
       
       if (currentUser == null) {
@@ -23,16 +53,16 @@ class DatabaseSeeder {
         return;
       }
 
-      // Sử dụng thông tin thật thay vì 'user_seed_01'
+      // Use real user info
       final String userId = currentUser.uid; 
       final String userEmail = currentUser.email ?? "user@test.com";
       final String displayName = currentUser.displayName ?? "Admin Bếp";
       
-      // Tạo ID Nhà dựa trên ID User để dễ quản lý (Mỗi user 1 nhà riêng khi seed)
+      // Create household ID based on user
       final String householdId = 'house_$userId';
 
       // ==========================================
-      // MASTER DATA: INGREDIENTS (Giữ nguyên)
+      // MASTER DATA: INGREDIENTS
       // ==========================================
       await _firestore.collection('ingredients').doc(_beefId).set({
         'ingredient_id': _beefId,

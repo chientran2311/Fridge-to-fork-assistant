@@ -1,19 +1,45 @@
+// =============================================================================
+// RECIPE PROVIDER - STATE MANAGEMENT FOR RECIPE FEATURE
+// =============================================================================
+// File: lib/providers/recipe_provider.dart
+// Feature: Recipe Search, Filter & Favorites
+// Description: Provider class quản lý state cho toàn bộ Recipe feature
+//              bao gồm search, filter, favorites và smart recommendations.
+//
+// Core Responsibilities:
+//   1. Recipe Search - Tìm kiếm recipes qua Repository
+//   2. Filter Management - Quản lý filter state (diet, cuisine, time...)
+//   3. Favorites - Sync với Firestore realtime
+//   4. Smart Recommendations - AI-based recipe suggestions
+//
+// Integration với Expiry Alert:
+//   - Nhận search query từ notification deep link
+//   - Auto search recipes phù hợp với nguyên liệu sắp hết hạn
+//
+// Author: Fridge to Fork Team
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/household_recipe.dart';
-import '../data/repositories/recipe_repository.dart'; // [Thay đổi] Dùng Repo
-import '../data/services/spoonacular_service.dart'; // ✅ Add for direct API call
+import '../data/repositories/recipe_repository.dart'; // Repository pattern
+import '../data/services/spoonacular_service.dart'; // Direct API for favorites
 import '../models/RecipeFilter.dart';
 
+// =============================================================================
+// RECIPE PROVIDER CLASS
+// =============================================================================
 class RecipeProvider extends ChangeNotifier {
-  // [Thay đổi] Sử dụng Repository thay vì Service trực tiếp
+  // Repository instance for data operations
   final RecipeRepository _recipeRepository = RecipeRepository();
 
-  // --- STATE ---
+  // ---------------------------------------------------------------------------
+  // STATE VARIABLES
+  // ---------------------------------------------------------------------------
   List<HouseholdRecipe> _recipes = [];
   List<HouseholdRecipe> _favoriteRecipes = [];
-  List<HouseholdRecipe> _recommendedRecipes = []; // [Mới] List gợi ý thông minh
+  List<HouseholdRecipe> _recommendedRecipes = []; // AI recommendations
 
   RecipeFilter _currentFilter = RecipeFilter();
   List<String> _currentIngredients = [];
@@ -22,17 +48,20 @@ class RecipeProvider extends ChangeNotifier {
   bool _isLoading = false;
   String _errorMessage = "";
 
-  // --- GETTERS ---
+  // ---------------------------------------------------------------------------
+  // GETTERS
+  // ---------------------------------------------------------------------------
   List<HouseholdRecipe> get recipes => _recipes;
   List<HouseholdRecipe> get favoriteRecipes => _favoriteRecipes;
-  List<HouseholdRecipe> get recommendedRecipes => _recommendedRecipes; // [Mới]
+  List<HouseholdRecipe> get recommendedRecipes => _recommendedRecipes;
 
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage.isNotEmpty ? _errorMessage : null;
   RecipeFilter get currentFilter => _currentFilter;
 
-  // --- 1. LOGIC TÌM KIẾM (Search & Filter) ---
-
+  // ===========================================================================
+  // 1. SEARCH & FILTER LOGIC
+  // ===========================================================================
   Future<void> searchRecipes({List<String>? ingredients, String? query}) async {
     if (ingredients != null) _currentIngredients = ingredients;
     if (query != null) _currentQuery = query;

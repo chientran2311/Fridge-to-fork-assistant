@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/notification.dart';
 
 class PlannerDetailScreen extends StatefulWidget {
   const PlannerDetailScreen({super.key});
@@ -45,13 +46,9 @@ class _PlannerDetailScreenState extends State<PlannerDetailScreen> {
     });
 
     // DEMO: hiển thị kết quả
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          "Meal added to ${pickedDate.day}/${pickedDate.month}/${pickedDate.year}",
-        ),
-        backgroundColor: const Color(0xFF214130),
-      ),
+    CustomToast.show(
+      context,
+      "Meal added to ${pickedDate.day}/${pickedDate.month}/${pickedDate.year}",
     );
 
     // 👉 Ở đây trong app thật:

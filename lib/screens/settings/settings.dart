@@ -15,7 +15,8 @@ import '../../providers/household_provider.dart';
 import '../../l10n/app_localizations.dart';
 
 // [MỚI] Import Database Seeder để gọi hàm tạo dữ liệu
-import '../../utils/database_seeder.dart'; 
+import '../../utils/database_seeder.dart';
+import '../../widgets/notification.dart'; 
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -161,9 +162,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: const Icon(Icons.copy),
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: inviteCode));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(s.codeCopied)),
-                      );
+                      CustomToast.show(context, s.codeCopied);
                     },
                   ),
                 ],
@@ -189,12 +188,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final alreadyOwns = await provider.checkIfUserOwnsHousehold();
     if (alreadyOwns) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(s.alreadyOwnFridge),
-            backgroundColor: redColor,
-          ),
-        );
+        CustomToast.show(context, s.alreadyOwnFridge, isError: true);
       }
       return;
     }
@@ -226,11 +220,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               final success = await provider.createHousehold(nameController.text.trim());
               
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(success ? s.fridgeCreated : s.cannotCreate),
-                    backgroundColor: success ? mainColor : redColor,
-                  ),
+                CustomToast.show(
+                  context, 
+                  success ? s.fridgeCreated : s.cannotCreate,
+                  isError: !success,
                 );
               }
             },
@@ -289,12 +282,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     message = s.cannotJoin;
                     isError = true;
                 }
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(message),
-                    backgroundColor: isError ? redColor : mainColor,
-                  ),
-                );
+                CustomToast.show(context, message, isError: isError);
               }
             },
             child: Text(s.join, style: TextStyle(color: mainColor, fontWeight: FontWeight.bold)),
@@ -692,29 +680,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               final success = await provider.removeMember(memberUid);
               
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: [
-                        Icon(
-                          success ? Icons.check_circle : Icons.error,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            success ? s.memberRemoved : s.cannotRemoveMember,
-                            style: const TextStyle(fontSize: 15),
-                          ),
-                        ),
-                      ],
-                    ),
-                    backgroundColor: success ? mainColor : redColor,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    margin: const EdgeInsets.all(16),
-                    duration: const Duration(seconds: 2),
-                  ),
+                CustomToast.show(
+                  context,
+                  success ? s.memberRemoved : s.cannotRemoveMember,
+                  isError: !success,
                 );
               }
             },
@@ -758,11 +727,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               if (currentHouseholdId != null) {
                 final success = await householdProvider.leaveHousehold(currentHouseholdId);
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(success ? s.leftFridge : s.ownerCannotLeave),
-                      backgroundColor: success ? mainColor : redColor,
-                    ),
+                  CustomToast.show(
+                    context,
+                    success ? s.leftFridge : s.ownerCannotLeave,
+                    isError: !success,
                   );
                 }
               }
@@ -806,13 +774,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               if (error == null) {
                 context.go('/login');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(s.accountDeleted)),
-                );
+                CustomToast.show(context, s.accountDeleted);
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(error), backgroundColor: redColor),
-                );
+                CustomToast.show(context, error, isError: true);
               }
             },
             child: Text(s.confirm, style: TextStyle(color: redColor, fontWeight: FontWeight.bold)),
@@ -824,22 +788,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // --- [MỚI] UI LOGIC: SEED DATABASE ---
   Future<void> _handleSeedDatabase(BuildContext context, AppLocalizations s) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(s.creatingData),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    CustomToast.show(context, s.creatingData);
 
     await DatabaseSeeder().seedDatabase();
 
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(s.dataCreatedSuccess),
-          backgroundColor: mainColor,
-        ),
-      );
+      CustomToast.show(context, s.dataCreatedSuccess);
     }
   }
 
@@ -1147,9 +1101,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               IconButton(
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: inviteCode));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(s.inviteCodeCopied), duration: const Duration(seconds: 2)),
-                  );
+                  CustomToast.show(context, s.inviteCodeCopied);
                 },
                 icon: Icon(Icons.copy, color: Colors.white.withOpacity(0.9), size: 20),
                 tooltip: s.inviteCode,

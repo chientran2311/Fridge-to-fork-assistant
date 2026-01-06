@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/household_recipe.dart';
+import '../widgets/notification.dart';
 import '../data/repositories/recipe_repository.dart'; // [Thay đổi] Dùng Repo
 import '../models/RecipeFilter.dart';
 
@@ -158,7 +159,7 @@ class RecipeProvider extends ChangeNotifier {
      // (Giữ nguyên logic cũ của bạn)
      final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng đăng nhập!")));
+      CustomToast.show(context, "Vui lòng đăng nhập!", isError: true);
       return;
     }
 
@@ -181,9 +182,7 @@ class RecipeProvider extends ChangeNotifier {
           await doc.reference.delete();
         }
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Đã xóa khỏi danh sách yêu thích"), duration: Duration(seconds: 1)),
-          );
+          CustomToast.show(context, "Đã xóa khỏi danh sách yêu thích");
         }
       } else {
         final recipeToSave = {
@@ -196,19 +195,13 @@ class RecipeProvider extends ChangeNotifier {
         await collectionRef.add(recipeToSave);
         
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Đã thêm vào yêu thích ❤️"),
-              duration: Duration(seconds: 1),
-              backgroundColor: Color(0xFF1B3B36),
-            ),
-          );
+          CustomToast.show(context, "Đã thêm vào yêu thích ❤️");
         }
       }
     } catch (e) {
       print("Lỗi toggle favorite: $e");
       if (context.mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi: $e")));
+         CustomToast.show(context, "Lỗi: $e", isError: true);
       }
     }
   }

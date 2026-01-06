@@ -18,6 +18,7 @@ import '../../widgets/fridge/fridge_section_header.dart';
 import '../../widgets/fridge/fridge_delete_bar.dart';
 import '../../widgets/fridge/add_item_bottom_sheet.dart';
 import '../../widgets/fridge/edit_item_bottom_sheet.dart';
+import '../../widgets/notification.dart';
 import '../../widgets/fridge/delete_confirmation_modal.dart';
 
 class FridgeHomeScreen extends StatefulWidget {
@@ -112,9 +113,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     final s = AppLocalizations.of(context);
     final msg = s?.itemsDeleted ?? 'Đã xóa các món đã chọn';
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
-    );
+    CustomToast.show(context, msg);
   }
 
   void _showDeleteConfirmation() {

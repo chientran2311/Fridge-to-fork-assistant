@@ -103,10 +103,10 @@ Future<List<HouseholdRecipe>> searchRecipes({
               
               double matchPercentage = recipe.usedIngredientCount / total;
               print("📊 ${recipe.title}: ${(matchPercentage * 100).toStringAsFixed(0)}% match (${recipe.usedIngredientCount}/${total})");
-              return matchPercentage >= 0.8; // Chỉ lấy nếu khớp >= 80%
+              return matchPercentage >= 0.3; // Chỉ lấy nếu khớp >= 80%
            }).toList();
            
-           print("✅ Sau khi lọc >= 80%: ${recipes.length} công thức");
+           print("✅ Sau khi lọc >= 30%: ${recipes.length} công thức");
         }
 
         return recipes;

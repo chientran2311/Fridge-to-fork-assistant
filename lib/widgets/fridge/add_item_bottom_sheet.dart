@@ -87,8 +87,10 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
       );
 
       if (mounted) {
-        Navigator.pop(context);
+        // [FIX] Hiển thị toast TRƯỚC khi pop BottomSheet
+        // Vì sau khi pop, context của BottomSheet sẽ bị dispose
         CustomToast.show(context, '${_nameController.text} đã được thêm!');
+        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {

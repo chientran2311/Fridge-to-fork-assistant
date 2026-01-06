@@ -242,14 +242,52 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
         ),
       ),
       
-      // FAB Thêm món
+      // FAB Thêm món + Nút Test Toast
       floatingActionButton: _isMultiSelectMode 
           ? null 
-          : FloatingActionButton(
-              onPressed: _showAddItemDialog,
-              shape: const CircleBorder(),
-              backgroundColor: const Color.fromARGB(255, 36, 75, 45),
-              child: const Icon(Icons.add, size: 28, color: Colors.white),
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // [TEST] Nút test CustomToast - XÓA SAU KHI TEST
+                FloatingActionButton.small(
+                  heroTag: 'testToast',
+                  onPressed: () {
+                    try {
+                      debugPrint('🧪 [TEST] Bắt đầu gọi CustomToast.show()...');
+                      CustomToast.show(context, 'Test Toast thành công! 🎉');
+                      debugPrint('🧪 [TEST] CustomToast.show() đã được gọi.');
+                    } catch (e, stack) {
+                      debugPrint('❌ [TEST] Lỗi CustomToast: $e');
+                      debugPrint('❌ [TEST] Stack: $stack');
+                      // Hiện dialog lỗi
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Lỗi CustomToast'),
+                          content: Text('Error: $e\n\nStack: $stack'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: const Text('OK'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  },
+                  backgroundColor: Colors.orange,
+                  child: const Icon(Icons.bug_report, color: Colors.white),
+                ),
+                const SizedBox(height: 12),
+                // FAB chính
+                FloatingActionButton(
+                  heroTag: 'addItem',
+                  onPressed: _showAddItemDialog,
+                  shape: const CircleBorder(),
+                  backgroundColor: const Color.fromARGB(255, 36, 75, 45),
+                  child: const Icon(Icons.add, size: 28, color: Colors.white),
+                ),
+              ],
             ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 

@@ -29,10 +29,10 @@ class CustomToast extends StatelessWidget {
         minWidth: 120,
         maxWidth: context.isMobile ? double.infinity : 400,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), // Tăng padding dọc chút cho dày dặn
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: isError ? errorColor : successColor,
-        borderRadius: BorderRadius.circular(30), // Bo tròn hình viên thuốc
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.15),
@@ -50,17 +50,12 @@ class CustomToast extends StatelessWidget {
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              // Viền màu xanh sáng (accent) thay vì trắng
-              border: Border.all(
-                color: iconColor, 
-                width: 2
-              ),
+              border: Border.all(color: iconColor, width: 2),
             ),
             child: Icon(
               isError ? Icons.close : Icons.check,
-              // Icon màu xanh sáng
               color: iconColor,
-              size: 14, // Kích thước nhỏ gọn giống ảnh
+              size: 14,
             ),
           ),
           const SizedBox(width: 12),
@@ -71,7 +66,7 @@ class CustomToast extends StatelessWidget {
               textAlign: TextAlign.left,
               style: const TextStyle(
                 color: Colors.white,
-                fontWeight: FontWeight.bold, // Đậm hơn chút giống ảnh
+                fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),
             ),
@@ -81,11 +76,25 @@ class CustomToast extends StatelessWidget {
     );
   }
 
-  // --- HÀM TĨNH HIỂN THỊ RESPONSIVE ---
+  // --- HÀM TĨNH HIỂN THỊ TOAST ---
+  /// Hiển thị thông báo toast floating
+  /// [context] - BuildContext hiện tại
+  /// [message] - Nội dung thông báo
+  /// [isError] - true nếu là thông báo lỗi (màu đỏ)
   static void show(BuildContext context, String message, {bool isError = false}) {
+    // Ẩn snackbar cũ nếu có
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
     final bool isDesktopOrTablet = context.isDesktop || context.isTablet;
+    
+    // Bottom margin: Ngay trên BottomNavigationBar (~56px) + padding 10px = ~66px
+    // Vị trí này sẽ cùng hàng với FAB
+    const double mobileBottom = 70.0;
+    const double desktopBottom = 50.0;
+
+    // Tính toán margin horizontal để căn giữa cho desktop
+    final screenWidth = MediaQuery.of(context).size.width;
+    final desktopHorizontalMargin = (screenWidth - 400) / 2;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -94,18 +103,20 @@ class CustomToast extends StatelessWidget {
         elevation: 0,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
+        dismissDirection: DismissDirection.horizontal,
         
-        // --- LOGIC RESPONSIVE VỊ TRÍ ---
-        
-        // Desktop: Cố định chiều rộng
-        width: isDesktopOrTablet ? 400 : null, 
-        
-        // Mobile & Tablet: Căn lề
-        margin: isDesktopOrTablet 
-            ? const EdgeInsets.only(bottom: 30) 
-            // [QUAN TRỌNG] Thay đổi margin đáy cho Mobile giống Ảnh 2
-            // Bottom = 90 để nằm TRÊN thanh BottomNavigationBar (thường cao ~60-80px)
-            : const EdgeInsets.only(bottom: 90, left: 24, right: 24), 
+        // CHỈ dùng margin (không dùng width vì Flutter không cho dùng cả 2)
+        margin: isDesktopOrTablet
+            ? EdgeInsets.only(
+                bottom: desktopBottom,
+                left: desktopHorizontalMargin.clamp(20.0, double.infinity),
+                right: desktopHorizontalMargin.clamp(20.0, double.infinity),
+              )
+            : const EdgeInsets.only(
+                bottom: mobileBottom,
+                left: 16,
+                right: 70, // Chừa chỗ cho FAB bên phải
+              ),
       ),
     );
   }

@@ -1,13 +1,40 @@
+// =============================================================================
+// RECIPE REPOSITORY - DATA LAYER ABSTRACTION
+// =============================================================================
+// File: lib/data/repositories/recipe_repository.dart
+// Feature: Recipe Data Management for Expiry Alert
+// Description: Repository pattern để coordinate giữa Gemini AI và 
+//              Spoonacular API services.
+//
+// Architecture: Provider -> Repository -> Services (Gemini, Spoonacular)
+//
+// Expiry Alert Integration:
+//   - getRecipesByIngredients() nhận list nguyên liệu sắp hết hạn
+//   - Combine AI suggestions với API real data
+//   - Return recipes tối ưu để giảm food waste
+//
+// Error Handling:
+//   - Try-catch với fallback logic
+//   - Luôn return empty list thay vì throw để UI không crash
+//
+// Author: Fridge to Fork Team
+// =============================================================================
+
 import '../services/spoonacular_service.dart';
 import '../services/gemini_service.dart';
 import '../../models/household_recipe.dart';
 import '../../models/RecipeFilter.dart';
 
+// =============================================================================
+// RECIPE REPOSITORY CLASS
+// =============================================================================
 class RecipeRepository {
   final SpoonacularService _spoonacularService = SpoonacularService();
   final GeminiService _geminiService = GeminiService();
 
-  // --- [MỚI] CHIẾN LƯỢC 3: SMART RECOMMENDATION (AI + API) ---
+  // ===========================================================================
+  // STRATEGY 1: SMART AI RECOMMENDATIONS
+  // ===========================================================================
   /// 1. Gemini phân tích Favorites/History -> Ra Filter
   /// 2. Spoonacular tìm kiếm thực tế dựa trên Filter đó
   Future<List<HouseholdRecipe>> getSmartRecommendations({
@@ -15,7 +42,7 @@ class RecipeRepository {
     required List<String> historyTitles,
   }) async {
     try {
-      // BƯỚC 1: Hỏi Gemini
+      // BƯỚC 1: Hỏi Gemini phân tích taste
       final suggestion = await _geminiService.analyzeUserTaste(
         favoriteTitles: favoriteTitles,
         historyTitles: historyTitles,

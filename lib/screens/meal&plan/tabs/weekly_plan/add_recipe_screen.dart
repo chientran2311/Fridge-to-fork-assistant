@@ -377,35 +377,71 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         ),
       ),
       child: Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              width: 60,
-              height: 60,
-              color: Colors.grey[100],
-              child: (recipe['image'] as String).isNotEmpty
-                  ? Image.network(
-                      recipe['image'],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Center(
-                        child: Icon(Icons.restaurant,
-                            color: Colors.grey[300], size: 28),
-                      ),
-                    )
-                  : Center(
-                      child: Icon(Icons.restaurant,
-                          color: Colors.grey[300], size: 28),
-                    ),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-          ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    color: Colors.grey[100],
+                    child: (recipe['image'] as String).isNotEmpty
+                        ? Image.network(
+                            recipe['image'],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Center(
+                              child: Icon(Icons.restaurant,
+                                  color: Colors.grey[300], size: 28),
+                            ),
+                          )
+                        : Center(
+                            child: Icon(Icons.restaurant,
+                                color: Colors.grey[300], size: 28),
+                          ),
+                  ),
+                ),
+                if (recipe['isFavorite'] == true)
+                  Positioned(
+                    top: 3,
+                    right: 3,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.favorite,
+                        size: 12,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -419,6 +455,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
+                    height: 1.3,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -432,13 +469,35 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                       style: TextStyle(
                         fontSize: 11,
                         color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
+                    const Spacer(),
+                    if (recipe['isFavorite'] == true)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF214130).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'Yêu thích',
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: Color(0xFF214130),
+                            fontWeight: FontWeight.w600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                   ],
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 6),
+          Icon(Icons.drag_indicator, color: Colors.grey[350], size: 18),
         ],
       ),      ),    );
   }

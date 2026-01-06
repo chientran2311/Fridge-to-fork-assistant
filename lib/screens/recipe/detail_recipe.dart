@@ -92,10 +92,17 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             String nameClean = ing['name'] ?? "";
             String original = ing['original'] ?? "$amount $unit $nameClean";
 
-            String ingNameClean = nameClean.toLowerCase();
-            bool isInFridge = myFridgeItems.any((myFridgeItem) =>
-                ingNameClean.contains(myFridgeItem) ||
-                myFridgeItem.contains(ingNameClean));
+            String ingNameClean = nameClean.toLowerCase().trim();
+            
+            // [FIX LOGIC SO SÁNH - SENIOR ADVICE]
+            // Chỉ cho phép item trong tủ lạnh "bao hàm" item trong công thức
+            // Hoặc khớp chính xác
+            // VD: Tủ có "Thịt bò ba chỉ" -> công thức cần "Thịt bò" -> OK (True)
+            // VD: Tủ có "Sữa" -> công thức cần "Sữa chua" -> KHÔNG (False) - Đúng logic
+            // TUYỆT ĐỐI KHÔNG DÙNG: ingNameClean.contains(myFridgeItem)
+            bool isInFridge = myFridgeItems.any((myFridgeItem) {
+                return myFridgeItem == ingNameClean || myFridgeItem.contains(ingNameClean);
+            });
 
             return {
               "original": original,

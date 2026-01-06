@@ -90,7 +90,26 @@ Future<List<HouseholdRecipe>> searchRecipes({
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final List<dynamic> results = data['results'];
-        return results.map((json) => HouseholdRecipe.fromSpoonacular(json)).toList();
+        
+        // 1. Map sang Model
+        var recipes = results.map((json) => HouseholdRecipe.fromSpoonacular(json)).toList();
+
+        // [FIX] 2. Lọc chỉ lấy món đáp ứng >= 80% nguyên liệu
+        // Công thức: (Số lượng có) / (Số lượng có + Số lượng thiếu) >= 0.8
+        if (ingredients != null && ingredients.isNotEmpty) {
+           recipes = recipes.where((recipe) {
+              int total = recipe.usedIngredientCount + recipe.missedIngredientCount;
+              if (total == 0) return true; // Giữ lại nếu không có thông tin (tránh chia cho 0)
+              
+              double matchPercentage = recipe.usedIngredientCount / total;
+              print("📊 ${recipe.title}: ${(matchPercentage * 100).toStringAsFixed(0)}% match (${recipe.usedIngredientCount}/${total})");
+              return matchPercentage >= 0.8; // Chỉ lấy nếu khớp >= 80%
+           }).toList();
+           
+           print("✅ Sau khi lọc >= 80%: ${recipes.length} công thức");
+        }
+
+        return recipes;
       } else {
         throw Exception('Lỗi API (${response.statusCode}): ${response.body}');
       }

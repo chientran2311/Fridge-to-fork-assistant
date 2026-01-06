@@ -29,9 +29,10 @@ void main() async {
   );
 
   try {
-    await dotenv.load(fileName: ".env");
+    // Load từ assets/.env (Flutter Web và Mobile đều hoạt động)
+    await dotenv.load(fileName: "assets/.env");
   } catch (e) {
-    debugPrint("⚠️ config: $e");
+    debugPrint("⚠️ Dotenv config: $e");
   }
 
   // [QUAN TRỌNG] Load trạng thái onboarding TRƯỚC khi khởi tạo router

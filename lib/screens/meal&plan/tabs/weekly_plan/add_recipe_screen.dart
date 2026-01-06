@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 class AddRecipeScreen extends StatefulWidget {
@@ -222,8 +223,9 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                       recipeFilter == 'favorite'
                           ? 'Không có công thức yêu thích'
                           : recipeFilter == 'api'
-                              ? 'Không có công thức từ API'
-                              : 'Không có công thức nào',
+                              ? 'Không có công thức từ API.\nHãy tìm kiếm công thức ở màn hình Recipes!'
+                              : 'Không có công thức nào.\nHãy thêm công thức vào yêu thích hoặc tìm kiếm!',
+                      textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                   ],

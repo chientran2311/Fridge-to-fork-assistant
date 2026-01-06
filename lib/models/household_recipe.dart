@@ -1,6 +1,28 @@
+// =============================================================================
+// HOUSEHOLD RECIPE MODEL - RECIPE DATA STRUCTURE
+// =============================================================================
+// File: lib/models/household_recipe.dart
+// Feature: Core Recipe Model for Expiry Alert Feature
+// Description: Data model cho recipes, hỗ trợ parse từ Spoonacular API
+//              và Firestore. Chứa tất cả thông tin cần thiết để hiển thị.
+//
+// Data Sources:
+//   - Spoonacular API: fromSpoonacular() factory
+//   - Firestore: fromFirestore() factory
+//   - Firestore save: toFirestore() method
+//
+// Author: Fridge to Fork Team
+// =============================================================================
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// =============================================================================
+// HOUSEHOLD RECIPE CLASS
+// =============================================================================
 class HouseholdRecipe {
+  // ---------------------------------------------------------------------------
+  // PROPERTIES
+  // ---------------------------------------------------------------------------
   final String? localRecipeId;
   final String? householdId;
   final int apiRecipeId;
@@ -9,21 +31,24 @@ class HouseholdRecipe {
   final int readyInMinutes;
   final int? servings;
   final double? calories;
-  final String? difficulty; // Lưu trữ chuỗi "Easy", "Medium", "Hard"
+  final String? difficulty; // "Easy", "Medium", "Hard"
   final String? instructions;
-  final List<Map<String, dynamic>>? ingredients; // ✅ Add ingredients field
+  final List<Map<String, dynamic>>? ingredients;
   final String? addedByUid;
   final DateTime? addedAt;
   final int usedIngredientCount;
   final int missedIngredientCount;
 
+  // ---------------------------------------------------------------------------
+  // CONSTRUCTOR
+  // ---------------------------------------------------------------------------
   HouseholdRecipe({
     this.localRecipeId,
     this.householdId,
     required this.apiRecipeId,
     required this.title,
     this.imageUrl,
-    this.readyInMinutes = 0, // Mặc định là 0 nếu không có dữ liệu
+    this.readyInMinutes = 0,
     this.servings,
     this.calories,
     this.difficulty,

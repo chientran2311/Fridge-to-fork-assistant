@@ -18,6 +18,8 @@ import '../../l10n/app_localizations.dart';
 import '../../utils/database_seeder.dart';
 // [MỚI] Import Recipe Migration để fix recipes
 import '../../utils/fix_recipes_migration.dart';
+// Import Barcode Generator Screen
+import 'barcode_generator.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -1068,12 +1070,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
                     onTap: () => _handleSeedDatabase(context, s),
                   ),
+                  _buildDivider(),
                   _buildListTile(
                     icon: Icons.build_circle_outlined, // Icon công cụ
                     title: "Fix Recipes (Sửa dữ liệu recipes)", // Nút mới
                     trailing:
                         Icon(Icons.chevron_right, color: Colors.grey[400]),
                     onTap: () => _handleFixRecipes(context), // Gọi hàm fix
+                  ),
+                  _buildDivider(),
+                  _buildListTile(
+                    icon: Icons.qr_code_2,
+                    title: "Barcode Generator",
+                    trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BarcodeGeneratorScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ]),
 

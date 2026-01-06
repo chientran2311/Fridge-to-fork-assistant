@@ -84,7 +84,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
       await context.read<InventoryProvider>().addItem(
         name: _nameController.text.trim(),
         quantity: double.tryParse(_quantityController.text) ?? 1,
-        unit: _selectedUnit,
+        unit: _mapUnitToDB(_selectedUnit), // Convert UI unit to DB unit
         expiryDate: _selectedExpiryDate!,
         category: _selectedCategory,
       );
@@ -128,7 +128,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
         setState(() {
           _scannedIngredient = ingredient;
           _nameController.text = ingredient.name;
-          _selectedUnit = ingredient.defaultUnit;
+          _selectedUnit = _mapUnitToUI(ingredient.defaultUnit); // Convert DB unit to UI unit
           _selectedCategory = _mapCategoryToUI(ingredient.category);
         });
         
@@ -161,6 +161,63 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
         return 'Trái cây';
       default:
         return 'Khác';
+    }
+  }
+
+  // Map đơn vị từ tiếng Anh (DB) sang tiếng Việt (UI)
+  String _mapUnitToUI(String unit) {
+    switch (unit.toLowerCase()) {
+      case 'pcs':
+      case 'piece':
+      case 'pieces':
+        return 'cái';
+      case 'g':
+      case 'gram':
+      case 'grams':
+        return 'g';
+      case 'kg':
+      case 'kilogram':
+      case 'kilograms':
+        return 'kg';
+      case 'ml':
+      case 'milliliter':
+      case 'milliliters':
+        return 'ml';
+      case 'l':
+      case 'liter':
+      case 'liters':
+        return 'L';
+      case 'box':
+      case 'boxes':
+        return 'hộp';
+      case 'pack':
+      case 'package':
+      case 'packages':
+        return 'gói';
+      default:
+        return 'cái'; // Default fallback
+    }
+  }
+
+  // Map đơn vị từ tiếng Việt (UI) sang tiếng Anh (DB)
+  String _mapUnitToDB(String unit) {
+    switch (unit) {
+      case 'cái':
+        return 'pcs';
+      case 'g':
+        return 'g';
+      case 'kg':
+        return 'kg';
+      case 'ml':
+        return 'ml';
+      case 'L':
+        return 'L';
+      case 'hộp':
+        return 'box';
+      case 'gói':
+        return 'pack';
+      default:
+        return 'pcs'; // Default fallback
     }
   }
 

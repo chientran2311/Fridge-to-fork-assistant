@@ -1,22 +1,37 @@
+// =============================================================================
+// RECIPE DETAIL SCREEN - FULL RECIPE INFORMATION DISPLAY
+// =============================================================================
+// File: lib/screens/recipe/detail_recipe.dart
+// Feature: Recipe Detail View for Expiry Alert Recommendations
+// Description: Hiển thị chi tiết công thức nấu ăn bao gồm ingredients,
+//              instructions và nutrition info. Hỗ trợ save to meal plan.
+//
+// Navigation: AIRecipeScreen -> RecipeDetailScreen
+// Author: Fridge to Fork Team
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import 'package:fridge_to_fork_assistant/widgets/common/primary_button.dart';
 import 'package:fridge_to_fork_assistant/models/household_recipe.dart';
-import 'package:fridge_to_fork_assistant/providers/inventory_provider.dart';
 
-// [THÊM] Import thư viện Firebase
+// Firebase imports for meal plan saving
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../data/services/spoonacular_service.dart';
 
+// Widget imports
 import 'package:fridge_to_fork_assistant/widgets/recipe/detail/ingredients_section.dart';
 import 'package:fridge_to_fork_assistant/widgets/recipe/detail/instructions_section.dart';
 import 'package:fridge_to_fork_assistant/widgets/recipe/detail/recipe_detail_app_bar.dart';
 import 'package:fridge_to_fork_assistant/widgets/recipe/detail/recipe_tags_section.dart';
 import 'package:fridge_to_fork_assistant/widgets/recipe/detail/recipe_title_section.dart';
 
+// =============================================================================
+// RECIPE DETAIL SCREEN WIDGET
+// =============================================================================
 class RecipeDetailScreen extends StatefulWidget {
   final HouseholdRecipe recipe;
 
@@ -27,12 +42,14 @@ class RecipeDetailScreen extends StatefulWidget {
 }
 
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
+  // UI Colors
   final Color mainColor = const Color(0xFF1B3B36);
-  // [THÊM] Màu chủ đạo cho lịch (Everglade)
   final Color calendarColor = const Color(0xFF214130);
 
+  // Services
   final SpoonacularService _spoonacularService = SpoonacularService();
 
+  // State variables
   bool _isLoading = true;
   String? _errorMessage;
   bool _isSaving = false;

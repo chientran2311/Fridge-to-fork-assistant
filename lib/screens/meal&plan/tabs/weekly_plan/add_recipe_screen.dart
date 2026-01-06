@@ -23,7 +23,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   late DateTime pickedDate;
   String selectedMealType = 'breakfast';
   int servings = 1;
-  String recipeFilter = 'all';
+  String recipeFilter = 'all'; // 'all', 'favorite', 'api'
 
   @override
   void initState() {
@@ -33,11 +33,13 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Filter recipes based on selected filter
     List<Map<String, dynamic>> filteredRecipes = widget.recipes;
     if (recipeFilter == 'favorite') {
       filteredRecipes =
           widget.recipes.where((r) => r['isFavorite'] == true).toList();
     } else if (recipeFilter == 'api') {
+      // ✅ Show only API recipes (not saved to favorites)
       filteredRecipes = widget.recipes
           .where((r) => r['isFromApi'] == true && r['isFavorite'] != true)
           .toList();
@@ -63,11 +65,13 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
       ),
       body: Column(
         children: [
+          // Calendar + Meal Type Selection
           SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
+                  // DragTarget wrapping Calendar
                   DragTarget<Map<String, dynamic>>(
                     onWillAccept: (data) => true,
                     onAccept: (dragData) async {
@@ -99,7 +103,8 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                           focusedDay: pickedDate,
                           firstDay: DateTime(2025, 1, 1),
                           lastDay: DateTime(2027, 12, 31),
-                          selectedDayPredicate: (day) => isSameDay(pickedDate, day),
+                          selectedDayPredicate: (day) =>
+                              isSameDay(pickedDate, day),
                           onDaySelected: (selectedDay, focusedDay) {
                             setState(() {
                               pickedDate = selectedDay;
@@ -114,7 +119,8 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                               color: const Color(0xFF214130).withOpacity(0.3),
                               shape: BoxShape.circle,
                             ),
-                            selectedTextStyle: const TextStyle(color: Colors.white),
+                            selectedTextStyle:
+                                const TextStyle(color: Colors.white),
                           ),
                           headerStyle: HeaderStyle(
                             formatButtonVisible: false,
@@ -128,122 +134,127 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                       );
                     },
                   ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _mealTypeButton('Bữa sáng', 'breakfast'),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _mealTypeButton('Bữa trưa', 'lunch'),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _mealTypeButton('Bữa tối', 'dinner'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('Khẩu phần:',
-                    style: TextStyle(fontWeight: FontWeight.w500)),
-                const SizedBox(width: 12),
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey[300]!),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  const SizedBox(height: 16),
+                  // Meal Type Selection
+                  Row(
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove, size: 18),
-                        onPressed: () {
-                          if (servings > 1) setState(() => servings--);
-                        },
-                        constraints:
-                            const BoxConstraints(minWidth: 32, minHeight: 32),
-                        padding: EdgeInsets.zero,
+                      Expanded(
+                        child: _mealTypeButton('Bữa sáng', 'breakfast'),
                       ),
-                      Container(
-                        width: 30,
-                        alignment: Alignment.center,
-                        child: Text('$servings',
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _mealTypeButton('Bữa trưa', 'lunch'),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.add, size: 18),
-                        onPressed: () => setState(() => servings++),
-                        constraints:
-                            const BoxConstraints(minWidth: 32, minHeight: 32),
-                        padding: EdgeInsets.zero,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _mealTypeButton('Bữa tối', 'dinner'),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  // Servings Selection
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('Khẩu phần:',
+                          style: TextStyle(fontWeight: FontWeight.w500)),
+                      const SizedBox(width: 12),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove, size: 18),
+                              onPressed: () {
+                                if (servings > 1) setState(() => servings--);
+                              },
+                              constraints: const BoxConstraints(
+                                  minWidth: 32, minHeight: 32),
+                              padding: EdgeInsets.zero,
+                            ),
+                            Container(
+                              width: 30,
+                              alignment: Alignment.center,
+                              child: Text('$servings',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add, size: 18),
+                              onPressed: () => setState(() => servings++),
+                              constraints: const BoxConstraints(
+                                  minWidth: 32, minHeight: 32),
+                              padding: EdgeInsets.zero,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const Divider(height: 1),
+          // Recipe Filter Tabs
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _recipeFilterButton('Tất cả', 'all'),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _recipeFilterButton('Yêu thích', 'favorite'),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _recipeFilterButton('Từ API', 'api'),
                 ),
               ],
             ),
-          ],
-        ),
-      ),
-      const Divider(height: 1),
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: Row(
-          children: [
-            Expanded(
-              child: _recipeFilterButton('Tất cả', 'all'),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _recipeFilterButton('Yêu thích', 'favorite'),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _recipeFilterButton('Từ API', 'api'),
-            ),
-          ],
-        ),
-      ),
-      const Divider(height: 1),
-      Expanded(
-        child: filteredRecipes.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.restaurant_menu,
-                        size: 48, color: Colors.grey[300]),
-                    const SizedBox(height: 12),
-                    Text(
-                      recipeFilter == 'favorite'
-                          ? 'Không có công thức yêu thích'
-                          : recipeFilter == 'api'
-                              ? 'Không có công thức từ API.\nHãy tìm kiếm công thức ở màn hình Recipes!'
-                              : 'Không có công thức nào.\nHãy thêm công thức vào yêu thích hoặc tìm kiếm!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey[600]),
+          ),
+          const Divider(height: 1),
+          // Draggable Recipe Cards
+          Expanded(
+            child: filteredRecipes.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.restaurant_menu,
+                            size: 48, color: Colors.grey[300]),
+                        const SizedBox(height: 12),
+                        Text(
+                          recipeFilter == 'favorite'
+                              ? 'Không có công thức yêu thích'
+                              : recipeFilter == 'api'
+                                  ? 'Không có công thức từ API.\nHãy tìm kiếm công thức ở màn hình Recipes!'
+                                  : 'Không có công thức nào.\nHãy thêm công thức vào yêu thích hoặc tìm kiếm!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: filteredRecipes.length,
-                itemBuilder: (context, index) {
-                  final recipe = filteredRecipes[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: _buildRecipeCard(recipe),
-                  );
-                },
-              ),
-      ),
-    ],
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: filteredRecipes.length,
+                    itemBuilder: (context, index) {
+                      final recipe = filteredRecipes[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _buildDraggableRecipeCard(recipe),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -297,13 +308,15 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
     );
   }
 
-  Widget _buildRecipeCard(Map<String, dynamic> recipe) {
+  Widget _buildDraggableRecipeCard(Map<String, dynamic> recipe) {
+    final dragData = {
+      'recipe': recipe,
+      'date': pickedDate,
+      'mealType': selectedMealType,
+    };
+
     return LongPressDraggable<Map<String, dynamic>>(
-      data: {
-        'recipe': recipe,
-        'date': pickedDate,
-        'mealType': selectedMealType,
-      },
+      data: dragData,
       delay: const Duration(milliseconds: 500),
       feedback: Material(
         color: Colors.transparent,
@@ -444,68 +457,64 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   ),
               ],
             ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  recipe['title'],
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Icon(Icons.local_fire_department,
-                        size: 12, color: Colors.orange[700]),
-                    const SizedBox(width: 3),
-                    Text(
-                      '${recipe['calories']} kcal',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w500,
-                      ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    recipe['title'],
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                      height: 1.3,
                     ),
-                    const Spacer(),
-                    if (recipe['isFavorite'] == true)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF214130).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text(
-                          'Yêu thích',
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: Color(0xFF214130),
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(Icons.local_fire_department,
+                          size: 12, color: Colors.orange[700]),
+                      const SizedBox(width: 3),
+                      Text(
+                        '${recipe['calories']} kcal',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                  ],
-                ),
-              ],
+                      const Spacer(),
+                      if (recipe['isFavorite'] == true)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF214130).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            'Yêu thích',
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: Color(0xFF214130),
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 6),
-          Icon(Icons.drag_indicator, color: Colors.grey[350], size: 18),
-        ],
-      ),      ),    );
-  }
-}
-      body: const Center(
-        child: Text('Add Recipe to Calendar'),
+            const SizedBox(width: 6),
+            Icon(Icons.drag_indicator, color: Colors.grey[350], size: 18),
+          ],
+        ),
       ),
     );
   }

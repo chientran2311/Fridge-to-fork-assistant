@@ -1,3 +1,28 @@
+// =============================================================================
+// AI RECIPE SCREEN - SMART RECIPE SEARCH & RECOMMENDATIONS
+// =============================================================================
+// File: lib/screens/recipe/ai_recipe.dart
+// Feature: Main Recipe Screen with Expiry Alert Deep Link Support
+// Description: Màn hình chính tìm kiếm và gợi ý công thức nấu ăn
+//              với hỗ trợ deep link từ expiry notifications.
+//
+// Deep Link Integration:
+//   - Nhận initialQuery từ notification payload
+//   - Auto parse ingredients string thành list
+//   - Trigger search với nguyên liệu sắp hết hạn
+//
+// UI Components:
+//   - AIRecipeHeader: Search bar và filter button
+//   - RecipeCard: Hiển thị từng recipe result
+//   - Loading/Empty states
+//
+// Navigation Flow:
+//   Notification tap -> app_router -> AIRecipeScreen(initialQuery)
+//   -> Parse ingredients -> searchRecipes() -> Display results
+//
+// Author: Fridge to Fork Team
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:fridge_to_fork_assistant/models/household_recipe.dart';
 import 'package:provider/provider.dart';
@@ -9,9 +34,13 @@ import '../../providers/recipe_provider.dart';
 
 // Import Widgets
 import '../../widgets/recipe/ai_recipe/ai_recipe_header.dart';
-import '../../widgets/recipe/ai_recipe/recipe_card.dart'; // Đảm bảo import file Card mới bên dưới
+import '../../widgets/recipe/ai_recipe/recipe_card.dart';
 
+// =============================================================================
+// AI RECIPE SCREEN WIDGET
+// =============================================================================
 class AIRecipeScreen extends StatefulWidget {
+  /// Query từ notification deep link (nguyên liệu sắp hết hạn)
   final String? initialQuery;
   const AIRecipeScreen({super.key, this.initialQuery});
   
@@ -28,14 +57,17 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
     });
   }
 
+  // ===========================================================================
+  // LOAD RECIPES - Handle both deep link and normal flow
+  // ===========================================================================
   void _loadRecipes() {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
 
-    // Ưu tiên 1: Nếu có dữ liệu từ Thông báo (Deep Link)
+    // Priority 1: Deep link từ Expiry Alert Notification
     if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
-      print("🔔 AI Recipe: Nhận yêu cầu tìm kiếm: ${widget.initialQuery}");
+      print("🔔 AI Recipe: Nhận yêu cầu tìm kiếm từ notification: ${widget.initialQuery}");
 
-      // [LOGIC MỚI] Tách chuỗi thành danh sách
+      // Parse comma-separated string to list
       // VD: "Thịt bò,Trứng gà" -> ["Thịt bò", "Trứng gà"]
       List<String> searchIngredients = widget.initialQuery!.split(',');
 

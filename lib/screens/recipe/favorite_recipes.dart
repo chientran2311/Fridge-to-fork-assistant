@@ -1,15 +1,31 @@
+// =============================================================================
+// FAVORITE RECIPES SCREEN - USER'S SAVED RECIPES
+// =============================================================================
+// File: lib/screens/recipe/favorite_recipes.dart
+// Feature: Favorite Recipes Management
+// Description: Hiển thị danh sách công thức yêu thích của user.
+//              Data sync realtime từ Firestore via RecipeProvider.
+//
+// Integration: RecipeProvider.listenToFavorites() -> Firestore realtime
+// Author: Fridge to Fork Team
+// =============================================================================
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import '../../l10n/app_localizations.dart';
-// Import Provider và Model
+
+// Provider & Model imports
 import '../../providers/recipe_provider.dart';
 import '../../models/household_recipe.dart';
 
 late AppLocalizations s;
 
+// =============================================================================
+// FAVORITE RECIPES SCREEN WIDGET
+// =============================================================================
 class FavoriteRecipesScreen extends StatefulWidget {
   const FavoriteRecipesScreen({super.key});
 
@@ -20,7 +36,8 @@ class FavoriteRecipesScreen extends StatefulWidget {
 class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
   final Color mainColor = const Color(0xFF1B3B36);
   String _selectedFilter = "All";
-  // Mock filters
+  
+  // Filter categories
   final List<String> filters = [
     "All",
     "Breakfast",

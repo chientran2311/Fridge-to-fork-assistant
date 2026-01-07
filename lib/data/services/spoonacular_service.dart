@@ -2,18 +2,19 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 // Đảm bảo import đúng đường dẫn Model
-import '../../models/household_recipe.dart'; 
+import '../../models/household_recipe.dart';
 import '../../models/RecipeFilter.dart';
+
 class SpoonacularService {
   // Lấy API Key từ file .env
-  static String get _apiKey => dotenv.env['SPOONACULAR_API_KEY'] ?? ''; 
+  static String get _apiKey => dotenv.env['SPOONACULAR_API_KEY'] ?? '';
   static const String _baseUrl = 'https://api.spoonacular.com/recipes';
   static const String _authority = 'api.spoonacular.com';
   static const String _path = '/recipes/complexSearch';
   // --- 1. Tìm kiếm món ăn theo tên (Search) ---
- // Trong file spoonacular_service.dart
+  // Trong file spoonacular_service.dart
 
-Future<List<HouseholdRecipe>> searchRecipes({
+  Future<List<HouseholdRecipe>> searchRecipes({
     String? query,
     List<String>? ingredients,
     RecipeFilter? filter,
@@ -25,6 +26,7 @@ Future<List<HouseholdRecipe>> searchRecipes({
       'apiKey': _apiKey,
       'number': '10',
       'addRecipeInformation': 'true',
+      'addRecipeNutrition': 'true', // ✅ Add nutrition data
       'fillIngredients': 'true',
       'instructionsRequired': 'true',
     };
@@ -48,7 +50,8 @@ Future<List<HouseholdRecipe>> searchRecipes({
         if (filter.cuisine == 'Vegan') {
           queryParameters['diet'] = 'vegan'; // Chuyển sang tham số diet
         } else {
-          queryParameters['cuisine'] = filter.cuisine!; // Giữ nguyên cuisine (Italian, Asian...)
+          queryParameters['cuisine'] =
+              filter.cuisine!; // Giữ nguyên cuisine (Italian, Asian...)
         }
       }
 
@@ -67,14 +70,14 @@ Future<List<HouseholdRecipe>> searchRecipes({
       }
       // -- Max Prep Time --
       // Chỉ gửi tham số nếu user đã chọn thời gian < 120 (max mặc định)
-     if (filter.maxPrepTime < 120) {
+      if (filter.maxPrepTime < 120) {
         if (calculatedMaxTime != null) {
-           // Lấy min của 2 giá trị
-           calculatedMaxTime = (filter.maxPrepTime < calculatedMaxTime) 
-              ? filter.maxPrepTime 
+          // Lấy min của 2 giá trị
+          calculatedMaxTime = (filter.maxPrepTime < calculatedMaxTime)
+              ? filter.maxPrepTime
               : calculatedMaxTime;
         } else {
-           calculatedMaxTime = filter.maxPrepTime;
+          calculatedMaxTime = filter.maxPrepTime;
         }
       }
       if (calculatedMaxTime != null) {
@@ -90,26 +93,9 @@ Future<List<HouseholdRecipe>> searchRecipes({
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final List<dynamic> results = data['results'];
-        
-        // 1. Map sang Model
-        var recipes = results.map((json) => HouseholdRecipe.fromSpoonacular(json)).toList();
-
-        // [FIX] 2. Lọc chỉ lấy món đáp ứng >= 80% nguyên liệu
-        // Công thức: (Số lượng có) / (Số lượng có + Số lượng thiếu) >= 0.8
-        if (ingredients != null && ingredients.isNotEmpty) {
-           recipes = recipes.where((recipe) {
-              int total = recipe.usedIngredientCount + recipe.missedIngredientCount;
-              if (total == 0) return true; // Giữ lại nếu không có thông tin (tránh chia cho 0)
-              
-              double matchPercentage = recipe.usedIngredientCount / total;
-              print("📊 ${recipe.title}: ${(matchPercentage * 100).toStringAsFixed(0)}% match (${recipe.usedIngredientCount}/${total})");
-              return matchPercentage >= 0.3; // Chỉ lấy nếu khớp >= 80%
-           }).toList();
-           
-           print("✅ Sau khi lọc >= 30%: ${recipes.length} công thức");
-        }
-
-        return recipes;
+        return results
+            .map((json) => HouseholdRecipe.fromSpoonacular(json))
+            .toList();
       } else {
         throw Exception('Lỗi API (${response.statusCode}): ${response.body}');
       }
@@ -120,16 +106,17 @@ Future<List<HouseholdRecipe>> searchRecipes({
   }
 
   // --- 2. Tìm theo nguyên liệu (Find by Ingredients) ---
-  Future<List<HouseholdRecipe>> getRecipesByIngredients(List<String> ingredients) async {
+  Future<List<HouseholdRecipe>> getRecipesByIngredients(
+      List<String> ingredients) async {
     if (_apiKey.isEmpty) throw Exception('Chưa cấu hình API Key');
 
     final String ingredientsString = ingredients.join(',+');
-    
+
     final url = Uri.parse(
       '$_baseUrl/findByIngredients?ingredients=$ingredientsString&number=10&ranking=1&ignorePantry=true&apiKey=$_apiKey',
     );
 
-    print("🚀 Spoonacular API (Find): $url"); 
+    print("🚀 Spoonacular API (Find): $url");
 
     final response = await http.get(url);
 
@@ -138,7 +125,7 @@ Future<List<HouseholdRecipe>> searchRecipes({
       print("✅ Spoonacular tìm thấy: ${data.length} công thức");
       return data.map((json) => HouseholdRecipe.fromSpoonacular(json)).toList();
     } else {
-      print("❌ Lỗi API: ${response.body}"); 
+      print("❌ Lỗi API: ${response.body}");
       throw Exception('Lỗi API (${response.statusCode}): ${response.body}');
     }
   }
@@ -150,7 +137,7 @@ Future<List<HouseholdRecipe>> searchRecipes({
 
     // Endpoint lấy thông tin chi tiết (bao gồm cả nutrition nếu cần)
     final url = Uri.parse(
-      '$_baseUrl/$id/information?includeNutrition=false&apiKey=$_apiKey',
+      '$_baseUrl/$id/information?includeNutrition=true&apiKey=$_apiKey',
     );
 
     print("🚀 Spoonacular API (Detail): $url");

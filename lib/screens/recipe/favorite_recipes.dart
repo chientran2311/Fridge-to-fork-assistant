@@ -171,7 +171,7 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
           const SizedBox(width: 16),
           Expanded(
             child: Text(
-              "${s.favoriterecipe} ❤️",
+              "${s.favoriterecipe} ",
               style: GoogleFonts.merriweather(
                 fontSize: 24,
                 fontWeight: FontWeight.w900,
@@ -334,43 +334,6 @@ class FavoriteRecipeCard extends StatelessWidget {
                     const Spacer(), 
                     Row(
                       
-                      children: [
-                        Expanded(
-                          child: SizedBox(
-                            height: 38,
-                            child: ElevatedButton.icon(
-                              onPressed: () {}, 
-                              icon: const Icon(Icons.calendar_today, size: 14, color: Colors.black54),
-                              label: Text(s.schedule, style: const TextStyle(color: Colors.black54, fontSize: 11, fontWeight: FontWeight.bold)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFF5F5F5),
-                                elevation: 0,
-                                padding: EdgeInsets.zero,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: SizedBox(
-                            height: 38,
-                            child: ElevatedButton.icon(
-                              onPressed: () {
-                                context.go('/recipes/detail', extra: recipe);
-                              },
-                              icon: const Icon(Icons.restaurant_menu, size: 14, color: Colors.white),
-                              label: Text(s.cooknow, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: mainColor,
-                                elevation: 0,
-                                padding: EdgeInsets.zero,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
                     )
                   ],
                 ),

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
-import 'add_item_overlay.dart';
-import 'weekly_plan_tab.dart';
-import 'shopping_list_tab.dart';
+import 'package:fridge_to_fork_assistant/screens/meal&plan/tabs/weekly_plan/weekly_plan_tab.dart';
+import 'package:fridge_to_fork_assistant/screens/meal&plan/tabs/shopping_list/shopping_list_tab.dart';
 import 'package:go_router/go_router.dart';
 // Import Localization
-import '../../l10n/app_localizations.dart';
+import 'package:fridge_to_fork_assistant/l10n/app_localizations.dart';
 
 const _bgColor = Color(0xFFF4F6F4);
 const _primaryColor = Color(0xFF214130);
@@ -25,11 +24,13 @@ class _PlannerScreenState extends State<PlannerScreen> {
   PlannerTab _currentTab = PlannerTab.weeklyPlan;
 
   void _onTabChanged(PlannerTab tab) {
+    debugPrint('📱 PlannerScreen: Tab switched to ${tab.name}');
     setState(() => _currentTab = tab);
   }
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🏗️  PlannerScreen: build() called | currentTab: ${_currentTab.name}');
     final isDesktop = context.isDesktop;
     // ✅ 1. Lấy ngôn ngữ (Safe Mode)
     final s = AppLocalizations.of(context);
@@ -54,29 +55,29 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 ),
               ),
               actions: [
-                GestureDetector(
-                  onTap: () {
-                    // Đường dẫn con của recipes: /recipes/favorites
-                    context.go('/recipes/favorites');
-                  },
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
                   child: Container(
-                    width: 40,
-                    height: 40,
-                    margin: const EdgeInsets.only(right: 16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey.shade300),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 4,
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
                           offset: const Offset(0, 2),
-                        )
+                        ),
                       ],
                     ),
-                    child: const Icon(Icons.favorite_border_outlined,
-                        size: 20, color: _primaryColor),
+                    child: IconButton(
+                      icon: const Icon(Icons.favorite_border),
+                      onPressed: () {
+                        context.push('/recipes/favorites');
+                      },
+                      color: const Color(0xFF214130),
+                      tooltip: 'Favorite Recipes',
+                      iconSize: 24,
+                    ),
                   ),
                 ),
               ],
@@ -84,34 +85,35 @@ class _PlannerScreenState extends State<PlannerScreen> {
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 900),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                /// 🔹 TABS (Truyền text đa ngôn ngữ vào)
-                _Tabs(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 🔹 TABS (Fixed at top)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: _Tabs(
                   currentTab: _currentTab,
                   onChanged: _onTabChanged,
-                  weeklyPlanText: weeklyPlanText, // ✅ Truyền text
-                  shoppingListText: shoppingListText, // ✅ Truyền text
+                  weeklyPlanText: weeklyPlanText,
+                  shoppingListText: shoppingListText,
                 ),
+              ),
 
-                const SizedBox(height: 24),
+              const SizedBox(height: 24),
 
-                /// 🔥 SWITCH CONTENT
-                AnimatedSwitcher(
+              // 🔥 SWITCH CONTENT (Takes remaining space)
+              Expanded(
+                child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 250),
                   child: _currentTab == PlannerTab.weeklyPlan
                       ? const WeeklyPlanContent()
-                      : const ShoppingListTab(),
+                      : ShoppingListTab(key: shoppingListGlobalKey),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
-      floatingActionButton: isDesktop ? null : const _FloatingAddButton(),
     );
   }
 }
@@ -189,27 +191,6 @@ class _TabButton extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _FloatingAddButton extends StatelessWidget {
-  const _FloatingAddButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return FloatingActionButton(
-      shape: const CircleBorder(),
-      backgroundColor: _primaryColor,
-      onPressed: () {
-        showModalBottomSheet(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.transparent,
-          builder: (_) => const AddItemBottomSheet(),
-        );
-      },
-      child: const Icon(Icons.add, size: 32, color: Colors.white),
     );
   }
 }

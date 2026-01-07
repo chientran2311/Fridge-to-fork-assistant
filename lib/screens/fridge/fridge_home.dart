@@ -242,7 +242,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
         ),
       ),
       
-      // FAB Thêm món
+      // FAB Thêm món + Nút Test Toast
       floatingActionButton: _isMultiSelectMode 
           ? null 
           : FloatingActionButton(
@@ -251,7 +251,6 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
               shape: const CircleBorder(),
               backgroundColor: const Color.fromARGB(255, 36, 75, 45),
               child: const Icon(Icons.add, size: 28, color: Colors.white),
-            ),
             ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 

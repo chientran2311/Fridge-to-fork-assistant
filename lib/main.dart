@@ -21,8 +21,13 @@ import 'package:fridge_to_fork_assistant/router/app_router.dart';
 // Import Notification Service
 import 'data/services/notification_service.dart';
 
+// Import Native Splash
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // Giữ splash screen cho đến khi khởi tạo xong
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -40,6 +45,9 @@ void main() async {
 
   // [QUAN TRỌNG] Truyền key (lấy từ app_router.dart) vào Service
   await NotificationService().init(rootNavigatorKey);
+
+  // Xóa splash screen sau khi khởi tạo xong
+  FlutterNativeSplash.remove();
 
   runApp(const MyApp());
 }
@@ -98,13 +106,18 @@ class _AuthProfileImageSyncState extends State<_AuthProfileImageSync> {
     if (currentUserId != _lastUserId) {
       _lastUserId = currentUserId;
       
-      if (currentUserId != null) {
-        // User đăng nhập -> load ảnh của user đó
-        profileProvider.loadProfileImageForUser(currentUserId);
-      } else {
-        // User đăng xuất -> reset về mặc định
-        profileProvider.resetToDefault();
-      }
+      // Delay để tránh gọi notifyListeners trong build phase
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        
+        if (currentUserId != null) {
+          // User đăng nhập -> load ảnh của user đó
+          profileProvider.loadProfileImageForUser(currentUserId);
+        } else {
+          // User đăng xuất -> reset về mặc định
+          profileProvider.resetToDefault();
+        }
+      });
     }
   }
   

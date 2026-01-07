@@ -55,13 +55,30 @@ class _PlannerScreenState extends State<PlannerScreen> {
                 ),
               ),
               actions: [
-                IconButton(
-                  icon: const Icon(Icons.favorite),
-                  onPressed: () {
-                    context.push('/recipes/favorites');
-                  },
-                  color: const Color(0xFFE63946),
-                  tooltip: 'Favorite Recipes',
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: IconButton(
+                      icon: const Icon(Icons.favorite_border),
+                      onPressed: () {
+                        context.push('/recipes/favorites');
+                      },
+                      color: const Color(0xFF214130),
+                      tooltip: 'Favorite Recipes',
+                      iconSize: 24,
+                    ),
+                  ),
                 ),
               ],
             ),

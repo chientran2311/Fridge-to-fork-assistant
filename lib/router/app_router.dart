@@ -10,7 +10,7 @@ import '../screens/auth/register.dart';
 import '../screens/main_screen.dart';
 import '../screens/fridge/fridge_home.dart';
 import '../screens/recipe/ai_recipe.dart';
-import '../screens/meal&plan/planner_screen.dart';
+import '../screens/meal&plan/planner/planner_screen.dart';
 import '../../screens/recipe/detail_recipe.dart';
 import '../models/household_recipe.dart';
 import '../screens/settings/settings.dart';

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
 // Import các màn hình
+import '../screens/fridge/fridge_notifications.dart';
 import '../screens/auth/login.dart';
 import '../screens/auth/register.dart';
 import '../screens/main_screen.dart';
@@ -91,6 +92,10 @@ final GoRouter appRouter = GoRouter(
                 GoRoute(
                     path: 'settings',
                     builder: (context, state) => const SettingsScreen()),
+                GoRoute(
+                    path: 'notifications',
+                    builder: (context, state) =>
+                        const FridgeNotificationScreen()),
               ],
             ),
           ],

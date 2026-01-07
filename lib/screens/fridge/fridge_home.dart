@@ -104,6 +104,10 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     context.go('/fridge/settings'); 
   }
 
+  void _navigateToNotifications() {
+    context.push('/fridge/notifications');
+  }
+
   void _deleteSelectedItems() {
     final provider = Provider.of<InventoryProvider>(context, listen: false);
     provider.deleteItems(_selectedItems.toList());
@@ -165,6 +169,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
               onCancel: _exitMultiSelectMode,
               onSave: _exitMultiSelectMode,
               onSettings: _navigateToSettings,
+              onNotifications: _navigateToNotifications,
             ),
             const FridgeSearchBar(),
             

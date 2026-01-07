@@ -20,7 +20,8 @@ class InventoryProvider extends ChangeNotifier {
   List<String> get ingredientNames => _items.map((e) => e.name).toList();
 
   InventoryProvider() {
-    _init(); // Tự động chạy khi Provider được tạo
+    // Delay initialization to avoid notifyListeners during build
+    Future.microtask(() => _init());
   }
 
   // --- 1. LOGIC KHỞI TẠO THÔNG MINH ---

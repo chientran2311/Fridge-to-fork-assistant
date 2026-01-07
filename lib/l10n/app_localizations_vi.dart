@@ -15,7 +15,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get fridgeTab => 'Fridge';
 
   @override
-  String get recipeTab => 'Chef AI Suggestion';
+  String get recipetab => 'Trợ lý AI gợi ý';
 
   @override
   String get planTab => 'Kế Hoạch';
@@ -223,9 +223,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get applyFilters => 'Áp dụng bộ lọc';
-
-  @override
-  String get recipetab => 'Trợ lý AI gợi ý';
 
   @override
   String get schedule => 'Lên lịch';

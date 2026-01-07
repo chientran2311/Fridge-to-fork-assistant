@@ -110,11 +110,11 @@ abstract class AppLocalizations {
   /// **'Fridge'**
   String get fridgeTab;
 
-  /// No description provided for @recipeTab.
+  /// No description provided for @recipetab.
   ///
   /// In en, this message translates to:
-  /// **'Chef AI Suggestion'**
-  String get recipeTab;
+  /// **'AI suggestion'**
+  String get recipetab;
 
   /// No description provided for @planTab.
   ///
@@ -523,12 +523,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Apply Filters'**
   String get applyFilters;
-
-  /// No description provided for @recipetab.
-  ///
-  /// In en, this message translates to:
-  /// **'AI suggestion'**
-  String get recipetab;
 
   /// No description provided for @schedule.
   ///

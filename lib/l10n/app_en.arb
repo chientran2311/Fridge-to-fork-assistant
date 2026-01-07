@@ -1,7 +1,7 @@
 {
   "appTitle": "Kitchen Assistant",
   "fridgeTab": "Fridge",
-  "recipeTab": "Chef AI Suggestion",
+  "recipetab": "Chef AI Suggestion",
   "planTab": "Plan",
   "settingsTitle": "Settings",
   "language": "Language",

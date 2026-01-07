@@ -43,7 +43,7 @@ class AIRecipeHeader extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                s.recipeTab,
+                s.recipetab,
                 style: GoogleFonts.merriweather(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,

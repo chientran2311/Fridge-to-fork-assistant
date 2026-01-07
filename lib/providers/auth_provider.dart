@@ -19,7 +19,8 @@ class AuthProvider extends ChangeNotifier {
   String get displayName => _displayName ?? _user?.displayName ?? 'User';
 
   AuthProvider() {
-    _init();
+    // Delay initialization to avoid notifyListeners during build
+    Future.microtask(() => _init());
   }
 
   void _init() {

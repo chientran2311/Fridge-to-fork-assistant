@@ -26,7 +26,8 @@ class HouseholdProvider extends ChangeNotifier {
   bool get isOwner => _currentHousehold?['owner_id'] == FirebaseAuth.instance.currentUser?.uid;
 
   HouseholdProvider() {
-    _init();
+    // Delay initialization to avoid notifyListeners during build
+    Future.microtask(() => _init());
   }
 
   /// Khởi tạo: Lắng nghe auth state và load household

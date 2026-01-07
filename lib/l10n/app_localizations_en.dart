@@ -15,7 +15,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fridgeTab => 'Fridge';
 
   @override
-  String get recipeTab => 'Chef AI Suggestion';
+  String get recipetab => 'AI suggestion';
 
   @override
   String get planTab => 'Plan';
@@ -223,9 +223,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get applyFilters => 'Apply Filters';
-
-  @override
-  String get recipetab => 'AI suggestion';
 
   @override
   String get schedule => 'Schedule';

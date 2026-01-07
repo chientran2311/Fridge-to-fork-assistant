@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fridge_to_fork_assistant/screens/fridge/fridge_barcode_scan.dart';
 import '../../models/ingredient.dart';
-import '../../services/firebase_service.dart';
+import '../../data/services/firebase_service.dart';
 import '../../providers/inventory_provider.dart';
 import '../notification.dart';
 

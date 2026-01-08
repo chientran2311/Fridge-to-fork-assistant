@@ -41,6 +41,9 @@ class _ShoppingListTabState extends State<ShoppingListTab>
 
   // ✅ NEW: Track deleted items to prevent auto-adding them back
   Set<String> _deletedItemKeys = {};
+  
+  // ✅ Filter by category
+  String _selectedCategory = 'All Items';
 
   @override
   bool get wantKeepAlive => true; // ✅ Keep state when switching tabs
@@ -531,28 +534,60 @@ class _ShoppingListTabState extends State<ShoppingListTab>
 
     return Stack(
       children: [
-        RefreshIndicator(
-          onRefresh: () async {
-            // ✅ Reset flag when user pulls to refresh and recalculate
-            _hasLoadedData = false;
-            await _recalculateShoppingList();
-          },
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: isDesktop ? 32 : 16,
-              vertical: 16,
-            ),
-            physics:
-                const AlwaysScrollableScrollPhysics(), // ✅ Allow refresh even when empty
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. Header
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        Column(
+          children: [
+            // 1. Category Filter Buttons - Fixed at top
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isDesktop ? 32 : 16,
+                vertical: 12,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildCategoryButton('All Items'),
+                    const SizedBox(width: 8),
+                    _buildCategoryButton('Produce'),
+                    const SizedBox(width: 8),
+                    _buildCategoryButton('Dairy'),
+                    const SizedBox(width: 8),
+                    _buildCategoryButton('Pantry'),
+                    const SizedBox(width: 8),
+                    _buildCategoryButton('Other'),
+                  ],
                 ),
+              ),
+            ),
 
-                // 2. Shopping Items by Date
+            // 2. Scrollable content
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  // ✅ Reset flag when user pulls to refresh and recalculate
+                  _hasLoadedData = false;
+                  await _recalculateShoppingList();
+                },
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isDesktop ? 32 : 16,
+                    vertical: 16,
+                  ),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Shopping Items by Date
                 if (_itemsByDate.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 32),
@@ -566,6 +601,20 @@ class _ShoppingListTabState extends State<ShoppingListTab>
                 else
                   ...dates.map((dateKey) {
                     final items = _itemsByDate[dateKey]!;
+                    // ✅ Filter items by selected category
+                    final filteredItems = _selectedCategory == 'All Items'
+                        ? items
+                        : items.where((item) {
+                            final itemCategory = item.category.toLowerCase();
+                            final selectedCat = _selectedCategory.toLowerCase();
+                            return itemCategory == selectedCat;
+                          }).toList();
+                    
+                    // ✅ Skip this date if no items match the filter
+                    if (filteredItems.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -586,7 +635,7 @@ class _ShoppingListTabState extends State<ShoppingListTab>
                         const SizedBox(height: 12),
 
                         // ✅ Items for this date
-                        ...items
+                        ...filteredItems
                             .map((item) => EditableShoppingItem(
                                   itemId: item.itemId,
                                   title: item.ingredientName,
@@ -609,11 +658,14 @@ class _ShoppingListTabState extends State<ShoppingListTab>
                     );
                   }).toList(),
 
-                // Extra space at bottom
-                const SizedBox(height: 80),
-              ],
+                      // Extra space at bottom
+                      const SizedBox(height: 80),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
         
         // ✅ Floating Action Button to add custom item (Fridge-style)
@@ -629,6 +681,37 @@ class _ShoppingListTabState extends State<ShoppingListTab>
           ),
         ),
       ],
+    );
+  }
+
+  // ✅ Build category filter button
+  Widget _buildCategoryButton(String category) {
+    final isSelected = _selectedCategory == category;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedCategory = category;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF214130) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF214130) : Colors.grey.shade300,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          category,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontSize: 14,
+          ),
+        ),
+      ),
     );
   }
 

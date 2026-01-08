@@ -491,6 +491,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
   void _showDatePicker() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (BuildContext context) {
         DateTime selectedDate = weekDays.first;
         return StatefulBuilder(

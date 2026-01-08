@@ -42,19 +42,23 @@ android {
     }
     
     signingConfigs {
-        create("release") {
-            // Kotlin bắt buộc dùng ngoặc kép "" và dấu bằng =
-            keyAlias = keystoreProperties.getProperty("keyAlias")
-            keyPassword = keystoreProperties.getProperty("keyPassword")
-            storeFile = file(keystoreProperties.getProperty("storeFile"))
-            storePassword = keystoreProperties.getProperty("storePassword")
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                // Kotlin bắt buộc dùng ngoặc kép "" và dấu bằng =
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
         }
     }
 
     buildTypes {
         getByName("release") {
-            // Gọi lại signingConfig đã tạo ở trên
-            signingConfig = signingConfigs.getByName("release")
+            // Chỉ gọi signingConfig nếu đã được tạo
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             
             // Trong Kotlin DSL phải có chữ 'is' và dấu '='
             isMinifyEnabled = false

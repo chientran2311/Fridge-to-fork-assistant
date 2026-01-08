@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart'; 
+import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import '../../l10n/app_localizations.dart';
@@ -20,8 +20,14 @@ class FavoriteRecipesScreen extends StatefulWidget {
 class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
   final Color mainColor = const Color(0xFF1B3B36);
   String _selectedFilter = "All";
-  // Mock filters 
-  final List<String> filters = ["All", "Breakfast", "Lunch", "Dinner", "Snacks"];
+  // Mock filters
+  final List<String> filters = [
+    "All",
+    "Breakfast",
+    "Lunch",
+    "Dinner",
+    "Snacks"
+  ];
 
   @override
   void initState() {
@@ -41,16 +47,18 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
           builder: (context, recipeProvider, child) {
             final favorites = recipeProvider.favoriteRecipes;
             if (favorites.isEmpty && !recipeProvider.isLoading) {
-               return _buildEmptyState(); 
+              return _buildEmptyState();
             }
 
             return ResponsiveLayout(
               mobileBody: _buildMobileList(favorites),
-              tabletBody: _buildGridContent(favorites, crossAxisCount: 2, aspectRatio: 0.8),
+              tabletBody: _buildGridContent(favorites,
+                  crossAxisCount: 2, aspectRatio: 0.8),
               desktopBody: Center(
                 child: Container(
                   constraints: const BoxConstraints(maxWidth: 1200),
-                  child: _buildGridContent(favorites, crossAxisCount: 3, aspectRatio: 0.85),
+                  child: _buildGridContent(favorites,
+                      crossAxisCount: 3, aspectRatio: 0.85),
                 ),
               ),
             );
@@ -72,11 +80,13 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
               children: [
                 Icon(Icons.favorite_border, size: 60, color: Colors.grey[300]),
                 const SizedBox(height: 16),
-                Text("Chưa có món yêu thích nào", style: TextStyle(color: Colors.grey[500], fontSize: 16)),
+                Text("Chưa có món yêu thích nào",
+                    style: TextStyle(color: Colors.grey[500], fontSize: 16)),
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => context.go('/recipes'),
-                  child: Text(s.discovermore, style: const TextStyle(fontSize: 14)),
+                  child: Text(s.discovermore,
+                      style: const TextStyle(fontSize: 14)),
                 )
               ],
             ),
@@ -90,7 +100,7 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
     return CustomScrollView(
       slivers: [
         // [FIXED] Vì Header giờ là Box, cần bọc lại bằng SliverToBoxAdapter khi dùng trong CustomScrollView
-        SliverToBoxAdapter(child: _buildHeader()), 
+        SliverToBoxAdapter(child: _buildHeader()),
         _buildFilterChips(), // Widget này vẫn trả về Sliver nên để nguyên
         const SliverToBoxAdapter(child: SizedBox(height: 20)),
         SliverPadding(
@@ -123,7 +133,8 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
     );
   }
 
-  Widget _buildGridContent(List<HouseholdRecipe> favorites, {required int crossAxisCount, required double aspectRatio}) {
+  Widget _buildGridContent(List<HouseholdRecipe> favorites,
+      {required int crossAxisCount, required double aspectRatio}) {
     return CustomScrollView(
       slivers: [
         // [FIXED] Bọc Header lại
@@ -201,12 +212,15 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
             return GestureDetector(
               onTap: () => setState(() => _selectedFilter = filter),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: isSelected ? mainColor : Colors.white,
                   borderRadius: BorderRadius.circular(25),
-                  border: isSelected ? null : Border.all(color: Colors.grey.shade300),
+                  border: isSelected
+                      ? null
+                      : Border.all(color: Colors.grey.shade300),
                 ),
                 child: Text(
                   filter,
@@ -261,16 +275,20 @@ class FavoriteRecipeCard extends StatelessWidget {
                     width: double.infinity,
                     height: double.infinity,
                     decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(24)),
                       color: Colors.grey[200],
                     ),
                     child: ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(24)),
                       child: Image.network(
                         recipe.imageUrl ?? "",
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => 
-                            const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Center(
+                                child: Icon(Icons.broken_image,
+                                    color: Colors.grey)),
                       ),
                     ),
                   ),
@@ -279,7 +297,8 @@ class FavoriteRecipeCard extends StatelessWidget {
                     right: 10,
                     child: GestureDetector(
                       onTap: () {
-                         Provider.of<RecipeProvider>(context, listen: false).toggleFavorite(recipe, context);
+                        Provider.of<RecipeProvider>(context, listen: false)
+                            .toggleFavorite(recipe, context);
                       },
                       child: Container(
                         padding: const EdgeInsets.all(6),
@@ -287,7 +306,8 @@ class FavoriteRecipeCard extends StatelessWidget {
                           color: Colors.white,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.favorite, size: 16, color: Color(0xFFE57373)),
+                        child: const Icon(Icons.favorite,
+                            size: 16, color: Color(0xFFE57373)),
                       ),
                     ),
                   )
@@ -322,7 +342,7 @@ class FavoriteRecipeCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      "Difficulty: ${recipe.difficulty ?? 'Medium'}", 
+                      "Difficulty: ${recipe.difficulty ?? 'Medium'}",
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -354,7 +374,8 @@ class DiscoverMoreCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.go('/recipes'),
       child: CustomPaint(
-        painter: DashedRectPainter(color: Colors.grey.shade300, strokeWidth: 1.5, gap: 5.0),
+        painter: DashedRectPainter(
+            color: Colors.grey.shade300, strokeWidth: 1.5, gap: 5.0),
         child: Container(
           decoration: BoxDecoration(
             color: const Color(0xFFF9F9F7),
@@ -364,7 +385,8 @@ class DiscoverMoreCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 48, height: 48,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   color: Colors.grey.shade200,
                   shape: BoxShape.circle,
@@ -377,7 +399,8 @@ class DiscoverMoreCard extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               const SizedBox(height: 4),
-              Text(s.browseai,
+              Text(
+                s.browseai,
                 style: TextStyle(color: Colors.grey[500], fontSize: 12),
               ),
             ],
@@ -393,7 +416,8 @@ class DashedRectPainter extends CustomPainter {
   final Color color;
   final double gap;
 
-  DashedRectPainter({this.strokeWidth = 1.0, this.color = Colors.black, this.gap = 5.0});
+  DashedRectPainter(
+      {this.strokeWidth = 1.0, this.color = Colors.black, this.gap = 5.0});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -405,9 +429,11 @@ class DashedRectPainter extends CustomPainter {
     double x = size.width;
     double y = size.height;
     double r = 24.0;
-    
-    var path = Path()..addRRect(RRect.fromRectAndRadius(Rect.fromLTWH(0, 0, x, y), Radius.circular(r)));
-    canvas.drawPath(path, dashedPaint); 
+
+    var path = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, x, y), Radius.circular(r)));
+    canvas.drawPath(path, dashedPaint);
   }
 
   @override

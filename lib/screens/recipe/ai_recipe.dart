@@ -28,7 +28,7 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
     });
   }
 
- void _loadRecipes() {
+  void _loadRecipes() {
     final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
 
     // Ưu tiên 1: Nếu có dữ liệu từ Thông báo (Deep Link)

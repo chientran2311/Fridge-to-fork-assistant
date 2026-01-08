@@ -9,14 +9,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 
 // Import Providers & Localization
-import '../../providers/auth_provider.dart'; 
+import '../../providers/auth_provider.dart';
 import '../../providers/locale_provider.dart';
 import '../../providers/household_provider.dart';
 import '../../l10n/app_localizations.dart';
 
 // [MỚI] Import Database Seeder để gọi hàm tạo dữ liệu
 import '../../utils/database_seeder.dart';
+import '../../utils/fix_recipes_migration.dart';
 import '../../widgets/notification.dart'; 
+import 'debug_tools.dart';
+import 'barcode_generator.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -746,9 +749,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _handleLogout(BuildContext context) async {
     final authProvider = context.read<AuthProvider>();
     await authProvider.logout();
-    
+
     if (context.mounted) {
-      context.go('/login'); 
+      context.go('/login');
     }
   }
 
@@ -766,7 +769,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(ctx); 
+              Navigator.pop(ctx);
               final authProvider = context.read<AuthProvider>();
               final String? error = await authProvider.deleteAccount();
 
@@ -779,7 +782,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 CustomToast.show(context, error, isError: true);
               }
             },
-            child: Text(s.confirm, style: TextStyle(color: redColor, fontWeight: FontWeight.bold)),
+            child: Text(s.confirm,
+                style: TextStyle(color: redColor, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -794,6 +798,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (context.mounted) {
       CustomToast.show(context, s.dataCreatedSuccess);
+    }
+  }
+
+  // ✅ Handler mới: Fix recipes thiếu ingredients/instructions
+  Future<void> _handleFixRecipes(BuildContext context) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("🔧 Đang sửa recipes... Vui lòng đợi!"),
+        duration: Duration(seconds: 3),
+      ),
+    );
+
+    // Import và gọi migration
+    final migration = FixRecipesMigration();
+    await migration.fixAllRecipes();
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content:
+              const Text("✅ Đã sửa xong! Kiểm tra console để xem chi tiết."),
+          backgroundColor: mainColor,
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
@@ -867,7 +896,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 
                 // SECTION 1: CÀI ĐẶT CHUNG
-                _buildSectionHeader(s.general), 
+                _buildSectionHeader(s.general),
                 _buildSectionCard([
                   _buildListTile(
                     icon: Icons.language,
@@ -975,14 +1004,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildListTile(
                     icon: Icons.delete_outline,
                     title: s.deleteAccount,
-                    textColor: redColor, 
-                    iconColor: redColor.withOpacity(0.1), 
-                    iconColorTint: redColor, 
+                    textColor: redColor,
+                    iconColor: redColor.withOpacity(0.1),
+                    iconColorTint: redColor,
                     trailing: const SizedBox(),
                     onTap: () => _confirmDeleteAccount(context, s),
                   ),
                 ]),
-                
+
                 const SizedBox(height: 24),
 
                 // SECTION 5: DEVELOPER TOOLS
@@ -994,10 +1023,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
                     onTap: () => _handleSeedDatabase(context, s),
                   ),
+                  _buildDivider(),
+                  _buildListTile(
+                    icon: Icons.build_circle_outlined, // Icon công cụ
+                    title: "Fix Recipes (Sửa dữ liệu recipes)", // Nút mới
+                    trailing:
+                        Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    onTap: () => _handleFixRecipes(context), // Gọi hàm fix
+                  ),
+                  _buildDivider(),
+                  _buildListTile(
+                    icon: Icons.qr_code_2,
+                    title: "Barcode Generator",
+                    trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BarcodeGeneratorScreen(),
+                        ),
+                      );
+                    },
+                  ),
                 ]),
 
                 const SizedBox(height: 40),
-                
+
                 // Version Info
                 Center(
                   child: Text(
@@ -1233,11 +1284,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   color: iconColor ?? const Color(0xFFE8F0EE),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  icon, 
-                  color: iconColorTint ?? const Color(0xFF1B3B36), 
-                  size: 18
-                ),
+                child: Icon(icon,
+                    color: iconColorTint ?? const Color(0xFF1B3B36), size: 18),
               ),
               const SizedBox(width: 16),
               Expanded(

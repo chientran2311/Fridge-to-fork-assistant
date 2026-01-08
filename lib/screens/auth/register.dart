@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
-import 'package:fridge_to_fork_assistant/screens/main_screen.dart';
 
 // Import Localization
 import '../../l10n/app_localizations.dart';
@@ -9,7 +8,6 @@ import '../../l10n/app_localizations.dart';
 import '../../widgets/auth/common_auth_widgets.dart';
 import '../../data/services/auth_service.dart';
 import '../../widgets/notification.dart';
-import 'package:go_router/go_router.dart';
 import '../../data/services/notification_service.dart';
 import '../../widgets/profile_avatar.dart';
 
@@ -25,7 +23,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final Color secondaryColor = const Color(0xFFF0F1F1);
 
   final AuthService _authService = AuthService();
-
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();

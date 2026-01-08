@@ -23,63 +23,71 @@ class NotificationService {
 
   // 1. Khởi tạo Service (Gọi ở main.dart)
   Future<void> init(GlobalKey<NavigatorState> navigatorKey) async {
-    // Xin quyền thông báo (Quan trọng cho iOS/Android 13+)
-    NotificationSettings settings = await _firebaseMessaging.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    try {
+      // Xin quyền thông báo (Quan trọng cho iOS/Android 13+)
+      NotificationSettings settings = await _firebaseMessaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('✅ Người dùng đã cấp quyền thông báo.');
-      
-      // Setup thông báo Local (để hiện tin khi App đang mở)
-      await _setupLocalNotifications();
-      
-      // Đăng ký hàm xử lý Background
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        print('✅ Người dùng đã cấp quyền thông báo.');
+        
+        // Setup thông báo Local (để hiện tin khi App đang mở)
+        await _setupLocalNotifications();
+        
+        // Đăng ký hàm xử lý Background
+        FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-      // Xử lý khi App đang mở (Foreground) - Hiện local notification
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        print('☀️ Nhận thông báo Foreground: ${message.notification?.title}');
-        _showLocalNotification(message);
-      });
+        // Xử lý khi App đang mở (Foreground) - Hiện local notification
+        FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+          print('☀️ Nhận thông báo Foreground: ${message.notification?.title}');
+          _showLocalNotification(message);
+        });
 
-      // Xử lý khi bấm vào thông báo FCM (từ background/terminated)
-      _setupInteractedMessage(navigatorKey);
-      
-      // Lấy Token và lưu ngay (nếu đã login)
-      await saveTokenToDatabase();
-      
-      // Lắng nghe thay đổi Token (ít khi xảy ra, nhưng cần thiết)
-      _firebaseMessaging.onTokenRefresh.listen((newToken) {
-        saveTokenToDatabase(token: newToken);
-      });
-      
-    } else {
-      print('❌ Người dùng từ chối quyền thông báo.');
+        // Xử lý khi bấm vào thông báo FCM (từ background/terminated)
+        _setupInteractedMessage(navigatorKey);
+        
+        // Lấy Token và lưu ngay (nếu đã login)
+        await saveTokenToDatabase();
+        
+        // Lắng nghe thay đổi Token (ít khi xảy ra, nhưng cần thiết)
+        _firebaseMessaging.onTokenRefresh.listen((newToken) {
+          saveTokenToDatabase(token: newToken);
+        });
+      } else {
+        print('❌ Người dùng từ chối quyền thông báo.');
+      }
+    } catch (e) {
+      print('⚠️ Lỗi khởi tạo notification service: $e');
     }
   }
 
   // 2. Logic Lưu Token lên Firestore
   Future<void> saveTokenToDatabase({String? token}) async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    try {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
 
-    String? fcmToken = token ?? await _firebaseMessaging.getToken();
-    print("🔑 FCM Token: $fcmToken");
+      String? fcmToken = token ?? await _firebaseMessaging.getToken();
+      print("🔑 FCM Token: $fcmToken");
 
-    if (fcmToken != null) {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .set({
-        'fcm_token': fcmToken,
-        'updated_at': FieldValue.serverTimestamp(),
-        'platform': 'flutter_client',
-      }, SetOptions(merge: true));
-      
-      print("💾 Đã lưu Token lên Firestore cho User: ${user.uid}");
+      if (fcmToken != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .set({
+          'fcm_token': fcmToken,
+          'updated_at': FieldValue.serverTimestamp(),
+          'platform': 'flutter_client',
+        }, SetOptions(merge: true));
+        
+        print("💾 Đã lưu Token lên Firestore cho User: ${user.uid}");
+      }
+    } catch (e) {
+      // ✅ Handle token retrieval errors gracefully
+      print('⚠️ Không thể lấy FCM token (emulator không hỗ trợ): $e');
     }
   }
 

@@ -56,6 +56,7 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
@@ -95,16 +96,11 @@ class _AuthProfileImageSyncState extends State<_AuthProfileImageSync> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _syncProfileImage();
-  }
-  
-  void _syncProfileImage() {
-    final authProvider = context.watch<AuthProvider>();
-    final profileProvider = context.read<ProfileImageProvider>();
     
+    final authProvider = context.watch<AuthProvider>();
+    final profileImageProvider = context.read<ProfileImageProvider>();
     final currentUserId = authProvider.user?.uid;
     
-    // Chỉ load khi userId thay đổi (đăng nhập user khác hoặc đăng xuất)
     if (currentUserId != _lastUserId) {
       _lastUserId = currentUserId;
       
@@ -114,10 +110,10 @@ class _AuthProfileImageSyncState extends State<_AuthProfileImageSync> {
         
         if (currentUserId != null) {
           // User đăng nhập -> load ảnh của user đó
-          profileProvider.loadProfileImageForUser(currentUserId);
+          profileImageProvider.loadProfileImageForUser(currentUserId);
         } else {
           // User đăng xuất -> reset về mặc định
-          profileProvider.resetToDefault();
+          profileImageProvider.resetToDefault();
         }
       });
     }

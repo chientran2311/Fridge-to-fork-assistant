@@ -13,13 +13,13 @@ import '../../models/inventory_item.dart';
 // Import Widgets
 import '../../widgets/fridge/fridge_item_card.dart'; 
 import '../../widgets/fridge/fridge_header.dart';
-import '../../widgets/fridge/fridge_search_bar.dart';
 import '../../widgets/fridge/fridge_section_header.dart';
 import '../../widgets/fridge/fridge_delete_bar.dart';
 import '../../widgets/fridge/add_item_bottom_sheet.dart';
 import '../../widgets/fridge/edit_item_bottom_sheet.dart';
 import '../../widgets/notification.dart';
 import '../../widgets/fridge/delete_confirmation_modal.dart';
+import '../../widgets/fridge/fridge_search_bar.dart';
 
 class FridgeHomeScreen extends StatefulWidget {
   const FridgeHomeScreen({super.key});
@@ -180,7 +180,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
                   // Loading
                   if (provider.isLoading) {
                     return const Center(
-                      child: CircularProgressIndicator(color: Color(0xFF0FBD3B)),
+                      child: CircularProgressIndicator(),
                     );
                   }
 

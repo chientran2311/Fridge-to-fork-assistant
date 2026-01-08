@@ -18,6 +18,7 @@ import '../screens/settings/settings.dart';
 import '../screens/recipe/favorite_recipes.dart';
 import '../screens/intro/onboarding_screen.dart';
 
+
 // [QUAN TRỌNG] Khai báo biến global public để Main dùng chung
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 

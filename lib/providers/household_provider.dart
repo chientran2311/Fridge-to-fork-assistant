@@ -13,17 +13,19 @@ class HouseholdProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _userHouseholds = [];
   bool _isLoading = false;
   String? _errorMessage;
+  StreamSubscription<User?>? _authSubscription;
 
   // Getters
   Map<String, dynamic>? get currentHousehold => _currentHousehold;
   List<Map<String, dynamic>> get userHouseholds => _userHouseholds;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  
+
   String? get currentHouseholdId => _currentHousehold?['household_id'];
   String? get currentHouseholdName => _currentHousehold?['name'];
   String? get inviteCode => _currentHousehold?['invite_code']?.toString();
-  bool get isOwner => _currentHousehold?['owner_id'] == FirebaseAuth.instance.currentUser?.uid;
+  bool get isOwner =>
+      _currentHousehold?['owner_id'] == FirebaseAuth.instance.currentUser?.uid;
 
   HouseholdProvider() {
     // Delay initialization to avoid notifyListeners during build
@@ -32,7 +34,11 @@ class HouseholdProvider extends ChangeNotifier {
 
   /// Khởi tạo: Lắng nghe auth state và load household
   void _init() {
-    FirebaseAuth.instance.authStateChanges().listen((user) async {
+    if (_authSubscription != null) return; // Đã init rồi
+
+    // Lắng nghe auth state changes
+    _authSubscription =
+        FirebaseAuth.instance.authStateChanges().listen((user) async {
       if (user != null) {
         await loadCurrentHousehold();
         await loadUserHouseholds();
@@ -44,8 +50,17 @@ class HouseholdProvider extends ChangeNotifier {
     });
   }
 
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
   /// Load thông tin household hiện tại
   Future<void> loadCurrentHousehold() async {
+    // Khởi tạo listener nếu chưa có (safe vì đây được gọi từ UI)
+    _init();
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -115,21 +130,21 @@ class HouseholdProvider extends ChangeNotifier {
 
     try {
       final result = await _householdService.joinHousehold(inviteCode);
-      
+
       if (result == 'invalid_code') {
         _errorMessage = 'Mã mời không hợp lệ';
         _isLoading = false;
         notifyListeners();
         return 'invalid_code';
       }
-      
+
       if (result == 'already_member') {
         _errorMessage = 'Bạn đã là thành viên của nhà này';
         _isLoading = false;
         notifyListeners();
         return 'already_member';
       }
-      
+
       if (result != null) {
         await switchHousehold(result);
         await loadUserHouseholds();
@@ -238,7 +253,7 @@ class HouseholdProvider extends ChangeNotifier {
   Future<bool> checkIfUserOwnsHousehold() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return false;
-    
+
     for (var household in _userHouseholds) {
       if (household['owner_id'] == user.uid) {
         return true;

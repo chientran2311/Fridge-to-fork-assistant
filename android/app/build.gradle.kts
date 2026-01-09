@@ -26,10 +26,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
-
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.fridge_to_fork_assistant"
@@ -55,11 +51,7 @@ android {
 
     buildTypes {
         getByName("release") {
-<<<<<<< HEAD
             // Chỉ gọi signingConfig nếu đã được tạo
-=======
-            // Gọi lại signingConfig đã tạo ở trên (nếu có)
->>>>>>> 9fd48f256ad9193052ea88a552cb17379fceedd5
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }

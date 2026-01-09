@@ -1,9 +1,19 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // [MỚI] Import Auth để lấy User thật
 import 'package:flutter/foundation.dart';
+import 'dart:math';
 
 class DatabaseSeeder {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  /// Generate random invite code format: XXXX-YYYY (8 chars)
+  String _generateInviteCode(String userId) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = Random();
+    final prefix = userId.substring(0, min(4, userId.length)).toUpperCase();
+    final suffix = List.generate(4, (index) => chars[random.nextInt(chars.length)]).join();
+    return '$prefix-$suffix';
+  }
 
   // IDs Nguyên liệu gốc (Master Data) - Giữ nguyên vì dùng chung
   final String _beefId = 'ing_beef_01';
@@ -76,12 +86,13 @@ class DatabaseSeeder {
       // BƯỚC 2: TẠO HOUSEHOLD (Collection: households)
       // ==========================================
       final houseRef = _firestore.collection('households').doc(householdId);
+      final inviteCode = _generateInviteCode(userId);
 
       await houseRef.set({
         'household_id': householdId,
         'name': 'Gia Đình của $displayName', // Tên nhà động theo user
         'owner_id': userId,
-        'invite_code': householdId, // invite_code = household_id
+        'invite_code': inviteCode,
         'members': [userId], // [QUAN TRỌNG] Thêm chính user vào mảng members
         'created_at': FieldValue.serverTimestamp(),
       });

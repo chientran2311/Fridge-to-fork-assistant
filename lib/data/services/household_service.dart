@@ -27,13 +27,15 @@ class HouseholdService {
 
     // Create new household for user
     try {
+      final inviteCode = _generateInviteCode(user.uid);
+      
       await householdRef.set({
         'household_id': householdId,
         'name': '${user.displayName ?? user.email ?? "User"}\'s Kitchen',
         'owner_id': user.uid,
         'members': [user.uid],
         'created_at': FieldValue.serverTimestamp(),
-        'invite_code': householdId, // invite_code = household_id
+        'invite_code': inviteCode,
       });
       
       // Update user's current_household_id
@@ -45,11 +47,13 @@ class HouseholdService {
     }
   }
 
-  /// Generate random invite code
-  String _generateInviteCode() {
+  /// Generate random invite code format: XXXX-YYYY (8 chars)
+  String _generateInviteCode(String userId) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final random = Random();
-    return List.generate(6, (index) => chars[random.nextInt(chars.length)]).join('-');
+    final prefix = userId.substring(0, min(4, userId.length)).toUpperCase();
+    final suffix = List.generate(4, (index) => chars[random.nextInt(chars.length)]).join();
+    return '$prefix-$suffix';
   }
 
   /// Get household info for current user
@@ -136,6 +140,7 @@ class HouseholdService {
       }
 
       final householdRef = _firestore.collection('households').doc();
+      final inviteCode = _generateInviteCode(user.uid);
 
       await householdRef.set({
         'household_id': householdRef.id,
@@ -143,7 +148,7 @@ class HouseholdService {
         'owner_id': user.uid,
         'members': [user.uid],
         'created_at': FieldValue.serverTimestamp(),
-        'invite_code': householdRef.id, // invite_code = household_id
+        'invite_code': inviteCode,
       });
 
       debugPrint('✅ Created new household: ${householdRef.id}');

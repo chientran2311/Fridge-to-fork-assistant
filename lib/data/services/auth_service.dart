@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -105,6 +106,9 @@ class AuthService {
         // B2: Tạo Nhà Mới ngay lập tức
         final String newHouseholdId =
             'house_${user.uid}'; // ID nhà gắn với ID User
+        
+        // Generate invite code format: XXXX-YYYY
+        final inviteCode = _generateInviteCode(user.uid);
 
         await _firestore.collection('households').doc(newHouseholdId).set({
           'household_id': newHouseholdId,
@@ -112,6 +116,7 @@ class AuthService {
           'owner_id': user.uid,
           'members': [user.uid], // Quan trọng: Có user trong members
           'created_at': FieldValue.serverTimestamp(),
+          'invite_code': inviteCode,
         });
 
         // B3: Tạo User Document (Link tới nhà vừa tạo)
@@ -144,6 +149,15 @@ class AuthService {
     } catch (e) {
       return 'Đã xảy ra lỗi không xác định.';
     }
+  }
+
+  /// Generate random invite code format: XXXX-YYYY (8 chars)
+  String _generateInviteCode(String userId) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final random = Random();
+    final prefix = userId.substring(0, min(4, userId.length)).toUpperCase();
+    final suffix = List.generate(4, (index) => chars[random.nextInt(chars.length)]).join();
+    return '$prefix-$suffix';
   }
 
   // --- 3. Đăng xuất ---

@@ -433,4 +433,88 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get nameEmpty => 'Tên không được để trống';
+
+  @override
+  String get fridge => 'Tủ lạnh';
+
+  @override
+  String get recipes => 'Công thức';
+
+  @override
+  String get plan => 'Lập lịch';
+
+  @override
+  String get selected => 'Đã chọn';
+
+  @override
+  String get add_food_title => 'Thêm thực phẩm';
+
+  @override
+  String get ingredient_name_label => 'Tên nguyên liệu';
+
+  @override
+  String get ingredient_name_hint => 'Nhập tên (VD: Sữa tươi, Thịt bò...)';
+
+  @override
+  String get quantity_label => 'Số lượng';
+
+  @override
+  String get expiry_date_label => 'Hết hạn';
+
+  @override
+  String get select_date => 'Chọn ngày';
+
+  @override
+  String get category_label => 'Phân loại';
+
+  @override
+  String get add_tag => '+ Thêm tag';
+
+  @override
+  String get scan_barcode => 'Quét mã vạch';
+
+  @override
+  String get add_to_fridge => 'Thêm vào Tủ Lạnh';
+
+  @override
+  String get adding => 'Đang thêm...';
+
+  @override
+  String get error_empty_name => 'Vui lòng nhập tên thực phẩm';
+
+  @override
+  String get error_empty_expiry => 'Vui lòng chọn ngày hết hạn';
+
+  @override
+  String get error => 'Lỗi';
+
+  @override
+  String item_added(Object item) {
+    return '$item đã được thêm!';
+  }
+
+  @override
+  String barcode_found(Object item) {
+    return 'Đã tìm thấy: $item';
+  }
+
+  @override
+  String barcode_not_found(Object barcode) {
+    return 'Không tìm thấy sản phẩm: $barcode';
+  }
+
+  @override
+  String get category_vegetable => 'Rau củ';
+
+  @override
+  String get category_dairy => 'Sữa/Trứng';
+
+  @override
+  String get category_meat => 'Thịt';
+
+  @override
+  String get category_fruit => 'Trái cây';
+
+  @override
+  String get category_other => 'Khác';
 }

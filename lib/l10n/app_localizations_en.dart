@@ -432,4 +432,88 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nameEmpty => 'Name cannot be empty';
+
+  @override
+  String get fridge => 'Fridge';
+
+  @override
+  String get recipes => 'Recipe';
+
+  @override
+  String get plan => 'Plan';
+
+  @override
+  String get selected => 'Selected';
+
+  @override
+  String get add_food_title => 'Add food';
+
+  @override
+  String get ingredient_name_label => 'Ingredient name';
+
+  @override
+  String get ingredient_name_hint => 'Enter name (e.g. Milk, Beef...)';
+
+  @override
+  String get quantity_label => 'Quantity';
+
+  @override
+  String get expiry_date_label => 'Expiry date';
+
+  @override
+  String get select_date => 'Select date';
+
+  @override
+  String get category_label => 'Category';
+
+  @override
+  String get add_tag => '+ Add tag';
+
+  @override
+  String get scan_barcode => 'Scan barcode';
+
+  @override
+  String get add_to_fridge => 'Add to Fridge';
+
+  @override
+  String get adding => 'Adding...';
+
+  @override
+  String get error_empty_name => 'Please enter the food name';
+
+  @override
+  String get error_empty_expiry => 'Please select an expiry date';
+
+  @override
+  String get error => 'Lỗi';
+
+  @override
+  String item_added(Object item) {
+    return '$item has been added!';
+  }
+
+  @override
+  String barcode_found(Object item) {
+    return 'Found: $item';
+  }
+
+  @override
+  String barcode_not_found(Object barcode) {
+    return 'Product not found: $barcode';
+  }
+
+  @override
+  String get category_vegetable => 'Vegetables';
+
+  @override
+  String get category_dairy => 'Dairy / Eggs';
+
+  @override
+  String get category_meat => 'Meat';
+
+  @override
+  String get category_fruit => 'Fruit';
+
+  @override
+  String get category_other => 'Other';
 }

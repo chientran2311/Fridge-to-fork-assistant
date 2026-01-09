@@ -5,6 +5,7 @@ import '../../models/ingredient.dart';
 import '../../data/services/firebase_service.dart';
 import '../../providers/inventory_provider.dart';
 import '../notification.dart';
+import '../../l10n/app_localizations.dart';
 
 class AddItemBottomSheet extends StatefulWidget {
   const AddItemBottomSheet({
@@ -17,20 +18,27 @@ class AddItemBottomSheet extends StatefulWidget {
 
 class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
   final FirebaseService _firebaseService = FirebaseService();
-  
+  late final s1 = AppLocalizations.of(context);
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _quantityController = TextEditingController(text: '1');
-  
+  final TextEditingController _quantityController =
+      TextEditingController(text: '1');
+
   String _selectedUnit = 'kg';
   DateTime? _selectedExpiryDate;
   String _selectedCategory = 'Rau củ';
   bool _isLoading = false;
-  
+
   // Store scanned ingredient data
   Ingredient? _scannedIngredient;
 
   final List<String> _units = ['cái', 'g', 'kg', 'ml', 'L', 'hộp', 'gói'];
-  final List<String> _categories = ['Rau củ', 'Sữa/Trứng', 'Thịt', 'Trái cây', 'Khác'];
+  final List<String> _categories = [
+    'Rau củ',
+    'Sữa/Trứng',
+    'Thịt',
+    'Trái cây',
+    'Khác'
+  ];
 
   @override
   void dispose() {
@@ -42,7 +50,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
   void _selectExpiryDate() async {
     // Ẩn bàn phím trước khi mở lịch
     FocusScope.of(context).unfocus();
-    
+
     final date = await showDatePicker(
       context: context,
       initialDate: DateTime.now().add(const Duration(days: 7)),
@@ -57,7 +65,7 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
         );
       },
     );
-    
+
     if (date != null) {
       setState(() => _selectedExpiryDate = date);
     }
@@ -65,12 +73,16 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
 
   void _addItem() async {
     if (_nameController.text.trim().isEmpty) {
-      CustomToast.show(context, 'Vui lòng nhập tên thực phẩm', isError: true);
+      CustomToast.show(
+          context, s1?.error_empty_name ?? 'Vui lòng nhập tên thực phẩm',
+          isError: true);
       return;
     }
 
     if (_selectedExpiryDate == null) {
-      CustomToast.show(context, 'Vui lòng chọn ngày hết hạn', isError: true);
+      CustomToast.show(
+          context, s1?.error_empty_expiry ?? 'Vui lòng chọn ngày hết hạn',
+          isError: true);
       return;
     }
 
@@ -79,22 +91,23 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
     try {
       // Sử dụng Provider để thêm item (MVVM pattern)
       await context.read<InventoryProvider>().addItem(
-        name: _nameController.text.trim(),
-        quantity: double.tryParse(_quantityController.text) ?? 1,
-        unit: _mapUnitToDB(_selectedUnit), // Convert UI unit to DB unit
-        expiryDate: _selectedExpiryDate!,
-        category: _selectedCategory,
-      );
+            name: _nameController.text.trim(),
+            quantity: double.tryParse(_quantityController.text) ?? 1,
+            unit: _mapUnitToDB(_selectedUnit), // Convert UI unit to DB unit
+            expiryDate: _selectedExpiryDate!,
+            category: _selectedCategory,
+          );
 
       if (mounted) {
         // [FIX] Hiển thị toast TRƯỚC khi pop BottomSheet
         // Vì sau khi pop, context của BottomSheet sẽ bị dispose
-        CustomToast.show(context, '${_nameController.text} đã được thêm!');
+        CustomToast.show(context,
+            '${_nameController.text} ${s1?.item_added ?? 'đã được thêm!'}');
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        CustomToast.show(context, 'Lỗi: $e', isError: true);
+        CustomToast.show(context, '${s1?.error ?? 'Lỗi'}: $e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -108,22 +121,30 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
         builder: (context) => const FridgeBarcodeScanScreen(),
       ),
     );
-    
+
     if (barcode != null) {
       // Fetch ingredient from Firebase
       final ingredient = await _firebaseService.getIngredientByBarcode(barcode);
-      
+
       if (ingredient != null && mounted) {
         setState(() {
           _scannedIngredient = ingredient;
           _nameController.text = ingredient.name;
-          _selectedUnit = _mapUnitToUI(ingredient.defaultUnit); // Convert DB unit to UI unit
+          _selectedUnit = _mapUnitToUI(
+              ingredient.defaultUnit); // Convert DB unit to UI unit
           _selectedCategory = _mapCategoryToUI(ingredient.category);
         });
-        
-        CustomToast.show(context, 'Đã tìm thấy: ${ingredient.name}');
+
+        CustomToast.show(
+          context,
+          s1!.barcode_found(ingredient.name),
+        );
       } else if (mounted) {
-        CustomToast.show(context, 'Không tìm thấy sản phẩm: $barcode', isError: true);
+        CustomToast.show(
+          context,
+          s1!.barcode_not_found(barcode),
+          isError: true,
+        );
       }
     }
   }
@@ -202,6 +223,8 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context);
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -236,8 +259,8 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Thêm thực phẩm',
+                    Text(
+                      s?.add_food_title ?? 'Thêm nguyên liệu',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -256,8 +279,8 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                 const SizedBox(height: 20),
 
                 // ================= TÊN MÓN =================
-                const Text(
-                  'Tên nguyên liệu',
+                Text(
+                  s?.ingredient_name_label ?? 'Tên nguyên liệu',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
@@ -265,10 +288,12 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                   controller: _nameController,
                   textCapitalization: TextCapitalization.sentences,
                   decoration: InputDecoration(
-                    hintText: 'Nhập tên (VD: Sữa tươi, Thịt bò...)',
+                    hintText: s?.ingredient_name_hint ??
+                        'Nhập tên (VD: Sữa tươi, Thịt bò...)',
                     filled: true,
                     fillColor: const Color(0xFFF6F8F6),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),
                       borderSide: BorderSide.none,
@@ -286,8 +311,8 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Số lượng',
+                          Text(
+                            s?.quantity_label ?? 'Số lượng',
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 8),
@@ -302,18 +327,25 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                                 Expanded(
                                   child: TextField(
                                     controller: _quantityController,
-                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
                                     decoration: const InputDecoration(
                                       border: InputBorder.none,
-                                      contentPadding: EdgeInsets.symmetric(vertical: 14),
+                                      contentPadding:
+                                          EdgeInsets.symmetric(vertical: 14),
                                     ),
                                   ),
                                 ),
                                 DropdownButton<String>(
                                   value: _selectedUnit,
                                   underline: const SizedBox(),
-                                  items: _units.map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
-                                  onChanged: (val) => setState(() => _selectedUnit = val!),
+                                  items: _units
+                                      .map((u) => DropdownMenuItem(
+                                          value: u, child: Text(u)))
+                                      .toList(),
+                                  onChanged: (val) =>
+                                      setState(() => _selectedUnit = val!),
                                 ),
                               ],
                             ),
@@ -329,8 +361,8 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Hết hạn',
+                          Text(
+                            s?.expiry_date_label ?? 'Hạn sử dụng',
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 8),
@@ -338,7 +370,8 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                             onTap: _selectExpiryDate,
                             child: Container(
                               height: 48,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF6F8F6),
                                 borderRadius: BorderRadius.circular(24),
@@ -348,14 +381,17 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                                   Expanded(
                                     child: Text(
                                       _selectedExpiryDate == null
-                                          ? 'Chọn ngày'
+                                          ? s?.select_date ?? 'Chọn ngày'
                                           : '${_selectedExpiryDate!.day}/${_selectedExpiryDate!.month}/${_selectedExpiryDate!.year}',
                                       style: TextStyle(
-                                        color: _selectedExpiryDate == null ? Colors.grey : Colors.black,
+                                        color: _selectedExpiryDate == null
+                                            ? Colors.grey
+                                            : Colors.black,
                                       ),
                                     ),
                                   ),
-                                  const Icon(Icons.calendar_today, color: Color(0xFF0FBD3B)),
+                                  const Icon(Icons.calendar_today,
+                                      color: Color(0xFF0FBD3B)),
                                 ],
                               ),
                             ),
@@ -369,8 +405,8 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                 const SizedBox(height: 24),
 
                 // ================= PHÂN LOẠI (QUICK TAGS) =================
-                const Text(
-                  'Phân loại',
+                Text(
+                  s?.category_label ?? 'Phân loại',
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 12),
@@ -382,17 +418,23 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                     ..._categories.map((category) {
                       final isSelected = category == _selectedCategory;
                       return GestureDetector(
-                        onTap: () => setState(() => _selectedCategory = category),
+                        onTap: () =>
+                            setState(() => _selectedCategory = category),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFFE6F4EA) : Colors.grey.shade100,
+                            color: isSelected
+                                ? const Color(0xFFE6F4EA)
+                                : Colors.grey.shade100,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             category,
                             style: TextStyle(
-                              color: isSelected ? const Color(0xFF1B5E20) : Colors.grey,
+                              color: isSelected
+                                  ? const Color(0xFF1B5E20)
+                                  : Colors.grey,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -401,13 +443,14 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                     }),
                     // + Add Tag button (chỉ hiển thị, không có chức năng)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text(
-                        '+ Thêm tag',
+                      child: Text(
+                        s?.add_tag ?? '+ Thêm tag',
                         style: TextStyle(
                           color: Colors.grey,
                           fontWeight: FontWeight.w600,
@@ -431,13 +474,13 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                         width: 1.5,
                       ),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(Icons.qr_code_scanner, color: Color(0xFF1B5E20)),
                         SizedBox(width: 8),
                         Text(
-                          'Quét mã vạch',
+                          s?.scan_barcode ?? 'Quét mã vạch',
                           style: TextStyle(
                             color: Color(0xFF1B5E20),
                             fontWeight: FontWeight.w600,
@@ -461,15 +504,18 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
                         borderRadius: BorderRadius.circular(28),
                       ),
                     ),
-                    icon: _isLoading 
+                    icon: _isLoading
                         ? const SizedBox(
-                            width: 20, 
-                            height: 20, 
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2),
                           )
                         : const Icon(Icons.check, color: Colors.white),
                     label: Text(
-                      _isLoading ? 'Đang thêm...' : 'Thêm vào Tủ Lạnh',
+                      _isLoading
+                          ? s?.adding ?? 'Đang thêm...'
+                          : s?.add_to_fridge ?? 'Thêm vào Tủ Lạnh',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,

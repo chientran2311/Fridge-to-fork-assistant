@@ -69,28 +69,35 @@ class FridgeHeader extends StatelessWidget {
             )
           else
             // Khi bình thường: Hiện Avatar + Greeting
-            Row(
-              children: [
-                const ProfileAvatar(
-                  size: 48,
-                  showEditIcon: true,
-                ),
-                const SizedBox(width: 12),
-                // Greeting text với display name từ Firestore
-                Consumer<AuthProvider>(
-                  builder: (context, authProvider, child) {
-                    final name = authProvider.displayName;
-                    return Text(
-                      s?.helloGreeting(name) ?? 'Xin chào, $name',
-                      style: GoogleFonts.merriweather(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1A1A1A),
-                      ),
-                    );
-                  },
-                ),
-              ],
+            Flexible(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const ProfileAvatar(
+                    size: 48,
+                    showEditIcon: true,
+                  ),
+                  const SizedBox(width: 12),
+                  // Greeting text với display name từ Firestore
+                  Flexible(
+                    child: Consumer<AuthProvider>(
+                      builder: (context, authProvider, child) {
+                        final name = authProvider.displayName;
+                        return Text(
+                          s?.helloGreeting(name) ?? 'Xin chào, $name',
+                          style: GoogleFonts.merriweather(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF1A1A1A),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
 
           // Nút Save (Lưu) hoặc Settings

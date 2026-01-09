@@ -925,6 +925,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Name cannot be empty'**
   String get nameEmpty;
+
+  /// No description provided for @fridge.
+  ///
+  /// In en, this message translates to:
+  /// **'Fridge'**
+  String get fridge;
+
+  /// No description provided for @recipes.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipe'**
+  String get recipes;
+
+  /// No description provided for @plan.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get plan;
+
+  /// No description provided for @selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get selected;
+
+  /// No description provided for @add_food_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add food'**
+  String get add_food_title;
+
+  /// No description provided for @ingredient_name_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Ingredient name'**
+  String get ingredient_name_label;
+
+  /// No description provided for @ingredient_name_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter name (e.g. Milk, Beef...)'**
+  String get ingredient_name_hint;
+
+  /// No description provided for @quantity_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity'**
+  String get quantity_label;
+
+  /// No description provided for @expiry_date_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiry date'**
+  String get expiry_date_label;
+
+  /// No description provided for @select_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Select date'**
+  String get select_date;
+
+  /// No description provided for @category_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get category_label;
+
+  /// No description provided for @add_tag.
+  ///
+  /// In en, this message translates to:
+  /// **'+ Add tag'**
+  String get add_tag;
+
+  /// No description provided for @scan_barcode.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan barcode'**
+  String get scan_barcode;
+
+  /// No description provided for @add_to_fridge.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Fridge'**
+  String get add_to_fridge;
+
+  /// No description provided for @adding.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding...'**
+  String get adding;
+
+  /// No description provided for @error_empty_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter the food name'**
+  String get error_empty_name;
+
+  /// No description provided for @error_empty_expiry.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select an expiry date'**
+  String get error_empty_expiry;
+
+  /// No description provided for @error.
+  ///
+  /// In en, this message translates to:
+  /// **'Lỗi'**
+  String get error;
+
+  /// No description provided for @item_added.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} has been added!'**
+  String item_added(Object item);
+
+  /// No description provided for @barcode_found.
+  ///
+  /// In en, this message translates to:
+  /// **'Found: {item}'**
+  String barcode_found(Object item);
+
+  /// No description provided for @barcode_not_found.
+  ///
+  /// In en, this message translates to:
+  /// **'Product not found: {barcode}'**
+  String barcode_not_found(Object barcode);
+
+  /// No description provided for @category_vegetable.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegetables'**
+  String get category_vegetable;
+
+  /// No description provided for @category_dairy.
+  ///
+  /// In en, this message translates to:
+  /// **'Dairy / Eggs'**
+  String get category_dairy;
+
+  /// No description provided for @category_meat.
+  ///
+  /// In en, this message translates to:
+  /// **'Meat'**
+  String get category_meat;
+
+  /// No description provided for @category_fruit.
+  ///
+  /// In en, this message translates to:
+  /// **'Fruit'**
+  String get category_fruit;
+
+  /// No description provided for @category_other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get category_other;
 }
 
 class _AppLocalizationsDelegate

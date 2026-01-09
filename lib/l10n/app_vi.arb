@@ -172,5 +172,82 @@
   "editDisplayName": "Chỉnh sửa tên",
   "enterNewName": "Nhập tên mới",
   "nameUpdated": "Cập nhật tên thành công!",
-  "nameEmpty": "Tên không được để trống"
+  "nameEmpty": "Tên không được để trống",
+  "fridge": "Tủ lạnh",
+  "recipes": "Công thức",
+  "plan": "Lập lịch",
+  "selected": "Đã chọn",
+  
+  "add_food_title": "Thêm thực phẩm",
+  "ingredient_name_label": "Tên nguyên liệu",
+  "ingredient_name_hint": "Nhập tên (VD: Sữa tươi, Thịt bò...)",
+
+  "quantity_label": "Số lượng",
+  "expiry_date_label": "Hết hạn",
+  "select_date": "Chọn ngày",
+
+  "category_label": "Phân loại",
+  "add_tag": "+ Thêm tag",
+
+  "scan_barcode": "Quét mã vạch",
+
+  "add_to_fridge": "Thêm vào Tủ Lạnh",
+  "adding": "Đang thêm...",
+
+  "error_empty_name": "Vui lòng nhập tên thực phẩm",
+  "error_empty_expiry": "Vui lòng chọn ngày hết hạn",
+  "error": "Lỗi",
+
+  "item_added": "{item} đã được thêm!",
+  "barcode_found": "Đã tìm thấy: {item}",
+  "@barcode_found": {
+    "placeholders": {
+      "item": {}
+    }
+  },
+  "barcode_not_found": "Không tìm thấy sản phẩm: {barcode}",
+  "@barcode_not_found": {
+    "placeholders": {
+      "barcode": {}
+    }
+  },
+
+  "category_vegetable": "Rau củ",
+  "category_dairy": "Sữa/Trứng",
+  "category_meat": "Thịt",
+  "category_fruit": "Trái cây",
+  "category_other": "Khác",
+
+  "loginRequired": "Vui lòng đăng nhập để thêm kế hoạch",
+  "addedToPlan": "Đã thêm vào kế hoạch",
+  "errorAddingRecipe": "Lỗi khi thêm công thức",
+  "selectDate": "Chọn ngày",
+  "confirmButton": "Xác nhận",
+  "mealPlans": "Kế Hoạch Bữa Ăn",
+  "noRecipesAvailable": "Không có công thức nào",
+  "noMealsPlanned": "Chưa có bữa ăn nào được lên kế hoạch",
+  "allItems": "Tất Cả",
+  "produce": "Rau Củ",
+  "dairy": "Sữa",
+  "pantry": "Tạp Hóa",
+  "noItemsNeeded": "Không có mục nào cần mua",
+  "addedToShoppingList": "✅ Đã thêm {name} vào danh sách mua sắm",
+  "@addedToShoppingList": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "protein": "Protein",
+  "vegetables": "Rau Củ",
+  "fruits": "Trái Cây",
+  "grains": "Ngũ Cốc",
+  "condiments": "Gia Vị",
+  "other": "Khác",
+  "addCustomItem": "Thêm Mục",
+  "itemName": "Tên Mục",
+  "quantity": "Số Lượng",
+  "category": "Danh Mục",
+  "addItemButton": "Thêm Mục"
 }

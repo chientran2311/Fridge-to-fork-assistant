@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:barcode_widget/barcode_widget.dart';
 import '../../models/ingredient.dart';
-import '../../services/firebase_service.dart';
+import '../data/services/firebase_service.dart';
 
 class BarcodeGeneratorScreen extends StatefulWidget {
   const BarcodeGeneratorScreen({super.key});

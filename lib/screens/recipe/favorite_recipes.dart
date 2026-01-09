@@ -182,7 +182,7 @@ class _FavoriteRecipesScreenState extends State<FavoriteRecipesScreen> {
           const SizedBox(width: 16),
           Expanded(
             child: Text(
-              "${s.favoriterecipe} ❤️",
+              "${s.favoriterecipe} ",
               style: GoogleFonts.merriweather(
                 fontSize: 24,
                 fontWeight: FontWeight.w900,
@@ -351,7 +351,10 @@ class FavoriteRecipeCard extends StatelessWidget {
                         height: 1.3,
                       ),
                     ),
-                    const Spacer()
+                    const Spacer(), 
+                    Row(
+                      
+                    )
                   ],
                 ),
               ),

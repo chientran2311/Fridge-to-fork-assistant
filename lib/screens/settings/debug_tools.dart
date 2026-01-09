@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/database_seeder.dart';
+import '../../widgets/notification.dart';
 import 'barcode_generator.dart';
 
 class DebugToolsScreen extends StatefulWidget {
@@ -21,12 +22,7 @@ class _DebugToolsScreenState extends State<DebugToolsScreen> {
     setState(() => _isSeeding = false);
     
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Database seeding completed!'),
-          backgroundColor: Color(0xFF28A745),
-        ),
-      );
+      CustomToast.show(context, 'Database seeding completed!');
     }
   }
 

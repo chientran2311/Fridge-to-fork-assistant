@@ -15,7 +15,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get fridgeTab => 'Fridge';
 
   @override
-  String get recipeTab => 'Chef AI Suggestion';
+  String get recipetab => 'Trợ lý AI gợi ý';
 
   @override
   String get planTab => 'Kế Hoạch';
@@ -223,9 +223,6 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get applyFilters => 'Áp dụng bộ lọc';
-
-  @override
-  String get recipetab => 'Trợ lý AI gợi ý';
 
   @override
   String get schedule => 'Lên lịch';
@@ -436,4 +433,165 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get nameEmpty => 'Tên không được để trống';
+
+  @override
+  String get fridge => 'Tủ lạnh';
+
+  @override
+  String get recipes => 'Công thức';
+
+  @override
+  String get plan => 'Lập lịch';
+
+  @override
+  String get selected => 'Đã chọn';
+
+  @override
+  String get add_food_title => 'Thêm thực phẩm';
+
+  @override
+  String get ingredient_name_label => 'Tên nguyên liệu';
+
+  @override
+  String get ingredient_name_hint => 'Nhập tên (VD: Sữa tươi, Thịt bò...)';
+
+  @override
+  String get quantity_label => 'Số lượng';
+
+  @override
+  String get expiry_date_label => 'Hết hạn';
+
+  @override
+  String get select_date => 'Chọn ngày';
+
+  @override
+  String get category_label => 'Phân loại';
+
+  @override
+  String get add_tag => '+ Thêm tag';
+
+  @override
+  String get scan_barcode => 'Quét mã vạch';
+
+  @override
+  String get add_to_fridge => 'Thêm vào Tủ Lạnh';
+
+  @override
+  String get adding => 'Đang thêm...';
+
+  @override
+  String get error_empty_name => 'Vui lòng nhập tên thực phẩm';
+
+  @override
+  String get error_empty_expiry => 'Vui lòng chọn ngày hết hạn';
+
+  @override
+  String get error => 'Lỗi';
+
+  @override
+  String item_added(Object item) {
+    return '$item đã được thêm!';
+  }
+
+  @override
+  String barcode_found(Object item) {
+    return 'Đã tìm thấy: $item';
+  }
+
+  @override
+  String barcode_not_found(Object barcode) {
+    return 'Không tìm thấy sản phẩm: $barcode';
+  }
+
+  @override
+  String get category_vegetable => 'Rau củ';
+
+  @override
+  String get category_dairy => 'Sữa/Trứng';
+
+  @override
+  String get category_meat => 'Thịt';
+
+  @override
+  String get category_fruit => 'Trái cây';
+
+  @override
+  String get category_other => 'Khác';
+
+  @override
+  String get loginRequired => 'Vui lòng đăng nhập để thêm kế hoạch';
+
+  @override
+  String get addedToPlan => 'Đã thêm vào kế hoạch';
+
+  @override
+  String get errorAddingRecipe => 'Lỗi khi thêm công thức';
+
+  @override
+  String get selectDate => 'Chọn ngày';
+
+  @override
+  String get confirmButton => 'Xác nhận';
+
+  @override
+  String get mealPlans => 'Kế Hoạch Bữa Ăn';
+
+  @override
+  String get noRecipesAvailable => 'Không có công thức nào';
+
+  @override
+  String get noMealsPlanned => 'Chưa có bữa ăn nào được lên kế hoạch';
+
+  @override
+  String get allItems => 'Tất Cả';
+
+  @override
+  String get produce => 'Rau Củ';
+
+  @override
+  String get dairy => 'Sữa';
+
+  @override
+  String get pantry => 'Tạp Hóa';
+
+  @override
+  String get noItemsNeeded => 'Không có mục nào cần mua';
+
+  @override
+  String addedToShoppingList(String name) {
+    return '✅ Đã thêm $name vào danh sách mua sắm';
+  }
+
+  @override
+  String get protein => 'Protein';
+
+  @override
+  String get vegetables => 'Rau Củ';
+
+  @override
+  String get fruits => 'Trái Cây';
+
+  @override
+  String get grains => 'Ngũ Cốc';
+
+  @override
+  String get condiments => 'Gia Vị';
+
+  @override
+  String get other => 'Khác';
+
+  @override
+  String get addCustomItem => 'Thêm Mục';
+
+  @override
+  String get itemName => 'Tên Mục';
+
+  @override
+  String get quantity => 'Số Lượng';
+
+  @override
+  String get category => 'Danh Mục';
+
+  @override
+  String get addItemButton => 'Thêm Mục';
 }

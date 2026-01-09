@@ -15,7 +15,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fridgeTab => 'Fridge';
 
   @override
-  String get recipeTab => 'Chef AI Suggestion';
+  String get recipetab => 'AI suggestion';
 
   @override
   String get planTab => 'Plan';
@@ -225,9 +225,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get applyFilters => 'Apply Filters';
 
   @override
-  String get recipetab => 'AI suggestion';
-
-  @override
   String get schedule => 'Schedule';
 
   @override
@@ -435,4 +432,165 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nameEmpty => 'Name cannot be empty';
+
+  @override
+  String get fridge => 'Fridge';
+
+  @override
+  String get recipes => 'Recipe';
+
+  @override
+  String get plan => 'Plan';
+
+  @override
+  String get selected => 'Selected';
+
+  @override
+  String get add_food_title => 'Add food';
+
+  @override
+  String get ingredient_name_label => 'Ingredient name';
+
+  @override
+  String get ingredient_name_hint => 'Enter name (e.g. Milk, Beef...)';
+
+  @override
+  String get quantity_label => 'Quantity';
+
+  @override
+  String get expiry_date_label => 'Expiry date';
+
+  @override
+  String get select_date => 'Select date';
+
+  @override
+  String get category_label => 'Category';
+
+  @override
+  String get add_tag => '+ Add tag';
+
+  @override
+  String get scan_barcode => 'Scan barcode';
+
+  @override
+  String get add_to_fridge => 'Add to Fridge';
+
+  @override
+  String get adding => 'Adding...';
+
+  @override
+  String get error_empty_name => 'Please enter the food name';
+
+  @override
+  String get error_empty_expiry => 'Please select an expiry date';
+
+  @override
+  String get error => 'Lỗi';
+
+  @override
+  String item_added(Object item) {
+    return '$item has been added!';
+  }
+
+  @override
+  String barcode_found(Object item) {
+    return 'Found: $item';
+  }
+
+  @override
+  String barcode_not_found(Object barcode) {
+    return 'Product not found: $barcode';
+  }
+
+  @override
+  String get category_vegetable => 'Vegetables';
+
+  @override
+  String get category_dairy => 'Dairy / Eggs';
+
+  @override
+  String get category_meat => 'Meat';
+
+  @override
+  String get category_fruit => 'Fruit';
+
+  @override
+  String get category_other => 'Other';
+
+  @override
+  String get loginRequired => 'Please log in to add a plan';
+
+  @override
+  String get addedToPlan => 'Added to plan';
+
+  @override
+  String get errorAddingRecipe => 'Error adding recipe';
+
+  @override
+  String get selectDate => 'Select date';
+
+  @override
+  String get confirmButton => 'Confirm';
+
+  @override
+  String get mealPlans => 'Meal Plans';
+
+  @override
+  String get noRecipesAvailable => 'No recipes available';
+
+  @override
+  String get noMealsPlanned => 'No meals planned for this day';
+
+  @override
+  String get allItems => 'All Items';
+
+  @override
+  String get produce => 'Produce';
+
+  @override
+  String get dairy => 'Dairy';
+
+  @override
+  String get pantry => 'Pantry';
+
+  @override
+  String get noItemsNeeded => 'No items needed';
+
+  @override
+  String addedToShoppingList(String name) {
+    return '✅ Added $name to shopping list';
+  }
+
+  @override
+  String get protein => 'Protein';
+
+  @override
+  String get vegetables => 'Vegetables';
+
+  @override
+  String get fruits => 'Fruits';
+
+  @override
+  String get grains => 'Grains';
+
+  @override
+  String get condiments => 'Condiments';
+
+  @override
+  String get other => 'Other';
+
+  @override
+  String get addCustomItem => 'Add Item';
+
+  @override
+  String get itemName => 'Item Name';
+
+  @override
+  String get quantity => 'Quantity';
+
+  @override
+  String get category => 'Category';
+
+  @override
+  String get addItemButton => 'Add Item';
 }

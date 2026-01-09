@@ -55,7 +55,7 @@ android {
 
     buildTypes {
         getByName("release") {
-            // Gọi lại signingConfig đã tạo ở trên (nếu có)
+            // Chỉ gọi signingConfig nếu đã được tạo
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }

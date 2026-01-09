@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import '../services/profile_image_service.dart';
+import '../data/services/profile_image_service.dart';
 
 /// Provider quản lý state ảnh profile (ViewModel trong MVVM)
 /// Sử dụng ChangeNotifier Pattern để notify UI khi state thay đổi

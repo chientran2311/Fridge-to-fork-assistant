@@ -17,6 +17,7 @@ import '../../widgets/fridge/fridge_section_header.dart';
 import '../../widgets/fridge/fridge_delete_bar.dart';
 import '../../widgets/fridge/add_item_bottom_sheet.dart';
 import '../../widgets/fridge/edit_item_bottom_sheet.dart';
+import '../../widgets/notification.dart';
 import '../../widgets/fridge/delete_confirmation_modal.dart';
 import '../../widgets/fridge/fridge_search_bar.dart';
 
@@ -103,6 +104,10 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     context.go('/fridge/settings'); 
   }
 
+  void _navigateToNotifications() {
+    context.push('/fridge/notifications');
+  }
+
   void _deleteSelectedItems() {
     final provider = Provider.of<InventoryProvider>(context, listen: false);
     provider.deleteItems(_selectedItems.toList());
@@ -112,9 +117,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
     final s = AppLocalizations.of(context);
     final msg = s?.itemsDeleted ?? 'Đã xóa các món đã chọn';
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
-    );
+    CustomToast.show(context, msg);
   }
 
   void _showDeleteConfirmation() {
@@ -166,6 +169,7 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
               onCancel: _exitMultiSelectMode,
               onSave: _exitMultiSelectMode,
               onSettings: _navigateToSettings,
+              onNotifications: _navigateToNotifications,
             ),
             const FridgeSearchBar(),
             
@@ -243,10 +247,11 @@ class _FridgeHomeScreenState extends State<FridgeHomeScreen> {
         ),
       ),
       
-      // FAB Thêm món
+      // FAB Thêm món + Nút Test Toast
       floatingActionButton: _isMultiSelectMode 
           ? null 
           : FloatingActionButton(
+              heroTag: 'addItem',
               onPressed: _showAddItemDialog,
               shape: const CircleBorder(),
               backgroundColor: const Color.fromARGB(255, 36, 75, 45),

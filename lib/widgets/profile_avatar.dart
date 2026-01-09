@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/profile_image_provider.dart';
 import '../providers/auth_provider.dart';
 import '../l10n/app_localizations.dart';
+import 'notification.dart';
 
 /// Widget Avatar Profile có thể tap để đổi ảnh (View trong MVVM)
 /// Sử dụng Consumer Pattern để listen state từ Provider
@@ -297,12 +298,7 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
             onPressed: () async {
               final newName = nameController.text.trim();
               if (newName.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(s?.nameEmpty ?? 'Tên không được để trống'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                CustomToast.show(context, s?.nameEmpty ?? 'Tên không được để trống', isError: true);
                 return;
               }
 
@@ -311,13 +307,10 @@ class _ProfileAvatarState extends State<ProfileAvatar> {
               final error = await authProvider.updateDisplayName(newName);
 
               if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      error ?? (s?.nameUpdated ?? 'Cập nhật tên thành công!'),
-                    ),
-                    backgroundColor: error == null ? Colors.green : Colors.red,
-                  ),
+                CustomToast.show(
+                  context, 
+                  error ?? (s?.nameUpdated ?? 'Cập nhật tên thành công!'),
+                  isError: error != null,
                 );
               }
             },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/inventory_item.dart';
+import '../notification.dart';
 
 class EditItemBottomSheet extends StatefulWidget {
   final InventoryItem item;
@@ -95,30 +96,7 @@ class _EditItemBottomSheetState extends State<EditItemBottomSheet> {
   }
 
   void _showSuccessSnackbar() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 12),
-            Text(
-              "Cập nhật thành công!",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        duration: const Duration(seconds: 2),
-      ),
-    );
+    CustomToast.show(context, "Cập nhật thành công!");
   }
 
   @override

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
+import 'providers/notification_provider.dart';
 import 'firebase_options.dart';
 
 // Import Localization
@@ -21,17 +22,23 @@ import 'package:fridge_to_fork_assistant/router/app_router.dart';
 // Import Notification Service
 import 'data/services/notification_service.dart';
 
+// Import Native Splash
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // Giữ splash screen cho đến khi khởi tạo xong
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
   try {
-    await dotenv.load(fileName: ".env");
+    // Load từ assets/.env (Flutter Web và Mobile đều hoạt động)
+    await dotenv.load(fileName: "assets/.env");
   } catch (e) {
-    debugPrint("⚠️ config: $e");
+    debugPrint("⚠️ Dotenv config: $e");
   }
 
   // [QUAN TRỌNG] Load trạng thái onboarding TRƯỚC khi khởi tạo router
@@ -39,6 +46,9 @@ void main() async {
 
   // [QUAN TRỌNG] Truyền key (lấy từ app_router.dart) vào Service
   await NotificationService().init(rootNavigatorKey);
+
+  // Xóa splash screen sau khi khởi tạo xong
+  FlutterNativeSplash.remove();
 
   runApp(const MyApp());
 }
@@ -59,6 +69,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => HouseholdProvider()),
         ChangeNotifierProvider(create: (_) => ProfileImageProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider(), lazy: false),
       ],
       child: const _AuthProfileImageSync(
         child: _AppWithLocale(),
@@ -86,15 +97,16 @@ class _AuthProfileImageSyncState extends State<_AuthProfileImageSync> {
   Widget build(BuildContext context) {
     // ✅ Lắng nghe AuthProvider trong build
     final authProvider = context.watch<AuthProvider>();
+    final profileProvider = context.read<ProfileImageProvider>();
     final currentUserId = authProvider.user?.uid;
     
     // ✅ Sử dụng addPostFrameCallback để tránh gọi notifyListeners() trong build
     if (currentUserId != _lastUserId) {
+      _lastUserId = currentUserId;
+      
+      // Delay để tránh gọi notifyListeners trong build phase
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        
-        _lastUserId = currentUserId;
-        final profileProvider = context.read<ProfileImageProvider>();
         
         if (currentUserId != null) {
           // User đăng nhập -> load ảnh của user đó

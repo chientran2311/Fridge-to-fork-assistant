@@ -1,7 +1,7 @@
 {
   "appTitle": "Kitchen Assistant",
   "fridgeTab": "Fridge",
-  "recipeTab": "Chef AI Suggestion",
+  "recipetab": "Chef AI Suggestion",
   "planTab": "Plan",
   "settingsTitle": "Settings",
   "language": "Language",
@@ -174,5 +174,82 @@
   "editDisplayName": "Edit Name",
   "enterNewName": "Enter new name",
   "nameUpdated": "Name updated successfully!",
-  "nameEmpty": "Name cannot be empty"
+  "nameEmpty": "Name cannot be empty",
+  "fridge": "Fridge",
+  "recipes": "Recipe",
+  "plan": "Plan",
+  "selected": "Selected",
+
+  "add_food_title": "Add food",
+  "ingredient_name_label": "Ingredient name",
+  "ingredient_name_hint": "Enter name (e.g. Milk, Beef...)",
+
+  "quantity_label": "Quantity",
+  "expiry_date_label": "Expiry date",
+  "select_date": "Select date",
+
+  "category_label": "Category",
+  "add_tag": "+ Add tag",
+
+  "scan_barcode": "Scan barcode",
+
+  "add_to_fridge": "Add to Fridge",
+  "adding": "Adding...",
+
+  "error_empty_name": "Please enter the food name",
+  "error_empty_expiry": "Please select an expiry date",
+  "error": "Lỗi",
+
+  "item_added": "{item} has been added!",
+  "barcode_found": "Found: {item}",
+  "@barcode_found": {
+    "placeholders": {
+      "item": {}
+    }
+  },
+  "barcode_not_found": "Product not found: {barcode}",
+  "@barcode_not_found": {
+    "placeholders": {
+      "barcode": {}
+    }
+  },
+
+  "category_vegetable": "Vegetables",
+  "category_dairy": "Dairy / Eggs",
+  "category_meat": "Meat",
+  "category_fruit": "Fruit",
+  "category_other": "Other",
+
+  "loginRequired": "Please log in to add a plan",
+  "addedToPlan": "Added to plan",
+  "errorAddingRecipe": "Error adding recipe",
+  "selectDate": "Select date",
+  "confirmButton": "Confirm",
+  "mealPlans": "Meal Plans",
+  "noRecipesAvailable": "No recipes available",
+  "noMealsPlanned": "No meals planned for this day",
+  "allItems": "All Items",
+  "produce": "Produce",
+  "dairy": "Dairy",
+  "pantry": "Pantry",
+  "noItemsNeeded": "No items needed",
+  "addedToShoppingList": "✅ Added {name} to shopping list",
+  "@addedToShoppingList": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "protein": "Protein",
+  "vegetables": "Vegetables",
+  "fruits": "Fruits",
+  "grains": "Grains",
+  "condiments": "Condiments",
+  "other": "Other",
+  "addCustomItem": "Add Item",
+  "itemName": "Item Name",
+  "quantity": "Quantity",
+  "category": "Category",
+  "addItemButton": "Add Item"
 }

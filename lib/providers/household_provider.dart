@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/household_service.dart';
+import '../data/services/household_service.dart';
 
 /// HouseholdProvider - MVVM Pattern
 /// Wrap HouseholdService để UI có thể reactive update

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../profile_avatar.dart';
+import '../../providers/notification_provider.dart';
 
 class FridgeHeader extends StatelessWidget {
   final bool isMultiSelectMode;
@@ -11,6 +12,7 @@ class FridgeHeader extends StatelessWidget {
   final VoidCallback onCancel;
   final VoidCallback onSave;
   final VoidCallback onSettings;
+  final VoidCallback? onNotifications;
 
   const FridgeHeader({
     super.key,
@@ -19,6 +21,7 @@ class FridgeHeader extends StatelessWidget {
     required this.onCancel,
     required this.onSave,
     required this.onSettings,
+    this.onNotifications,
   });
 
   @override
@@ -55,7 +58,9 @@ class FridgeHeader extends StatelessWidget {
           if (isMultiSelectMode)
             // Khi đang chọn nhiều: Hiện số lượng items đã chọn
             Text(
-              s?.language == 'vi' ? '$selectedCount đã chọn' : '$selectedCount selected',
+              s?.language == 'vi'
+                  ? '$selectedCount đã chọn'
+                  : '$selectedCount selected',
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
@@ -107,26 +112,92 @@ class FridgeHeader extends StatelessWidget {
               ),
             )
           else
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+            Row(
+              children: [
+                // Nút thông báo với badge
+                Consumer<NotificationProvider>(
+                  builder: (context, notificationProvider, child) {
+                    final unreadCount = notificationProvider.unreadCount;
+                    return Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.notifications_outlined,
+                                size: 20),
+                            onPressed: onNotifications,
+                            color: const Color(0xFF1A1A1A),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
+                        if (unreadCount > 0)
+                          Positioned(
+                            right: -2,
+                            top: -2,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFDC3545),
+                                shape: BoxShape.circle,
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 18,
+                                minHeight: 18,
+                              ),
+                              child: Text(
+                                unreadCount > 99
+                                    ? '99+'
+                                    : unreadCount.toString(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(width: 8),
+                // Nút settings
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.settings_outlined, size: 20),
-                onPressed: onSettings,
-                color: const Color(0xFF1A1A1A),
-                padding: EdgeInsets.zero,
-              ),
+                  child: IconButton(
+                    icon: const Icon(Icons.settings_outlined, size: 20),
+                    onPressed: onSettings,
+                    color: const Color(0xFF1A1A1A),
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
             ),
         ],
       ),

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../../../../widgets/plans/tabs/shopping_list_tab/shopping_item.dart';
 import '../../../../models/shopping_item.dart';
+import '../../../../l10n/app_localizations.dart';
 
 // ✅ Global key to access ShoppingListTab state from outside
 final GlobalKey<_ShoppingListTabState> shoppingListGlobalKey = GlobalKey();
@@ -41,6 +42,9 @@ class _ShoppingListTabState extends State<ShoppingListTab>
 
   // ✅ NEW: Track deleted items to prevent auto-adding them back
   Set<String> _deletedItemKeys = {};
+  
+  // ✅ Filter by category - use ID instead of display text
+  String _selectedCategory = 'all';
 
   @override
   bool get wantKeepAlive => true; // ✅ Keep state when switching tabs
@@ -531,6 +535,7 @@ class _ShoppingListTabState extends State<ShoppingListTab>
 
     return Stack(
       children: [
+        // Scrollable content
         RefreshIndicator(
           onRefresh: () async {
             // ✅ Reset flag when user pulls to refresh and recalculate
@@ -538,34 +543,86 @@ class _ShoppingListTabState extends State<ShoppingListTab>
             await _recalculateShoppingList();
           },
           child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: isDesktop ? 32 : 16,
-              vertical: 16,
-            ),
-            physics:
-                const AlwaysScrollableScrollPhysics(), // ✅ Allow refresh even when empty
+            padding: const EdgeInsets.all(0),
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Header
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                const SizedBox(height: 16),
+
+                // 1. Category Filter Buttons
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isDesktop ? 32 : 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildCategoryButton('all', AppLocalizations.of(context)?.allItems ?? 'All Items'),
+                        const SizedBox(width: 8),
+                        _buildCategoryButton('produce', AppLocalizations.of(context)?.produce ?? 'Produce'),
+                        const SizedBox(width: 8),
+                        _buildCategoryButton('dairy', AppLocalizations.of(context)?.dairy ?? 'Dairy'),
+                        const SizedBox(width: 8),
+                        _buildCategoryButton('pantry', AppLocalizations.of(context)?.pantry ?? 'Pantry'),
+                        const SizedBox(width: 8),
+                        _buildCategoryButton('other', AppLocalizations.of(context)?.other ?? 'Other'),
+                      ],
+                    ),
+                  ),
                 ),
 
+                const SizedBox(height: 16),
+
                 // 2. Shopping Items by Date
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isDesktop ? 32 : 16,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Shopping Items by Date
                 if (_itemsByDate.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 32),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32),
                     child: Center(
                       child: Text(
-                          'No items needed for upcoming meals\n\nPull to refresh',
+                          AppLocalizations.of(context)?.noItemsNeeded ??
+                              'No items needed for upcoming meals\n\nPull to refresh',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey)),
+                          style: const TextStyle(color: Colors.grey)),
                     ),
                   )
                 else
                   ...dates.map((dateKey) {
                     final items = _itemsByDate[dateKey]!;
+                    // ✅ Filter items by selected category
+                    final filteredItems = _selectedCategory == 'all'
+                        ? items
+                        : items.where((item) {
+                            final itemCategory = item.category.toLowerCase();
+                            final selectedCat = _selectedCategory.toLowerCase();
+                            return itemCategory == selectedCat;
+                          }).toList();
+                    
+                    // ✅ Skip this date if no items match the filter
+                    if (filteredItems.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -586,7 +643,7 @@ class _ShoppingListTabState extends State<ShoppingListTab>
                         const SizedBox(height: 12),
 
                         // ✅ Items for this date
-                        ...items
+                        ...filteredItems
                             .map((item) => EditableShoppingItem(
                                   itemId: item.itemId,
                                   title: item.ingredientName,
@@ -609,8 +666,11 @@ class _ShoppingListTabState extends State<ShoppingListTab>
                     );
                   }).toList(),
 
-                // Extra space at bottom
-                const SizedBox(height: 80),
+                      // Extra space at bottom
+                      const SizedBox(height: 100),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -629,6 +689,37 @@ class _ShoppingListTabState extends State<ShoppingListTab>
           ),
         ),
       ],
+    );
+  }
+
+  // ✅ Build category filter button
+  Widget _buildCategoryButton(String categoryId, String categoryLabel) {
+    final isSelected = _selectedCategory == categoryId;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedCategory = categoryId;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF214130) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF214130) : Colors.grey.shade300,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          categoryLabel,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.black87,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            fontSize: 14,
+          ),
+        ),
+      ),
     );
   }
 
@@ -674,9 +765,11 @@ class _ShoppingListTabState extends State<ShoppingListTab>
     await _saveToLocalStorage();
 
     if (mounted) {
+      final s = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('✅ Added $name to shopping list'),
+          content: Text(s?.addedToShoppingList(name) ??
+              'Added $name to shopping list'),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -702,15 +795,19 @@ class _AddItemBottomSheetState extends State<_AddItemBottomSheet> {
   String _selectedCategory = 'other';
 
   final List<String> _units = ['g', 'kg', 'ml', 'l', 'cup', 'tbsp', 'tsp', 'piece'];
-  final List<Map<String, String>> _categories = [
-    {'id': 'protein', 'label': 'Protein'},
-    {'id': 'dairy', 'label': 'Dairy'},
-    {'id': 'vegetables', 'label': 'Vegetables'},
-    {'id': 'fruits', 'label': 'Fruits'},
-    {'id': 'grains', 'label': 'Grains'},
-    {'id': 'condiments', 'label': 'Condiments'},
-    {'id': 'other', 'label': 'Other'},
-  ];
+  
+  List<Map<String, String>> _getCategories(BuildContext context) {
+    final s = AppLocalizations.of(context);
+    return [
+      {'id': 'protein', 'label': s?.protein ?? 'Protein'},
+      {'id': 'dairy', 'label': s?.dairy ?? 'Dairy'},
+      {'id': 'vegetables', 'label': s?.vegetables ?? 'Vegetables'},
+      {'id': 'fruits', 'label': s?.fruits ?? 'Fruits'},
+      {'id': 'grains', 'label': s?.grains ?? 'Grains'},
+      {'id': 'condiments', 'label': s?.condiments ?? 'Condiments'},
+      {'id': 'other', 'label': s?.other ?? 'Other'},
+    ];
+  }
 
   @override
   void dispose() {
@@ -751,24 +848,27 @@ class _AddItemBottomSheetState extends State<_AddItemBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final s = AppLocalizations.of(context);
     return Dialog(
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(28),
       ),
       child: Container(
         padding: const EdgeInsets.all(24),
-        constraints: const BoxConstraints(maxWidth: 500),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             // ✅ Header with title and close button
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Add Item',
-                  style: TextStyle(
+                Text(
+                  s?.addCustomItem ?? 'Add Item',
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF214130),
@@ -799,7 +899,7 @@ class _AddItemBottomSheetState extends State<_AddItemBottomSheet> {
             TextField(
               controller: _nameController,
               decoration: InputDecoration(
-                labelText: 'Item Name',
+                labelText: s?.itemName ?? 'Item Name',
                 filled: true,
                 fillColor: const Color(0xFFF6F8F6),
                 border: OutlineInputBorder(
@@ -820,7 +920,7 @@ class _AddItemBottomSheetState extends State<_AddItemBottomSheet> {
                     controller: _quantityController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
-                      labelText: 'Quantity',
+                      labelText: s?.quantity ?? 'Quantity',
                       filled: true,
                       fillColor: const Color(0xFFF6F8F6),
                       border: OutlineInputBorder(
@@ -864,9 +964,9 @@ class _AddItemBottomSheetState extends State<_AddItemBottomSheet> {
             const SizedBox(height: 16),
 
             // ✅ Category selector
-            const Text(
-              'Category',
-              style: TextStyle(
+            Text(
+              s?.category ?? 'Category',
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: Color(0xFF214130),
@@ -876,7 +976,7 @@ class _AddItemBottomSheetState extends State<_AddItemBottomSheet> {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: _categories.map((category) {
+              children: _getCategories(context).map((category) {
                 final isSelected = _selectedCategory == category['id'];
                 return GestureDetector(
                   onTap: () {
@@ -924,9 +1024,9 @@ class _AddItemBottomSheetState extends State<_AddItemBottomSheet> {
                     borderRadius: BorderRadius.circular(24),
                   ),
                 ),
-                child: const Text(
-                  'Add Item',
-                  style: TextStyle(
+                child: Text(
+                  s?.addItemButton ?? 'Add Item',
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -936,6 +1036,7 @@ class _AddItemBottomSheetState extends State<_AddItemBottomSheet> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../notification.dart';
 
 class ManageHouseholdsBottomSheet extends StatelessWidget {
   final List<Map<String, dynamic>> households;
@@ -301,12 +302,7 @@ class ManageHouseholdsBottomSheet extends StatelessWidget {
                           onTap: () {
                             final code = household['invite_code']?.toString() ?? '';
                             Clipboard.setData(ClipboardData(text: code));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Đã sao chép mã mời!'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
+                            CustomToast.show(context, 'Đã sao chép mã mời!');
                           },
                           child: Container(
                             padding: const EdgeInsets.all(4),

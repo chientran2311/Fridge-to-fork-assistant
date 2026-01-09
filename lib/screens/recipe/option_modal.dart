@@ -3,6 +3,7 @@ import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import 'package:fridge_to_fork_assistant/widgets/common/primary_button.dart';
 import 'package:fridge_to_fork_assistant/widgets/recipe/option/option_header.dart';
 import 'package:fridge_to_fork_assistant/widgets/recipe/option/option_button.dart';
+import 'package:fridge_to_fork_assistant/widgets/notification.dart';
 import 'share_recipe_modal.dart'; 
 
 class OptionModal extends StatelessWidget {
@@ -78,9 +79,7 @@ class OptionModal extends StatelessWidget {
             subtitle: "Access quickly from plan",
             onTap: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Recipe saved to favorites!")),
-              );
+              CustomToast.show(context, "Recipe saved to favorites!");
             },
           ),
           const SizedBox(height: 32),

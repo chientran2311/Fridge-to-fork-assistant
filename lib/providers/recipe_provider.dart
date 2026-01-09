@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/household_recipe.dart';
+import '../widgets/notification.dart';
 import '../data/repositories/recipe_repository.dart'; // [Thay đổi] Dùng Repo
 import '../data/services/spoonacular_service.dart'; // ✅ Add for direct API call
 import '../models/RecipeFilter.dart';
@@ -284,13 +285,7 @@ class RecipeProvider extends ChangeNotifier {
         await collectionRef.add(recipeData);
 
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Đã thêm vào yêu thích ❤️"),
-              duration: Duration(seconds: 1),
-              backgroundColor: Color(0xFF1B3B36),
-            ),
-          );
+          CustomToast.show(context, "Đã thêm vào yêu thích ❤️");
         }
       }
     } catch (e) {

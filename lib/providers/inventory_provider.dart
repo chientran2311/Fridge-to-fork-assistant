@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/inventory_item.dart';
 import '../data/repositories/inventory_repository.dart';
+import '../models/fridge_notification.dart';
 
 class InventoryProvider extends ChangeNotifier {
   final InventoryRepository _repository = InventoryRepository();
@@ -127,6 +128,16 @@ class InventoryProvider extends ChangeNotifier {
     );
 
     await _repository.addItem(householdId, newItem, user.uid);
+
+    // Thêm thông báo
+    await _addNotification(
+      householdId,
+      FridgeNotification.added(
+        itemName: name,
+        quantity: quantity,
+        unit: unit,
+      ),
+    );
   }
 
   // --- DỌN DẸP ---
@@ -134,6 +145,8 @@ class InventoryProvider extends ChangeNotifier {
     _userSubscription?.cancel();
     _inventorySubscription?.cancel();
   }
+
+  
 
   @override
   void dispose() {
@@ -151,6 +164,8 @@ class InventoryProvider extends ChangeNotifier {
     String? householdId = userDoc.data()?['current_household_id'];
     if (householdId == null) return;
 
+    final itemsToDelete = _items.where((item) => itemIds.contains(item.id)).toList();
+
     final batch = FirebaseFirestore.instance.batch();
     for (var id in itemIds) {
       final docRef = FirebaseFirestore.instance
@@ -161,6 +176,18 @@ class InventoryProvider extends ChangeNotifier {
       batch.delete(docRef);
     }
     await batch.commit();
+
+    // Thêm thông báo cho mỗi item bị xóa
+    for (var item in itemsToDelete) {
+      await _addNotification(
+        householdId,
+        FridgeNotification.removed(
+          itemName: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+        ),
+      );
+    }
   }
 
   // Cập nhật item
@@ -184,5 +211,28 @@ class InventoryProvider extends ChangeNotifier {
           'expiry_date': item.expiryDate != null ? Timestamp.fromDate(item.expiryDate!) : null,
           'quick_tag': item.quickTag,
         });
+      
+    // Thêm thông báo cập nhật
+    await _addNotification(
+      householdId,
+      FridgeNotification.updated(
+        itemName: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
+      ),
+    );
   }
+
+  Future<void> _addNotification(String householdId, FridgeNotification notification) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('households')
+          .doc(householdId)
+          .collection('notifications')
+          .add(notification.toFirestore());
+    } catch (e) {
+      debugPrint("❌ Lỗi khi thêm thông báo: $e");
+    }
+  }
+
 }

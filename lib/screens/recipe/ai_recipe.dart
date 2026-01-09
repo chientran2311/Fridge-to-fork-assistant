@@ -96,7 +96,7 @@ class _AIRecipeScreenState extends State<AIRecipeScreen> {
                   ),
                   icon: const Icon(Icons.auto_awesome, color: Colors.white),
                   label: const Text(
-                    "Tạo thêm công thức",
+                    "Tạo lại công thức",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,

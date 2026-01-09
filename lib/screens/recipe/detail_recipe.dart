@@ -4,6 +4,7 @@ import 'package:fridge_to_fork_assistant/utils/responsive_ui.dart';
 import 'package:fridge_to_fork_assistant/widgets/common/primary_button.dart';
 import 'package:fridge_to_fork_assistant/models/household_recipe.dart';
 import 'package:fridge_to_fork_assistant/providers/inventory_provider.dart';
+import 'package:fridge_to_fork_assistant/widgets/notification.dart';
 
 // [THÊM] Import thư viện Firebase
 import 'package:firebase_auth/firebase_auth.dart';
@@ -92,10 +93,17 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             String nameClean = ing['name'] ?? "";
             String original = ing['original'] ?? "$amount $unit $nameClean";
 
-            String ingNameClean = nameClean.toLowerCase();
-            bool isInFridge = myFridgeItems.any((myFridgeItem) =>
-                ingNameClean.contains(myFridgeItem) ||
-                myFridgeItem.contains(ingNameClean));
+            String ingNameClean = nameClean.toLowerCase().trim();
+            
+            // [FIX LOGIC SO SÁNH - SENIOR ADVICE]
+            // Chỉ cho phép item trong tủ lạnh "bao hàm" item trong công thức
+            // Hoặc khớp chính xác
+            // VD: Tủ có "Thịt bò ba chỉ" -> công thức cần "Thịt bò" -> OK (True)
+            // VD: Tủ có "Sữa" -> công thức cần "Sữa chua" -> KHÔNG (False) - Đúng logic
+            // TUYỆT ĐỐI KHÔNG DÙNG: ingNameClean.contains(myFridgeItem)
+            bool isInFridge = myFridgeItems.any((myFridgeItem) {
+                return myFridgeItem == ingNameClean || myFridgeItem.contains(ingNameClean);
+            });
 
             return {
               "original": original,
@@ -184,9 +192,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   Future<void> _saveToCookingHistory(DateTime date) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Bạn cần đăng nhập"), backgroundColor: Colors.red),
-      );
+      CustomToast.show(context, "Bạn cần đăng nhập", isError: true);
       return;
     }
 
@@ -222,20 +228,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           .add(historyData);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Đã thêm vào lịch ngày ${date.day}/${date.month}!"),
-            backgroundColor: const Color.fromARGB(255, 27, 56, 28),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        CustomToast.show(context, "Đã thêm vào lịch ngày ${date.day}/${date.month}!");
       }
 
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Lỗi: $e"), backgroundColor: Colors.red),
-        );
+        CustomToast.show(context, "Lỗi: $e", isError: true);
       }
     } finally {
       // Dù thành công hay thất bại, luôn tắt loading

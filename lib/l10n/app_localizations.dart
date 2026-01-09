@@ -110,11 +110,11 @@ abstract class AppLocalizations {
   /// **'Fridge'**
   String get fridgeTab;
 
-  /// No description provided for @recipeTab.
+  /// No description provided for @recipetab.
   ///
   /// In en, this message translates to:
-  /// **'Chef AI Suggestion'**
-  String get recipeTab;
+  /// **'AI suggestion'**
+  String get recipetab;
 
   /// No description provided for @planTab.
   ///
@@ -524,12 +524,6 @@ abstract class AppLocalizations {
   /// **'Apply Filters'**
   String get applyFilters;
 
-  /// No description provided for @recipetab.
-  ///
-  /// In en, this message translates to:
-  /// **'AI suggestion'**
-  String get recipetab;
-
   /// No description provided for @schedule.
   ///
   /// In en, this message translates to:
@@ -931,6 +925,312 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Name cannot be empty'**
   String get nameEmpty;
+
+  /// No description provided for @fridge.
+  ///
+  /// In en, this message translates to:
+  /// **'Fridge'**
+  String get fridge;
+
+  /// No description provided for @recipes.
+  ///
+  /// In en, this message translates to:
+  /// **'Recipe'**
+  String get recipes;
+
+  /// No description provided for @plan.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get plan;
+
+  /// No description provided for @selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get selected;
+
+  /// No description provided for @add_food_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add food'**
+  String get add_food_title;
+
+  /// No description provided for @ingredient_name_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Ingredient name'**
+  String get ingredient_name_label;
+
+  /// No description provided for @ingredient_name_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter name (e.g. Milk, Beef...)'**
+  String get ingredient_name_hint;
+
+  /// No description provided for @quantity_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity'**
+  String get quantity_label;
+
+  /// No description provided for @expiry_date_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Expiry date'**
+  String get expiry_date_label;
+
+  /// No description provided for @select_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Select date'**
+  String get select_date;
+
+  /// No description provided for @category_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get category_label;
+
+  /// No description provided for @add_tag.
+  ///
+  /// In en, this message translates to:
+  /// **'+ Add tag'**
+  String get add_tag;
+
+  /// No description provided for @scan_barcode.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan barcode'**
+  String get scan_barcode;
+
+  /// No description provided for @add_to_fridge.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to Fridge'**
+  String get add_to_fridge;
+
+  /// No description provided for @adding.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding...'**
+  String get adding;
+
+  /// No description provided for @error_empty_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter the food name'**
+  String get error_empty_name;
+
+  /// No description provided for @error_empty_expiry.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select an expiry date'**
+  String get error_empty_expiry;
+
+  /// No description provided for @error.
+  ///
+  /// In en, this message translates to:
+  /// **'Lỗi'**
+  String get error;
+
+  /// No description provided for @item_added.
+  ///
+  /// In en, this message translates to:
+  /// **'{item} has been added!'**
+  String item_added(Object item);
+
+  /// No description provided for @barcode_found.
+  ///
+  /// In en, this message translates to:
+  /// **'Found: {item}'**
+  String barcode_found(Object item);
+
+  /// No description provided for @barcode_not_found.
+  ///
+  /// In en, this message translates to:
+  /// **'Product not found: {barcode}'**
+  String barcode_not_found(Object barcode);
+
+  /// No description provided for @category_vegetable.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegetables'**
+  String get category_vegetable;
+
+  /// No description provided for @category_dairy.
+  ///
+  /// In en, this message translates to:
+  /// **'Dairy / Eggs'**
+  String get category_dairy;
+
+  /// No description provided for @category_meat.
+  ///
+  /// In en, this message translates to:
+  /// **'Meat'**
+  String get category_meat;
+
+  /// No description provided for @category_fruit.
+  ///
+  /// In en, this message translates to:
+  /// **'Fruit'**
+  String get category_fruit;
+
+  /// No description provided for @category_other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get category_other;
+
+  /// No description provided for @loginRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please log in to add a plan'**
+  String get loginRequired;
+
+  /// No description provided for @addedToPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to plan'**
+  String get addedToPlan;
+
+  /// No description provided for @errorAddingRecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Error adding recipe'**
+  String get errorAddingRecipe;
+
+  /// No description provided for @selectDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select date'**
+  String get selectDate;
+
+  /// No description provided for @confirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirmButton;
+
+  /// No description provided for @mealPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal Plans'**
+  String get mealPlans;
+
+  /// No description provided for @noRecipesAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No recipes available'**
+  String get noRecipesAvailable;
+
+  /// No description provided for @noMealsPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'No meals planned for this day'**
+  String get noMealsPlanned;
+
+  /// No description provided for @allItems.
+  ///
+  /// In en, this message translates to:
+  /// **'All Items'**
+  String get allItems;
+
+  /// No description provided for @produce.
+  ///
+  /// In en, this message translates to:
+  /// **'Produce'**
+  String get produce;
+
+  /// No description provided for @dairy.
+  ///
+  /// In en, this message translates to:
+  /// **'Dairy'**
+  String get dairy;
+
+  /// No description provided for @pantry.
+  ///
+  /// In en, this message translates to:
+  /// **'Pantry'**
+  String get pantry;
+
+  /// No description provided for @noItemsNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'No items needed'**
+  String get noItemsNeeded;
+
+  /// No description provided for @addedToShoppingList.
+  ///
+  /// In en, this message translates to:
+  /// **'✅ Added {name} to shopping list'**
+  String addedToShoppingList(String name);
+
+  /// No description provided for @protein.
+  ///
+  /// In en, this message translates to:
+  /// **'Protein'**
+  String get protein;
+
+  /// No description provided for @vegetables.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegetables'**
+  String get vegetables;
+
+  /// No description provided for @fruits.
+  ///
+  /// In en, this message translates to:
+  /// **'Fruits'**
+  String get fruits;
+
+  /// No description provided for @grains.
+  ///
+  /// In en, this message translates to:
+  /// **'Grains'**
+  String get grains;
+
+  /// No description provided for @condiments.
+  ///
+  /// In en, this message translates to:
+  /// **'Condiments'**
+  String get condiments;
+
+  /// No description provided for @other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get other;
+
+  /// No description provided for @addCustomItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Item'**
+  String get addCustomItem;
+
+  /// No description provided for @itemName.
+  ///
+  /// In en, this message translates to:
+  /// **'Item Name'**
+  String get itemName;
+
+  /// No description provided for @quantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity'**
+  String get quantity;
+
+  /// No description provided for @category.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get category;
+
+  /// No description provided for @addItemButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Item'**
+  String get addItemButton;
 }
 
 class _AppLocalizationsDelegate

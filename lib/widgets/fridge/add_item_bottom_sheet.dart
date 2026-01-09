@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fridge_to_fork_assistant/screens/fridge/fridge_barcode_scan.dart';
 import '../../models/ingredient.dart';
-import '../../services/firebase_service.dart';
+import '../../data/services/firebase_service.dart';
 import '../../providers/inventory_provider.dart';
+import '../notification.dart';
 
 class AddItemBottomSheet extends StatefulWidget {
   const AddItemBottomSheet({
@@ -64,16 +65,12 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
 
   void _addItem() async {
     if (_nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập tên thực phẩm'), backgroundColor: Colors.red),
-      );
+      CustomToast.show(context, 'Vui lòng nhập tên thực phẩm', isError: true);
       return;
     }
 
     if (_selectedExpiryDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn ngày hết hạn'), backgroundColor: Colors.orange),
-      );
+      CustomToast.show(context, 'Vui lòng chọn ngày hết hạn', isError: true);
       return;
     }
 
@@ -90,22 +87,14 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
       );
 
       if (mounted) {
+        // [FIX] Hiển thị toast TRƯỚC khi pop BottomSheet
+        // Vì sau khi pop, context của BottomSheet sẽ bị dispose
+        CustomToast.show(context, '${_nameController.text} đã được thêm!');
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${_nameController.text} đã được thêm!'),
-            backgroundColor: const Color(0xFF28A745),
-          ),
-        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: $e'),
-            backgroundColor: const Color(0xFFDC3545),
-          ),
-        );
+        CustomToast.show(context, 'Lỗi: $e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -132,19 +121,9 @@ class _AddItemBottomSheetState extends State<AddItemBottomSheet> {
           _selectedCategory = _mapCategoryToUI(ingredient.category);
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đã tìm thấy: ${ingredient.name}'),
-            backgroundColor: const Color(0xFF28A745),
-          ),
-        );
+        CustomToast.show(context, 'Đã tìm thấy: ${ingredient.name}');
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Không tìm thấy sản phẩm: $barcode'),
-            backgroundColor: const Color(0xFFDC3545),
-          ),
-        );
+        CustomToast.show(context, 'Không tìm thấy sản phẩm: $barcode', isError: true);
       }
     }
   }

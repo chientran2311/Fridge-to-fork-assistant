@@ -9,7 +9,15 @@ class AuthService {
   Future<void> _syncUserToFirestore(User user) async {
     try {
       final userRef = _firestore.collection('users').doc(user.uid);
-      final snapshot = await userRef.get();
+      
+      // Thêm timeout để tránh treo khi Firestore không phản hồi
+      final snapshot = await userRef.get().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          print("⏰ Firestore timeout - bỏ qua sync");
+          throw Exception("Firestore timeout");
+        },
+      );
 
       if (!snapshot.exists) {
         // A. Nếu chưa có hồ sơ -> Tạo mới
@@ -21,15 +29,17 @@ class AuthService {
           'current_household_id': null,
           'created_at': FieldValue.serverTimestamp(),
           'last_login': FieldValue.serverTimestamp(),
-        });
+        }).timeout(const Duration(seconds: 5));
       } else {
         // B. Nếu đã có hồ sơ -> Cập nhật giờ đăng nhập mới nhất
         await userRef.update({
           'last_login': FieldValue.serverTimestamp(),
-        });
+        }).timeout(const Duration(seconds: 5));
       }
+      print("✅ Sync Firestore thành công");
     } catch (e) {
       print("⚠️ Lỗi đồng bộ Firestore: $e");
+      // Không throw để login vẫn thành công dù sync thất bại
     }
   }
 
@@ -37,15 +47,21 @@ class AuthService {
   Future<String?> loginWithEmail(
       {required String email, required String password}) async {
     try {
+      print("🔐 Đang đăng nhập: $email");
+      
       UserCredential cred = await _auth.signInWithEmailAndPassword(
           email: email, password: password);
 
+      print("✅ Firebase Auth thành công: ${cred.user?.uid}");
+
       if (cred.user != null) {
-        await _syncUserToFirestore(cred.user!);
+        // Không await sync để login nhanh hơn
+        _syncUserToFirestore(cred.user!);
       }
 
       return null; // Thành công
     } on FirebaseAuthException catch (e) {
+      print("❌ FirebaseAuthException: ${e.code}");
       switch (e.code) {
         case 'user-not-found':
           return 'Không tìm thấy tài khoản với email này.';
@@ -57,11 +73,14 @@ class AuthService {
           return 'Tài khoản này đã bị vô hiệu hóa.';
         case 'too-many-requests':
           return 'Quá nhiều lần thử thất bại. Vui lòng thử lại sau.';
+        case 'invalid-credential':
+          return 'Email hoặc mật khẩu không chính xác.';
         default:
           return 'Lỗi đăng nhập: ${e.message}';
       }
     } catch (e) {
-      return 'Đã xảy ra lỗi không xác định.';
+      print("❌ Lỗi không xác định: $e");
+      return 'Đã xảy ra lỗi: $e';
     }
   }
 

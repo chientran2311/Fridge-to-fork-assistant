@@ -10,7 +10,7 @@ class SignupFooter extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          "New here? ",
+          "Người mới ở đây? ",
           style: TextStyle(color: Colors.grey[600], fontSize: 16),
         ),
         GestureDetector(
@@ -22,7 +22,7 @@ class SignupFooter extends StatelessWidget {
             );
           },
           child: const Text(
-            "Create an account",
+            "Tạo tài khoản",
             style: TextStyle(
               color: Colors.black,
               fontSize: 16,

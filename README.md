@@ -271,8 +271,7 @@ Dự án này được phân phối dưới giấy phép MIT. Xem file `LICENSE`
 
 Nếu bạn có câu hỏi hoặc góp ý, vui lòng liên hệ:
 
-- **Email**: your-email@example.com
-- **GitHub Issues**: [Tạo issue mới](https://github.com/your-username/fridge-to-fork-assistant/issues)
+- **Email**: chien2977@gmail.com
 
 ---
 

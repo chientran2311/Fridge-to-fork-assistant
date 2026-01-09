@@ -432,4 +432,89 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nameEmpty => 'Name cannot be empty';
+
+  @override
+  String get selectDate => 'Select date';
+
+  @override
+  String get confirmButton => 'Confirm';
+
+  @override
+  String get mealPlans => 'Meal Plans';
+
+  @override
+  String get noMealsPlanned => 'No meals planned for this day';
+
+  @override
+  String get noRecipesAvailable =>
+      'No recipes available. Search for recipes in the Recipe tab.';
+
+  @override
+  String get loginRequired => 'Please log in to add a plan';
+
+  @override
+  String get addedToPlan => 'Added to plan';
+
+  @override
+  String get errorAddingRecipe => 'Error adding recipe';
+
+  @override
+  String get allItems => 'All Items';
+
+  @override
+  String get produce => 'Produce';
+
+  @override
+  String get dairy => 'Dairy';
+
+  @override
+  String get pantry => 'Pantry';
+
+  @override
+  String get other => 'Other';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get noItemsNeeded =>
+      'No items needed for upcoming meals\n\nPull to refresh';
+
+  @override
+  String addedToShoppingList(String name) {
+    return 'Added $name to shopping list';
+  }
+
+  @override
+  String get addCustomItem => 'Add Custom Item';
+
+  @override
+  String get itemName => 'Item Name';
+
+  @override
+  String get quantity => 'Quantity';
+
+  @override
+  String get unit => 'Unit';
+
+  @override
+  String get category => 'Category';
+
+  @override
+  String get protein => 'Protein';
+
+  @override
+  String get vegetables => 'Vegetables';
+
+  @override
+  String get fruits => 'Fruits';
+
+  @override
+  String get grains => 'Grains';
+
+  @override
+  String get condiments => 'Condiments';
+
+  @override
+  String get addItemButton => 'Add Item';
 }

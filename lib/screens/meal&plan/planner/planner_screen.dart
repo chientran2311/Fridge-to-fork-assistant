@@ -46,7 +46,9 @@ class _PlannerScreenState extends State<PlannerScreen> {
           ? null
           : AppBar(
               elevation: 0,
+              scrolledUnderElevation: 0,
               backgroundColor: _bgColor,
+              surfaceTintColor: Colors.transparent,
               title: Text(
                 titleText, // ✅ Dùng biến đa ngôn ngữ
                 style: const TextStyle(

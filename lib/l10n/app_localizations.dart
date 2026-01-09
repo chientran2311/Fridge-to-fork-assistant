@@ -925,6 +925,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Name cannot be empty'**
   String get nameEmpty;
+
+  /// No description provided for @selectDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Select date'**
+  String get selectDate;
+
+  /// No description provided for @confirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get confirmButton;
+
+  /// No description provided for @mealPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Meal Plans'**
+  String get mealPlans;
+
+  /// No description provided for @noMealsPlanned.
+  ///
+  /// In en, this message translates to:
+  /// **'No meals planned for this day'**
+  String get noMealsPlanned;
+
+  /// No description provided for @noRecipesAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No recipes available. Search for recipes in the Recipe tab.'**
+  String get noRecipesAvailable;
+
+  /// No description provided for @loginRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please log in to add a plan'**
+  String get loginRequired;
+
+  /// No description provided for @addedToPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to plan'**
+  String get addedToPlan;
+
+  /// No description provided for @errorAddingRecipe.
+  ///
+  /// In en, this message translates to:
+  /// **'Error adding recipe'**
+  String get errorAddingRecipe;
+
+  /// No description provided for @allItems.
+  ///
+  /// In en, this message translates to:
+  /// **'All Items'**
+  String get allItems;
+
+  /// No description provided for @produce.
+  ///
+  /// In en, this message translates to:
+  /// **'Produce'**
+  String get produce;
+
+  /// No description provided for @dairy.
+  ///
+  /// In en, this message translates to:
+  /// **'Dairy'**
+  String get dairy;
+
+  /// No description provided for @pantry.
+  ///
+  /// In en, this message translates to:
+  /// **'Pantry'**
+  String get pantry;
+
+  /// No description provided for @other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get other;
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @noItemsNeeded.
+  ///
+  /// In en, this message translates to:
+  /// **'No items needed for upcoming meals\n\nPull to refresh'**
+  String get noItemsNeeded;
+
+  /// No description provided for @addedToShoppingList.
+  ///
+  /// In en, this message translates to:
+  /// **'Added {name} to shopping list'**
+  String addedToShoppingList(String name);
+
+  /// No description provided for @addCustomItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Custom Item'**
+  String get addCustomItem;
+
+  /// No description provided for @itemName.
+  ///
+  /// In en, this message translates to:
+  /// **'Item Name'**
+  String get itemName;
+
+  /// No description provided for @quantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Quantity'**
+  String get quantity;
+
+  /// No description provided for @unit.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit'**
+  String get unit;
+
+  /// No description provided for @category.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get category;
+
+  /// No description provided for @protein.
+  ///
+  /// In en, this message translates to:
+  /// **'Protein'**
+  String get protein;
+
+  /// No description provided for @vegetables.
+  ///
+  /// In en, this message translates to:
+  /// **'Vegetables'**
+  String get vegetables;
+
+  /// No description provided for @fruits.
+  ///
+  /// In en, this message translates to:
+  /// **'Fruits'**
+  String get fruits;
+
+  /// No description provided for @grains.
+  ///
+  /// In en, this message translates to:
+  /// **'Grains'**
+  String get grains;
+
+  /// No description provided for @condiments.
+  ///
+  /// In en, this message translates to:
+  /// **'Condiments'**
+  String get condiments;
+
+  /// No description provided for @addItemButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Item'**
+  String get addItemButton;
 }
 
 class _AppLocalizationsDelegate

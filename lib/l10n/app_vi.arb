@@ -1,5 +1,6 @@
 {
   "appTitle": "Bếp Trợ Lý",
+  "fridgeTab": "Tủ Lạnh",
   "planTab": "Kế Hoạch",
   "settingsTitle": "Cài Đặt",
   "language": "Ngôn ngữ",
@@ -172,5 +173,40 @@
   "editDisplayName": "Chỉnh sửa tên",
   "enterNewName": "Nhập tên mới",
   "nameUpdated": "Cập nhật tên thành công!",
-  "nameEmpty": "Tên không được để trống"
+  "nameEmpty": "Tên không được để trống",
+
+  "selectDate": "Chọn ngày",
+  "confirmButton": "Xác nhận",
+  "mealPlans": "Kế Hoạch Bữa Ăn",
+  "noMealsPlanned": "Chưa có bữa ăn nào được lên kế hoạch cho ngày này",
+  "noRecipesAvailable": "Không có công thức nào. Hãy tìm kiếm công thức ở tab Recipes.",
+  "loginRequired": "Vui lòng đăng nhập để thêm kế hoạch",
+  "addedToPlan": "Đã thêm vào kế hoạch",
+  "errorAddingRecipe": "Lỗi khi thêm công thức",
+  "allItems": "Tất cả",
+  "produce": "Rau củ",
+  "dairy": "Sữa",
+  "pantry": "Tạp hóa",
+  "other": "Khác",
+  "today": "Hôm nay",
+  "noItemsNeeded": "Không có mặt hàng nào cần cho các bữa ăn sắp tới\n\nKéo xuống để làm mới",
+  "addedToShoppingList": "Đã thêm {name} vào danh sách mua sắm",
+  "@addedToShoppingList": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addCustomItem": "Thêm mặt hàng tùy chỉnh",
+  "itemName": "Tên mặt hàng",
+  "quantity": "Số lượng",
+  "unit": "Đơn vị",
+  "category": "Danh mục",
+  "protein": "Protein",
+  "vegetables": "Rau củ",
+  "fruits": "Trái cây",
+  "grains": "Ngũ cốc",
+  "condiments": "Gia vị",
+  "addItemButton": "Thêm mặt hàng"
 }

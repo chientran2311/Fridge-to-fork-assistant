@@ -174,5 +174,40 @@
   "editDisplayName": "Edit Name",
   "enterNewName": "Enter new name",
   "nameUpdated": "Name updated successfully!",
-  "nameEmpty": "Name cannot be empty"
+  "nameEmpty": "Name cannot be empty",
+
+  "selectDate": "Select date",
+  "confirmButton": "Confirm",
+  "mealPlans": "Meal Plans",
+  "noMealsPlanned": "No meals planned for this day",
+  "noRecipesAvailable": "No recipes available. Search for recipes in the Recipe tab.",
+  "loginRequired": "Please log in to add a plan",
+  "addedToPlan": "Added to plan",
+  "errorAddingRecipe": "Error adding recipe",
+  "allItems": "All Items",
+  "produce": "Produce",
+  "dairy": "Dairy",
+  "pantry": "Pantry",
+  "other": "Other",
+  "today": "Today",
+  "noItemsNeeded": "No items needed for upcoming meals\n\nPull to refresh",
+  "addedToShoppingList": "Added {name} to shopping list",
+  "@addedToShoppingList": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addCustomItem": "Add Custom Item",
+  "itemName": "Item Name",
+  "quantity": "Quantity",
+  "unit": "Unit",
+  "category": "Category",
+  "protein": "Protein",
+  "vegetables": "Vegetables",
+  "fruits": "Fruits",
+  "grains": "Grains",
+  "condiments": "Condiments",
+  "addItemButton": "Add Item"
 }

@@ -12,7 +12,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appTitle => 'Bếp Trợ Lý';
 
   @override
-  String get fridgeTab => 'Fridge';
+  String get fridgeTab => 'Tủ Lạnh';
 
   @override
   String get recipetab => 'Trợ lý AI gợi ý';
@@ -433,4 +433,90 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get nameEmpty => 'Tên không được để trống';
+
+  @override
+  String get selectDate => 'Chọn ngày';
+
+  @override
+  String get confirmButton => 'Xác nhận';
+
+  @override
+  String get mealPlans => 'Kế Hoạch Bữa Ăn';
+
+  @override
+  String get noMealsPlanned =>
+      'Chưa có bữa ăn nào được lên kế hoạch cho ngày này';
+
+  @override
+  String get noRecipesAvailable =>
+      'Không có công thức nào. Hãy tìm kiếm công thức ở tab Recipes.';
+
+  @override
+  String get loginRequired => 'Vui lòng đăng nhập để thêm kế hoạch';
+
+  @override
+  String get addedToPlan => 'Đã thêm vào kế hoạch';
+
+  @override
+  String get errorAddingRecipe => 'Lỗi khi thêm công thức';
+
+  @override
+  String get allItems => 'Tất cả';
+
+  @override
+  String get produce => 'Rau củ';
+
+  @override
+  String get dairy => 'Sữa';
+
+  @override
+  String get pantry => 'Tạp hóa';
+
+  @override
+  String get other => 'Khác';
+
+  @override
+  String get today => 'Hôm nay';
+
+  @override
+  String get noItemsNeeded =>
+      'Không có mặt hàng nào cần cho các bữa ăn sắp tới\n\nKéo xuống để làm mới';
+
+  @override
+  String addedToShoppingList(String name) {
+    return 'Đã thêm $name vào danh sách mua sắm';
+  }
+
+  @override
+  String get addCustomItem => 'Thêm mặt hàng tùy chỉnh';
+
+  @override
+  String get itemName => 'Tên mặt hàng';
+
+  @override
+  String get quantity => 'Số lượng';
+
+  @override
+  String get unit => 'Đơn vị';
+
+  @override
+  String get category => 'Danh mục';
+
+  @override
+  String get protein => 'Protein';
+
+  @override
+  String get vegetables => 'Rau củ';
+
+  @override
+  String get fruits => 'Trái cây';
+
+  @override
+  String get grains => 'Ngũ cốc';
+
+  @override
+  String get condiments => 'Gia vị';
+
+  @override
+  String get addItemButton => 'Thêm mặt hàng';
 }

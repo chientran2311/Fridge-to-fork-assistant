@@ -14,6 +14,7 @@ import '../weekly_plan/add_recipe_screen.dart';
 import '../../../../data/services/spoonacular_service.dart';
 import '../shopping_list/shopping_list_tab.dart';
 import '../../../recipe/favorite_recipes.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class WeeklyPlanContent extends StatefulWidget {
   final Function(int)? onTabChange;
@@ -363,10 +364,11 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
       if (_userId == null || _householdId == null) {
         debugPrint('❌ Cannot add meal plan: userId or householdId is null');
         if (mounted) {
+          final s = AppLocalizations.of(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('❌ Vui lòng đăng nhập để thêm kế hoạch'),
-              duration: Duration(seconds: 2),
+            SnackBar(
+              content: Text(s?.loginRequired ?? 'Please log in to add a plan'),
+              duration: const Duration(seconds: 2),
               backgroundColor: Colors.red,
             ),
           );
@@ -402,9 +404,10 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
       triggerShoppingListRecalculation();
 
       if (mounted) {
+        final s = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('✅ Đã thêm vào kế hoạch'),
+            content: Text('✅ ${s?.addedToPlan ?? "Added to plan"}'),
             duration: const Duration(seconds: 2),
             backgroundColor: const Color(0xFF214130),
           ),
@@ -413,9 +416,10 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
     } catch (e) {
       debugPrint('❌ Error adding meal plan: $e');
       if (mounted) {
+        final s = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('❌ Lỗi khi thêm công thức'),
+            content: Text('❌ ${s?.errorAddingRecipe ?? "Error adding recipe"}'),
             duration: const Duration(seconds: 2),
             backgroundColor: Colors.red,
           ),
@@ -489,6 +493,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
 
   // ✅ Show calendar dialog to pick a date
   void _showDatePicker() {
+    final s = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -504,7 +509,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Chọn ngày',
+                      s?.selectDate ?? 'Select date',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
@@ -574,9 +579,9 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      child: const Text(
-                        'Xác nhận',
-                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      child: Text(
+                        s?.confirmButton ?? 'Confirm',
+                        style: const TextStyle(color: Colors.white, fontSize: 16),
                       ),
                     ),
                   ],
@@ -855,184 +860,186 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
 
     return Stack(
       children: [
-        Column(
-          children: [
-            // ---------- WEEK HEADER (Month & Date Range) ----------
-            Container(
-              color: Colors.white,
-              padding:
-                  const EdgeInsets.only(left: 8, right: 8, top: 12, bottom: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Previous week button
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left),
-                    onPressed: _previousWeek,
-                    color: const Color(0xFF214130),
-                    splashRadius: 20,
-                  ),
-                  // Week range text (clickable)
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: _showDatePicker,
-                      child: Text(
-                        _getWeekRangeText(),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF214130),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Next week button
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right),
-                    onPressed: _nextWeek,
-                    color: const Color(0xFF214130),
-                    splashRadius: 20,
-                  ),
-                ],
-              ),
-            ),
+        // ---------- SCROLLABLE CONTENT ----------
+        RefreshIndicator(
+          onRefresh: () async {
+            // ✅ Reset flag when user pulls to refresh
+            _hasLoadedData = false;
+            await _loadMealPlans();
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
 
-            // ---------- DAY SELECTOR (FIXED AT TOP) ----------
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              child: SizedBox(
-                height: 80,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: weekDays.length,
-                  itemBuilder: (context, index) {
-                    final date = weekDays[index];
-
-                    final hasMealPlan = _hasMealPlan(date);
-                    final isActive = selectedDayIndex == index;
-
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: SizedBox(
-                        width: 60, // ✅ Fixed width for DragTarget
-                        height: 80, // ✅ Fixed height matching parent
-                        child: DragTarget<Map<String, dynamic>>(
-                          onWillAccept: (data) {
-                            debugPrint(
-                                '🟡 [Day ${date.day}] onWillAccept: Hovering over day');
-                            return true;
-                          },
-                          onAccept: (dragData) async {
-                            // ✅ Recipe dropped on this day
-                            debugPrint(
-                                '✅ [Day ${date.day}] onAccept: Received drag data!');
-                            debugPrint('   Drag Data: $dragData');
-
-                            final recipe =
-                                dragData['recipe'] as Map<String, dynamic>;
-                            final droppedDate = dragData['date'] as DateTime;
-                            final mealType = dragData['mealType'] as String;
-
-                            debugPrint('   Recipe: ${recipe['title']}');
-                            debugPrint('   MealType: $mealType');
-                            debugPrint('   DropDate: $droppedDate');
-
-                            await _addMealPlan(date, recipe['id'], mealType);
-                            debugPrint(
-                                '✅ Successfully added ${recipe['title']} to ${date.day}/${date.month}');
-                          },
-                          onLeave: (data) {
-                            debugPrint(
-                                '🔵 [Day ${date.day}] onLeave: Left the day target');
-                          },
-                          builder: (context, candidateData, rejectedData) {
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() => selectedDayIndex = index);
-                              },
-                              child: DayItem(
-                                day: _weekdayLabel(date),
-                                date: date.day.toString(),
-                                active: isActive,
-                                hasMealPlan: hasMealPlan,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-
-            // ---------- TITLE (FIXED) ----------
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    "Meal Plans",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Row(
+                // ---------- WEEK HEADER (Month & Date Range) ----------
+                Container(
+                  color: Colors.white,
+                  padding:
+                      const EdgeInsets.only(left: 8, right: 8, top: 12, bottom: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      if (_isLoading)
-                        const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                      // Previous week button
+                      IconButton(
+                        icon: const Icon(Icons.chevron_left),
+                        onPressed: _previousWeek,
+                        color: const Color(0xFF214130),
+                        splashRadius: 20,
+                      ),
+                      // Week range text (clickable)
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: _showDatePicker,
+                          child: Text(
+                            _getWeekRangeText(),
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF214130),
+                            ),
+                          ),
                         ),
-                      const SizedBox(width: 8),
-                    
+                      ),
+                      // Next week button
+                      IconButton(
+                        icon: const Icon(Icons.chevron_right),
+                        onPressed: _nextWeek,
+                        color: const Color(0xFF214130),
+                        splashRadius: 20,
+                      ),
                     ],
                   ),
-                ],
-              ),
-            ),
+                ),
 
-            // ---------- SCROLLABLE CONTENT ----------
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  // ✅ Reset flag when user pulls to refresh
-                  _hasLoadedData = false;
-                  await _loadMealPlans();
-                },
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                const SizedBox(height: 8),
+
+                      // ---------- DAY SELECTOR ----------
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        child: SizedBox(
+                          height: 80,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: weekDays.length,
+                            itemBuilder: (context, index) {
+                              final date = weekDays[index];
+
+                              final hasMealPlan = _hasMealPlan(date);
+                              final isActive = selectedDayIndex == index;
+
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 12),
+                                child: SizedBox(
+                                  width: 60, // ✅ Fixed width for DragTarget
+                                  height: 80, // ✅ Fixed height matching parent
+                                  child: DragTarget<Map<String, dynamic>>(
+                                    onWillAccept: (data) {
+                                      debugPrint(
+                                          '🟡 [Day ${date.day}] onWillAccept: Hovering over day');
+                                      return true;
+                                    },
+                                    onAccept: (dragData) async {
+                                      // ✅ Recipe dropped on this day
+                                      debugPrint(
+                                          '✅ [Day ${date.day}] onAccept: Received drag data!');
+                                      debugPrint('   Drag Data: $dragData');
+
+                                      final recipe =
+                                          dragData['recipe'] as Map<String, dynamic>;
+                                      final droppedDate = dragData['date'] as DateTime;
+                                      final mealType = dragData['mealType'] as String;
+
+                                      debugPrint('   Recipe: ${recipe['title']}');
+                                      debugPrint('   MealType: $mealType');
+                                      debugPrint('   DropDate: $droppedDate');
+
+                                      await _addMealPlan(date, recipe['id'], mealType);
+                                      debugPrint(
+                                          '✅ Successfully added ${recipe['title']} to ${date.day}/${date.month}');
+                                    },
+                                    onLeave: (data) {
+                                      debugPrint(
+                                          '🔵 [Day ${date.day}] onLeave: Left the day target');
+                                    },
+                                    builder: (context, candidateData, rejectedData) {
+                                      return GestureDetector(
+                                        onTap: () {
+                                          setState(() => selectedDayIndex = index);
+                                        },
+                                        child: DayItem(
+                                          day: _weekdayLabel(date),
+                                          date: date.day.toString(),
+                                          active: isActive,
+                                          hasMealPlan: hasMealPlan,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+
                       const SizedBox(height: 8),
 
+                      // ---------- TITLE ----------
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              AppLocalizations.of(context)?.mealPlans ?? "Meal Plans",
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            Row(
+                              children: [
+                                if (_isLoading)
+                                  const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                const SizedBox(width: 8),
+                              
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
                       // ---------- DYNAMIC MEAL CARDS ----------
-                      _buildMealCardsForSelectedDay(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _buildMealCardsForSelectedDay(),
+                      ),
 
                       const SizedBox(
-                          height: 40), // ✅ Spacing at bottom for scroll
+                          height: 100), // ✅ Spacing at bottom for scroll and FAB
                     ],
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
+        
         // ✅ Floating Action Button
         Positioned(
           bottom: 24,
@@ -1046,12 +1053,12 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
 
               // Check if recipes are loaded
               if (_availableRecipes.isEmpty) {
+                final s = AppLocalizations.of(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Không có công thức nào. Hãy tìm kiếm công thức ở tab Recipes.'),
+                  SnackBar(
+                    content: Text(s?.noRecipesAvailable ?? 'No recipes available'),
                     backgroundColor: Colors.orange,
-                    duration: Duration(seconds: 2),
+                    duration: const Duration(seconds: 2),
                   ),
                 );
                 return;
@@ -1080,6 +1087,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
     }
 
     if (mealPlans.isEmpty) {
+      final s = AppLocalizations.of(context);
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 32),
         child: Center(
@@ -1088,7 +1096,7 @@ class _WeeklyPlanContentState extends State<WeeklyPlanContent>
               Icon(Icons.restaurant_menu, size: 48, color: Colors.grey[300]),
               const SizedBox(height: 12),
               Text(
-                'No meals planned for this day',
+                s?.noMealsPlanned ?? 'No meals planned for this day',
                 style: TextStyle(color: Colors.grey[600]),
               ),
             ],

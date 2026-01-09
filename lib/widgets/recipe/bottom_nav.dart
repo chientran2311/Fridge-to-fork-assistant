@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../l10n/app_localizations.dart';
 
 class BottomNav extends StatelessWidget {
   // Biến để xác định tab nào đang được chọn (0: Fridge, 1: Recipes, 2: Plan)
@@ -17,6 +18,7 @@ class BottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color activeColor = const Color(0xFF1B3B36); // Màu xanh rêu đậm
     final Color inactiveColor = Colors.grey.shade400;  // Màu xám nhạt
+    final s = AppLocalizations.of(context);
 
     return Container(
       // Trang trí nền trắng và viền mỏng phía trên
@@ -48,7 +50,7 @@ class BottomNav extends StatelessWidget {
               _buildNavItem(
                 index: 0,
                 icon: Icons.kitchen_outlined, // Icon tủ lạnh
-                label: "Fridge",
+                label: s?.fridge ?? "Fridge",
                 isActive: selectedIndex == 0,
                 activeColor: activeColor,
                 inactiveColor: inactiveColor,
@@ -58,7 +60,7 @@ class BottomNav extends StatelessWidget {
               _buildNavItem(
                 index: 1,
                 icon: Icons.restaurant_menu, // Icon dao dĩa chéo (Chuẩn y hệt ảnh)
-                label: "Recipes",
+                label: s?.recipes ?? "Recipes",
                 isActive: selectedIndex == 1,
                 activeColor: activeColor,
                 inactiveColor: inactiveColor,
@@ -68,7 +70,7 @@ class BottomNav extends StatelessWidget {
               _buildNavItem(
                 index: 2,
                 icon: Icons.calendar_today_outlined, // Icon lịch
-                label: "Plan",
+                label: s?.plan ?? "Plan",
                 isActive: selectedIndex == 2,
                 activeColor: activeColor,
                 inactiveColor: inactiveColor,

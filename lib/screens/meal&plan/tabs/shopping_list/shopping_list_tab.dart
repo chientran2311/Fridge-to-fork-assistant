@@ -43,7 +43,7 @@ class _ShoppingListTabState extends State<ShoppingListTab>
   // ✅ NEW: Track deleted items to prevent auto-adding them back
   Set<String> _deletedItemKeys = {};
   
-  // ✅ Filter by category - use ID instead of display text
+  // ✅ Filter by category - default to 'all'
   String _selectedCategory = 'all';
 
   @override
@@ -535,66 +535,59 @@ class _ShoppingListTabState extends State<ShoppingListTab>
 
     return Stack(
       children: [
-        // Scrollable content
-        RefreshIndicator(
-          onRefresh: () async {
-            // ✅ Reset flag when user pulls to refresh and recalculate
-            _hasLoadedData = false;
-            await _recalculateShoppingList();
-          },
+        Column(
+          children: [
+            // 1. Fixed Category Filter (Non-scrollable)
+            Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isDesktop ? 32 : 16,
+            vertical: 12,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(0),
-            physics: const AlwaysScrollableScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            scrollDirection: Axis.horizontal,
+            child: Row(
               children: [
-                const SizedBox(height: 16),
+                _buildCategoryButton('all', AppLocalizations.of(context)?.allItems ?? 'All Items'),
+                const SizedBox(width: 8),
+                _buildCategoryButton('produce', AppLocalizations.of(context)?.produce ?? 'Produce'),
+                const SizedBox(width: 8),
+                _buildCategoryButton('dairy', AppLocalizations.of(context)?.dairy ?? 'Dairy'),
+                const SizedBox(width: 8),
+                _buildCategoryButton('pantry', AppLocalizations.of(context)?.pantry ?? 'Pantry'),
+                const SizedBox(width: 8),
+                _buildCategoryButton('other', AppLocalizations.of(context)?.other ?? 'Other'),
+              ],
+            ),
+          ),
+        ),
 
-                // 1. Category Filter Buttons
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 32 : 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildCategoryButton('all', AppLocalizations.of(context)?.allItems ?? 'All Items'),
-                        const SizedBox(width: 8),
-                        _buildCategoryButton('produce', AppLocalizations.of(context)?.produce ?? 'Produce'),
-                        const SizedBox(width: 8),
-                        _buildCategoryButton('dairy', AppLocalizations.of(context)?.dairy ?? 'Dairy'),
-                        const SizedBox(width: 8),
-                        _buildCategoryButton('pantry', AppLocalizations.of(context)?.pantry ?? 'Pantry'),
-                        const SizedBox(width: 8),
-                        _buildCategoryButton('other', AppLocalizations.of(context)?.other ?? 'Other'),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // 2. Shopping Items by Date
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isDesktop ? 32 : 16,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Shopping Items by Date
+        // 2. Scrollable Shopping Items
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              // ✅ Reset flag when user pulls to refresh and recalculate
+              _hasLoadedData = false;
+              await _recalculateShoppingList();
+            },
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: isDesktop ? 32 : 16,
+                vertical: 16,
+              ),
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 if (_itemsByDate.isEmpty)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 32),
@@ -666,15 +659,15 @@ class _ShoppingListTabState extends State<ShoppingListTab>
                     );
                   }).toList(),
 
-                      // Extra space at bottom
-                      const SizedBox(height: 100),
-                    ],
-                  ),
-                ),
-              ],
+                  // Extra space at bottom
+                  const SizedBox(height: 100),
+                ],
+              ),
             ),
           ),
         ),
+        ],
+      ),
         
         // ✅ Floating Action Button to add custom item (Fridge-style)
         Positioned(
@@ -692,7 +685,7 @@ class _ShoppingListTabState extends State<ShoppingListTab>
     );
   }
 
-  // ✅ Build category filter button
+  // ✅ Build category filter button with ID and label
   Widget _buildCategoryButton(String categoryId, String categoryLabel) {
     final isSelected = _selectedCategory == categoryId;
     return GestureDetector(

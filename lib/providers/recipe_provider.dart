@@ -164,8 +164,7 @@ class RecipeProvider extends ChangeNotifier {
     // (Giữ nguyên logic cũ của bạn)
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Vui lòng đăng nhập!")));
+      CustomToast.show(context, "Vui lòng đăng nhập!", isError: true);
       return;
     }
 
@@ -196,11 +195,7 @@ class RecipeProvider extends ChangeNotifier {
         notifyListeners();
         
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text("Đã xóa khỏi danh sách yêu thích"),
-                duration: Duration(seconds: 1)),
-          );
+          CustomToast.show(context, "Đã xóa khỏi danh sách yêu thích");
         }
       } else {
         // ✅ Fetch full recipe details from API before saving
@@ -291,8 +286,7 @@ class RecipeProvider extends ChangeNotifier {
     } catch (e) {
       print("Lỗi toggle favorite: $e");
       if (context.mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Lỗi: $e")));
+         CustomToast.show(context, "Lỗi: $e", isError: true);
       }
     }
   }

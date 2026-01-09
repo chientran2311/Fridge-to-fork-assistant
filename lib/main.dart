@@ -94,13 +94,13 @@ class _AuthProfileImageSyncState extends State<_AuthProfileImageSync> {
   String? _lastUserId;
   
   @override
-  Widget build(BuildContext context) {
-    // ✅ Lắng nghe AuthProvider trong build
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
     final authProvider = context.watch<AuthProvider>();
-    final profileProvider = context.read<ProfileImageProvider>();
+    final profileImageProvider = context.read<ProfileImageProvider>();
     final currentUserId = authProvider.user?.uid;
     
-    // ✅ Sử dụng addPostFrameCallback để tránh gọi notifyListeners() trong build
     if (currentUserId != _lastUserId) {
       _lastUserId = currentUserId;
       
@@ -110,14 +110,17 @@ class _AuthProfileImageSyncState extends State<_AuthProfileImageSync> {
         
         if (currentUserId != null) {
           // User đăng nhập -> load ảnh của user đó
-          profileProvider.loadProfileImageForUser(currentUserId);
+          profileImageProvider.loadProfileImageForUser(currentUserId);
         } else {
           // User đăng xuất -> reset về mặc định
-          profileProvider.resetToDefault();
+          profileImageProvider.resetToDefault();
         }
       });
     }
-    
+  }
+  
+  @override
+  Widget build(BuildContext context) {
     return widget.child;
   }
 }

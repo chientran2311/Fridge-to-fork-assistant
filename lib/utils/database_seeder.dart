@@ -210,20 +210,7 @@ class DatabaseSeeder {
       // ==========================================
       // BƯỚC 6: TẠO SHOPPING LIST (Sub-collection: shopping_list)
       // ==========================================
-      await houseRef.collection('shopping_list').doc('shop_01').set({
-        'item_id': 'shop_01',
-        'household_id': householdId,
-        'name': 'Hành tím',
-        'quantity': 2,
-        'unit': 'củ',
-        'is_checked': false,
-        'is_auto_generated': true,
-        'for_recipe_id': _recipeId,
-        'target_date': Timestamp.fromDate(DateTime.now()),
-        'created_at': FieldValue.serverTimestamp(),
-        'note': 'Mua loại củ to',
-      });
-      debugPrint("✅ Đã tạo Shopping List");
+    
 
       debugPrint("🎉 HOÀN TẤT! Dữ liệu mẫu đã sẵn sàng cho User: $displayName");
     } catch (e) {
